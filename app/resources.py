@@ -2,6 +2,7 @@ import json
 from app.services import create_receiver, end_site_receiver
 from flask_restful import Resource, Api
 from flask import request, make_response
+
 # from app.celery_client import add_together
 
 api = Api()
@@ -26,8 +27,9 @@ api.add_resource(CreateReceiver, '/create_receiver')
 class RegisterCard(Resource):
     def post(self):
         req_data = json.loads(request.data.decode())
+        # Validate input parameters here? Could use something like Marshmallow (overkill?) for serializing.
         try:
-            result = end_site_receiver(req_data['hostname'], req_data['receiver_token'], req_data['payment_token'])
+            result = end_site_receiver(req_data['partner_slug'], req_data['payment_token'])
             response_text = result.text
             status_code = 200
         except Exception as e:

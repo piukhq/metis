@@ -53,8 +53,7 @@ class TestMetisResources(TestCase):
         self.end_site_receiver_route()
         resp = self.client.post('/register_card',
                                 headers={'content-type': 'application/json'},
-                                data=json.dumps({"hostname": "http://latestserver.com",
-                                                 "receiver_token": self.receiver_token,
+                                data=json.dumps({"partner_slug": "mastercard",
                                                  "payment_token": "12345678901234567890"}))
         self.assertTrue(resp.status_code == 200)
 
@@ -64,4 +63,21 @@ class TestMetisResources(TestCase):
         resp = self.client.post('/register_card',
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({}))
+        self.assertTrue(resp.status_code == 400)
+
+    @httpretty.activate
+    def test_end_site_receiver_param_missing(self):
+        self.end_site_receiver_route()
+        resp = self.client.post('/register_card',
+                                headers={'content-type': 'application/json'},
+                                data=json.dumps({"partner_slug": "mastercard"}))
+        self.assertTrue(resp.status_code == 400)
+
+    @httpretty.activate
+    def test_end_site_blank_param(self):
+        self.end_site_receiver_route()
+        resp = self.client.post('/register_card',
+                                headers={'content-type': 'application/json'},
+                                data=json.dumps({"partner_slug": "mastercard",
+                                                 "payment_token": " "}))
         self.assertTrue(resp.status_code == 400)

@@ -1,5 +1,6 @@
 import unittest
 import httpretty
+import settings
 from app.services import create_receiver, end_site_receiver
 
 
@@ -46,7 +47,7 @@ class TestServices(unittest.TestCase):
     @httpretty.activate
     def test_end_site_receiver(self):
         self.test_route()
-        resp = end_site_receiver('http://testing_latestserver.com/post.php',
-                                 self.receiver_token,
+        settings.TESTING = True
+        resp = end_site_receiver('mastercard',
                                  self.payment_method_token)
         self.assertTrue(resp.status_code == 200)
