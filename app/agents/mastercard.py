@@ -66,10 +66,10 @@ class MasterCard:
                   </soapenv:header></soapenv:envelope>""")
 
         soap = request.substitute(app_id=app_id,
-                           bank_customer_number=bank_customer_number,
-                           member_ica=member_ica,
-                           bank_product_code=bank_product_code,
-                           program_identifier=program_identifier)
+                                  bank_customer_number=bank_customer_number,
+                                  member_ica=member_ica,
+                                  bank_product_code=bank_product_code,
+                                  program_identifier=program_identifier)
 
         body_data = '![CDATA[{' + soap + '}]]'
         return body_data
