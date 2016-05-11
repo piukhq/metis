@@ -31,7 +31,7 @@ def end_site_receiver(partner_slug, payment_token):
     url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token() + '/deliver.xml'
     xml_data = '<delivery>' \
                '  <payment_method_token>' + payment_token + '</payment_method_token>' \
-               '  <url>' + agent_instance.hostname() + '</url>' \
+               '  <url>' + agent_instance.url() + '</url>' \
                '  <headers>' + agent_instance.request_header() + '</headers>' \
                '  <body>' + agent_instance.request_body() + '</body>' \
                '</delivery>'

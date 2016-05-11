@@ -11,14 +11,14 @@ class TestMastercard(TestCase):
     def setUp(self):
         self.mc = agent.MasterCard()
 
-    def test_hostname_testing(self):
+    def test_url_testing(self):
         settings.TESTING = True
-        result = self.mc.hostname()
+        result = self.mc.url()
         self.assertTrue(result == 'http://latestserver.com/post.php')
 
-    def test_hostname_production(self):
+    def test_url_production(self):
         settings.TESTING = False
-        result = self.mc.hostname()
+        result = self.mc.url()
         self.assertTrue(result == '')
 
     def test_receiver_token_testing(self):
@@ -34,14 +34,14 @@ class TestMastercard(TestCase):
     def test_request_header_testing(self):
         settings.TESTING = True
         result = self.mc.request_header()
-        self.assertTrue(result.__contains__('mtf'))
+        self.assertIn('mtf', result)
 
     def test_request_header_production(self):
         settings.TESTING = False
         result = self.mc.request_header()
-        self.assertFalse(result.__contains__('mtf'))
+        self.assertNotIn('mtf', result)
 
     def test_request_body_correct_text(self):
         result = self.mc.request_body()
-        self.assertTrue(result.__contains__('{{credit_card_number}}'))
-        self.assertTrue(result.__contains__('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>'))
+        self.assertIn('{{credit_card_number}}', result)
+        self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)

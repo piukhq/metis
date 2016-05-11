@@ -1,21 +1,21 @@
 import settings
 from string import Template
 
-testing_hostname = 'http://latestserver.com/post.php'
+testing_url = 'http://latestserver.com/post.php'
 testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
 testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
-production_hostname = ''
+production_url = ''
 production_receiver_token = ''
 production_endpoint = 'https://ws.mastercard.com/MRS/CustomerService'
 
 
 class MasterCard:
-    def hostname(self):
+    def url(self):
         if not settings.TESTING:
-            host_name = production_hostname
+            service_url = production_url
         else:
-            host_name = testing_hostname
-        return host_name
+            service_url = testing_url
+        return service_url
 
     def receiver_token(self):
         if not settings.TESTING:
@@ -37,7 +37,7 @@ class MasterCard:
     def request_body(self):
         app_id = 'Get app id from MasterCard'
         bank_customer_number = 'get the token'
-        member_ica = '17597'  # TODO check member ica
+        member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
         bank_product_code = 'MRS code for card product provided by MC'
         program_identifier = 'MRS program id'
 
@@ -47,7 +47,7 @@ class MasterCard:
                       <soapenv:header>
                       <identity>
                       <appID>$app_id</appID>
-                      <institutionName> Loyalty Angels </institutionName>
+                      <institutionName>Loyalty Angels</institutionName>
                       </identity>
                       <soapenv:body>
                         <cus:enroll>
