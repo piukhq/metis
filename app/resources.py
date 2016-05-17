@@ -14,7 +14,7 @@ class CreateReceiver(Resource):
         if req_data is not None and len(req_data) > 0:
             result = create_receiver(req_data['hostname'])
             response_text = result.text
-            status_code = 201
+            status_code = result.status_code
         else:
             response_text = str({'Error': 'Please provide the hostname url.'})
             status_code = 422

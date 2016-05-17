@@ -2,7 +2,7 @@ import settings
 from string import Template
 
 testing_url = 'http://latestserver.com/post.php'
-testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
+testing_receiver_token = 'YFteSZZ8lbjnxgHb1OR5tbR2oG7'
 testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
 production_url = ''
 production_receiver_token = ''
