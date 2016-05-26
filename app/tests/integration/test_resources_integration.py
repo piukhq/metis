@@ -1,4 +1,5 @@
 import json
+import settings
 from flask.ext.testing import TestCase
 from app import create_app
 
@@ -22,3 +23,11 @@ class TestMetisResources(TestCase):
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({"hostname": "testing"}))
         self.assertTrue(resp.status_code == 422)
+
+    def test_amex_receiver(self):
+        settings.TESTING = True
+        resp = self.client.post('/register_card',
+                                headers={'content-type': 'application/json'},
+                                data=json.dumps({"partner_slug": "amex",
+                                                 "payment_token": "RUcZ9XTPekFKL5DK0WC651xnWgV"}))
+        self.assertTrue(resp.status_code == 200)

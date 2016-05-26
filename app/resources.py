@@ -30,8 +30,8 @@ class RegisterCard(Resource):
         # Validate input parameters here? Could use something like Marshmallow (overkill?) for serializing.
         try:
             result = end_site_receiver(req_data['partner_slug'], req_data['payment_token'])
-            response_text = result.text
-            status_code = 200
+            response_text = result.content
+            status_code = result.status_code
         except Exception as e:
             response_text = str({'Error': 'Problem sending the payment card information. Message: {}'.format(e)})
             status_code = 400

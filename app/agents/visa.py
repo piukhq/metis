@@ -7,14 +7,16 @@ import time
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
 
-testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
-testing_create_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync'
-testing_remove_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/unsync'
+testing_hostname = 'http://latestserver.com/post.php'
+testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
+testing_create_url = 'https://test.api.loyaltyangels.com/file_enroll'
+testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 production_receiver_token = ''
-production_create_url = 'https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'
+production_create_url = 'test.api.loyaltyangels.com/file_enroll'
 
 
-class Amex:
+# ToDo work out the Visa file format and layout - code the request_body
+class Visa:
     def url(self):
         if not settings.TESTING:
             service_url = production_create_url
