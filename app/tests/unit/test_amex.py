@@ -24,7 +24,7 @@ class TestAmex(TestCase):
     def test_receiver_token_testing(self):
         settings.TESTING = True
         result = self.amex.receiver_token()
-        self.assertTrue(result == 'aDwu4ykovZVe7Gpto3rHkYWI5wI')
+        self.assertTrue(result == 'BqfFb1WnOwpbzH7WVTqmvYtffPV')
 
     def test_receiver_token_production(self):
         settings.TESTING = False

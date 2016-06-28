@@ -1,0 +1,20 @@
+tests:
+  script:
+    - pip3 install -r requirements.txt
+    - py.test app/tests/unit --cov=app
+
+complexity:
+  script:
+    - xenon --max-average A --max-modules B --max-absolute B .
+
+flake8:
+  script:
+    - flake8 *
+
+deploy:
+  image: loyaltyangels/ansible
+  stage: deploy
+  script:
+  - cd /ansible && ansible-playbook playbooks/deploy/flask.yml -e project=metis -e hosts=dev_web
+  only:
+  - master
