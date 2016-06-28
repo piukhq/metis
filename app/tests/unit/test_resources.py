@@ -1,7 +1,9 @@
+import httpretty
 import json
+import settings
+import app.agents.mastercard as mc
 from flask.ext.testing import TestCase
 from app import create_app
-import httpretty
 
 
 class Testing:
@@ -50,6 +52,8 @@ class TestMetisResources(TestCase):
 
     @httpretty.activate
     def test_end_site_receiver(self):
+        settings.TESTING = True
+        mc.testing_receiver_token = self.receiver_token
         self.end_site_receiver_route()
         resp = self.client.post('/register_card',
                                 headers={'content-type': 'application/json'},

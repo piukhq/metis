@@ -21,11 +21,6 @@ class TestMastercard(TestCase):
         result = self.mc.url()
         self.assertTrue(result == '')
 
-    def test_receiver_token_testing(self):
-        settings.TESTING = True
-        result = self.mc.receiver_token()
-        self.assertTrue(result == 'aDwu4ykovZVe7Gpto3rHkYWI5wI')
-
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.mc.receiver_token()

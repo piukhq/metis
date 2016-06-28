@@ -1,3 +1,4 @@
+import app.agents.mastercard as mc
 import unittest
 import httpretty
 import settings
@@ -47,6 +48,7 @@ class TestServices(unittest.TestCase):
     @httpretty.activate
     def test_end_site_receiver(self):
         self.test_route()
+        mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
         resp = end_site_receiver('mastercard',
                                  self.payment_method_token)
