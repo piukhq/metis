@@ -1,3 +1,4 @@
+import app.agents.amex
 import settings
 import app.agents.amex as agent
 from unittest import TestCase
@@ -39,3 +40,11 @@ class TestAmex(TestCase):
         result = self.amex.request_body()
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
+
+    def test_amex_oauth(self):
+        result = self.amex.amex_oauth()
+        self.assertTrue(result == 200)
+
+    def test_mac_auth_header(self):
+        result = app.agents.amex.mac_auth_header()
+        self.assertIn('MAC id', result)

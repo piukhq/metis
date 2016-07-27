@@ -31,3 +31,35 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({"partner_slug": "amex",
                                                  "payment_token": "RUcZ9XTPekFKL5DK0WC651xnWgV"}))
         self.assertTrue(resp.status_code == 200)
+
+    def test_spreedly_callback(self):
+        settings.TESTING = True
+        settings.SPREEDLY_SIGNING_SECRET = 'RKOCG5D8D3fZxDSg504D0IxU2XD4Io5VXmyzdCtTivHFTTSylzM2ZzTWFwVH4ucG'
+
+        log = """    <transactions>
+          <transaction>
+            <amount type="integer">100</amount>
+            <on_test_gateway type="boolean">false</on_test_gateway>
+            <created_at type="datetime">2012-09-10T20:35:10Z</created_at>
+            <updated_at type="datetime">2012-09-10T20:35:11Z</updated_at>
+            <currency_code>USD</currency_code>
+            <succeeded type="boolean">true</succeeded>
+            <state>succeeded</state>
+            <token>5AG4P7FPjlfIA6aED6AgZvUEehx</token>
+            <transaction_type>OffsitePurchase</transaction_type>
+            <order_id nil="true"></order_id>
+            <ip nil="true"></ip>
+            <callback_url>http://example.com/handle_callback</callback_url>
+            <signed>
+              <signature>b81436daf0d695404c5bf7a2aecf049d460bb6e1</signature>
+              <fields>amount callback_url created_at currency_code ip on_test_gateway order_id state succeeded token transaction_type updated_at</fields>
+              <algorithm>sha1</algorithm>
+            </signed>
+          </transaction>
+        </transactions>"""  # noqa
+        """noqa comment prevents flake8 checking the previous string."""
+
+        resp = self.client.post('/notify/spreedly',
+                                headers={'content-type': 'application/xml'},
+                                data=log)
+        self.assertTrue(resp.status_code == 200)
