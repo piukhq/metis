@@ -34,7 +34,7 @@ class TestAmex(TestCase):
 
     def test_request_header_both(self):
         result = self.amex.request_header()
-        self.assertIn('json', result)
+        self.assertIn('X-AMEX-ACCESS-KEY', result)
 
     def test_request_body_correct_text(self):
         result = self.amex.request_body()
@@ -49,5 +49,3 @@ class TestAmex(TestCase):
         auth_header = app.agents.amex.mac_auth_header()
         result = self.amex.amex_oauth(auth_header)
         self.assertTrue(len(result) > 0)
-
-

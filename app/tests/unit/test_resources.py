@@ -39,7 +39,7 @@ class TestMetisResources(TestCase):
         self.create_receiver_route()
         resp = self.client.post('/create_receiver',
                                 headers={'content-type': 'application/json'},
-                                data=json.dumps({"hostname": "http://latestserver.com"}))
+                                data=json.dumps({"hostname": "http://latestserver.com", "receiver_type": "test"}))
         self.assertTrue(resp.status_code == 201)
 
     @httpretty.activate
