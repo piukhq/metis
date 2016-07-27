@@ -18,7 +18,7 @@ class TestServices(unittest.TestCase):
 
     def test_create_visa_sftp_receiver(self):
         sftp_details = {'receiver_type': 'test', 'hostnames': 'sftp://178.238.141.18',
-                            'username': 'spreedlyftp', 'password': 'Ohpov9Sae2ge'}
+                        'username': 'spreedlyftp', 'password': 'Ohpov9Sae2ge'}
 
         resp = create_sftp_receiver(sftp_details)
         self.assertTrue(resp.status_code == 201)

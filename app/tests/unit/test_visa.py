@@ -14,17 +14,17 @@ class TestVisa(TestCase):
     def test_url_testing(self):
         settings.TESTING = True
         result = self.visa.url()
-        self.assertTrue(result == 'https://visa.test.com')
+        self.assertIn('test.api.loyaltyangels.com', result)
 
     def test_url_production(self):
         settings.TESTING = False
         result = self.visa.url()
-        self.assertTrue(result == 'https://visa.test.com')
+        self.assertIn('test.api.loyaltyangels.com', result)
 
     def test_receiver_token_testing(self):
         settings.TESTING = True
         result = self.visa.receiver_token()
-        self.assertTrue(result == 'BqfFb1WnOwpbzH7WVTqmvYtffPV')
+        self.assertTrue(result == 'aDwu4ykovZVe7Gpto3rHkYWI5wI')
 
     def test_receiver_token_production(self):
         settings.TESTING = False
@@ -45,4 +45,3 @@ class TestVisa(TestCase):
         result = self.visa.create_file_data(cards)
         self.assertIn('1234', result)
         self.assertIn('{{credit_card_number}}', result)
-

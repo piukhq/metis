@@ -54,7 +54,7 @@ class Notify(Resource):
         try:
             agent_instance = AgentManager.get_agent(provider_slug)
 
-            result = agent_instance.save(req_data)
+            agent_instance.save(req_data)
         except Exception as e:
             response_text = str({'Error': 'Problem processing request. Message: {}'.format(e)})
             status_code = 400

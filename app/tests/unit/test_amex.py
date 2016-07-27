@@ -41,10 +41,13 @@ class TestAmex(TestCase):
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
 
-    def test_amex_oauth(self):
-        result = self.amex.amex_oauth()
-        self.assertTrue(result == 200)
-
     def test_mac_auth_header(self):
         result = app.agents.amex.mac_auth_header()
         self.assertIn('MAC id', result)
+
+    def test_amex_oauth(self):
+        auth_header = app.agents.amex.mac_auth_header()
+        result = self.amex.amex_oauth(auth_header)
+        self.assertTrue(len(result) > 0)
+
+

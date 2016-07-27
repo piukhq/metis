@@ -5,7 +5,7 @@ import hmac
 import hashlib
 import base64
 import requests
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -47,12 +47,12 @@ class Amex:
         access_key = 'X-AMEX-ACCESS-KEY: ' + access_token
         header_end = ']]'
 
-        header = "{0} {1} {2} {3} {4} {5}".format(header_start, content_type,
-                                                  authentication, api_key, access_token, header_end)
+        header = "{0} {1} {2} {3} {4} {5} {6}".format(header_start, content_type,
+                                                      authentication, api_key, access_token, access_key, header_end)
         return header
 
     def request_body(self):
-        msgId = time.mktime(datetime.datetime.now().timetuple())  # 'Can this be a guid or similar?'
+        msgId = time.mktime(datetime.now().timetuple())  # 'Can this be a guid or similar?'
         partnerId = 'Amex to provide'
         cmAlias1 = 'card_id_token'
         distrChan = 'Amex to provide'
@@ -81,9 +81,9 @@ class Amex:
                   "X-AMEX-API-KEY": client_id}
 
         resp = requests.post(auth_url, data=payload, headers=header)
-
+        resp_json = json.loads(resp.content.decode())
         if resp.status_code == 200:
-            return resp.text["access_token"]
+            return resp_json["access_token"]
         else:
             return None
 
