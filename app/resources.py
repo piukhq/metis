@@ -21,7 +21,7 @@ class CreateReceiver(Resource):
 
         return make_response(response_text, status_code)
 
-api.add_resource(CreateReceiver, '/create_receiver')
+api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 
 
 class RegisterCard(Resource):
@@ -38,7 +38,7 @@ class RegisterCard(Resource):
 
         return make_response(response_text, status_code)
 
-api.add_resource(RegisterCard, '/register_card')
+api.add_resource(RegisterCard, '/payment_service/register_card')
 
 
 class Notify(Resource):
@@ -61,4 +61,4 @@ class Notify(Resource):
 
         return make_response(response_text, status_code)
 
-api.add_resource(Notify, '/notify/<string:provider_slug>')
+api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
