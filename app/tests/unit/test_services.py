@@ -41,7 +41,7 @@ class TestServices(unittest.TestCase):
     @httpretty.activate
     def test_create_receiver(self):
         self.create_route()
-        resp = create_receiver('http://testing_latestserver.com')
+        resp = create_receiver('http://testing_latestserver.com', 'test')
         self.assertTrue(resp.status_code == 201)
         self.assertIn('token', resp.text)
 
