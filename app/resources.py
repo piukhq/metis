@@ -27,13 +27,15 @@ api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 class RegisterCard(Resource):
     def post(self):
         req_data = json.loads(request.data.decode())
-        payment_token = req_data['payment_token']
-        partner_slug = req_data['partner_slug']
-        if not payment_token or not partner_slug:
-            return make_response('payment token or partner slug not provided', 400)
 
         try:
-            result = end_site_receiver(req_data['partner_slug'], req_data['payment_token'])
+            payment_token = req_data['payment_token']
+            partner_slug = req_data['partner_slug']
+        except KeyError:
+            return make_response('Payment token or partner slug not provided', 400)
+
+        try:
+            result = end_site_receiver(partner_slug, payment_token)
             response_text = result.content
             status_code = result.status_code
         except Exception as e:
