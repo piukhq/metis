@@ -1,10 +1,13 @@
-from environment import env_var, read_env
 import os
+from environment import env_var, read_env
+
 
 SECRET_KEY = b'\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N['
-SPREEDLY_SIGNING_SECRET = '4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa'
 
 read_env()
+
+SPREEDLY_SIGNING_SECRET = env_var('SPREEDLY_SIGNING_SECRET',
+                                  '4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa')
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))

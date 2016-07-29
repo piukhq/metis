@@ -14,8 +14,11 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
 testing_create_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync'
 testing_remove_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/unsync'
-production_receiver_token = ''
-production_create_url = 'https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'
+production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
+# production_create_url = 'https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'
+production_create_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync'
+
+# Amex OAuth details
 client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
 client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
 
@@ -51,22 +54,21 @@ class Amex:
                                                       authentication, api_key, access_token, access_key, header_end)
         return header
 
-    def request_body(self):
+    def request_body(self, payment_token):
         msgId = time.mktime(datetime.now().timetuple())  # 'Can this be a guid or similar?'
-        partnerId = 'Amex to provide'
-        cmAlias1 = 'card_id_token'
-        distrChan = 'Amex to provide'
+        partnerId = 'AAAA0045'  # 'Amex to provide'
+        distrChan = '39'  # 'Amex to provide'
 
         data = {
             "msgId": msgId,
             "partnerId": partnerId,
             "cardNbr": "{{credit_card_number}}",
-            "cmAlias1": cmAlias1,
+            "cmAlias1": payment_token,
             "distrChan": distrChan
         }
         # Todo - check if "langCd": "en", "ctryCd": "US", required
 
-        body_data = '![CDATA[{' + json.dumps(data) + '}]]'
+        body_data = '![CDATA[' + json.dumps(data) + ']]'
         return body_data
 
     def amex_oauth(self, auth_header):

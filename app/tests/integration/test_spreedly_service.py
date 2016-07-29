@@ -6,7 +6,7 @@ from app.services import create_receiver, create_sftp_receiver, end_site_receive
 
 class TestServices(unittest.TestCase):
     def test_create_receiver(self):
-        resp = create_receiver('http://latestserver.com')
+        resp = create_receiver('http://latestserver.com', 'test')
         self.assertTrue(resp.status_code == 201)
         self.assertIn('token', resp.text)
 

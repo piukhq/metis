@@ -37,6 +37,6 @@ class TestMastercard(TestCase):
         self.assertNotIn('mtf', result)
 
     def test_request_body_correct_text(self):
-        result = self.mc.request_body()
+        result = self.mc.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)

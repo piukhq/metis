@@ -34,17 +34,16 @@ class Visa:
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def request_body(self):
+    def request_body(self, payment_token):
         msgId = time.mktime(datetime.datetime.now().timetuple())  # 'Can this be a guid or similar?'
         partnerId = 'Visa to provide'
-        cmAlias1 = 'card_id_token'
         distrChan = 'Visa to provide'
 
         data = {
             "msgId": msgId,
             "partnerId": partnerId,
             "cardNbr": "{{credit_card_number}}",
-            "cmAlias1": cmAlias1,
+            "cmAlias1": payment_token,
             "distrChan": distrChan
         }
 

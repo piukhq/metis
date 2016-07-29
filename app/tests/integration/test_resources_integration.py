@@ -13,23 +13,29 @@ class TestMetisResources(TestCase):
         return create_app(Testing)
 
     def test_create_receiver(self):
-        resp = self.client.post('/create_receiver',
+        resp = self.client.post('/payment_service/create_receiver',
                                 headers={'content-type': 'application/json'},
-                                data=json.dumps({"hostname": "http://latestserver.com"}))
+                                data=json.dumps({"receiver_type": "test", "hostname": "http://latestserver.com"}))
         self.assertTrue(resp.status_code == 201)
 
     def test_create_receiver_invalid_hostname(self):
-        resp = self.client.post('/create_receiver',
+        resp = self.client.post('/payment_service/create_receiver',
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({"hostname": "testing"}))
         self.assertTrue(resp.status_code == 422)
 
+    def test_create_amex_receiver(self):
+        resp = self.client.post('/payment_service/create_receiver',
+                                headers={'content-type': 'application/json'},
+                                data=json.dumps({"receiver_type": "american_express"}))
+        self.assertTrue(resp.status_code == 201)
+
     def test_amex_receiver(self):
-        settings.TESTING = True
-        resp = self.client.post('/register_card',
+        settings.TESTING = False
+        resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({"partner_slug": "amex",
-                                                 "payment_token": "RUcZ9XTPekFKL5DK0WC651xnWgV"}))
+                                                 "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
         self.assertTrue(resp.status_code == 200)
 
     def test_spreedly_callback(self):
@@ -59,7 +65,7 @@ class TestMetisResources(TestCase):
         </transactions>"""  # noqa
         """noqa comment prevents flake8 checking the previous string."""
 
-        resp = self.client.post('/notify/spreedly',
+        resp = self.client.post('/payment_service/notify/spreedly',
                                 headers={'content-type': 'application/xml'},
                                 data=log)
         self.assertTrue(resp.status_code == 200)

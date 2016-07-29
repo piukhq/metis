@@ -34,9 +34,9 @@ class MasterCard:
                  'SOAPAction: ' + endpoint + ']]'
         return header
 
-    def request_body(self):
+    def request_body(self, payment_token):
         app_id = 'Get app id from MasterCard'
-        bank_customer_number = 'get the token'
+        bank_customer_number = payment_token
         member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
         bank_product_code = 'MRS code for card product provided by MC'
         program_identifier = 'MRS program id'
