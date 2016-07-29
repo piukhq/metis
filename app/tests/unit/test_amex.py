@@ -20,7 +20,7 @@ class TestAmex(TestCase):
     def test_url_production(self):
         settings.TESTING = False
         result = self.amex.url()
-        self.assertTrue(result == 'https://apigateway.americanexpress.com/v2/datapartnership/offers/sync')
+        self.assertTrue(result == 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync')
 
     def test_receiver_token_testing(self):
         settings.TESTING = True
@@ -30,14 +30,14 @@ class TestAmex(TestCase):
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.amex.receiver_token()
-        self.assertTrue(result == '')
+        self.assertTrue(result == 'ZQLPEvBP4jaaYhxHDl7SWobMXDt')
 
     def test_request_header_both(self):
         result = self.amex.request_header()
         self.assertIn('X-AMEX-ACCESS-KEY', result)
 
     def test_request_body_correct_text(self):
-        result = self.amex.request_body()
+        result = self.amex.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
 

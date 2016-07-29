@@ -36,7 +36,7 @@ class TestVisa(TestCase):
         self.assertIn('json', result)
 
     def test_request_body_correct_text(self):
-        result = self.visa.request_body()
+        result = self.visa.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
 

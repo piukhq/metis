@@ -1,5 +1,5 @@
 import json
-from app.services import create_receiver, end_site_receiver
+from app.services import create_prod_receiver, end_site_receiver
 from flask_restful import Resource, Api
 from flask import request, make_response
 from app.agents.agent_manager import AgentManager
@@ -12,7 +12,7 @@ class CreateReceiver(Resource):
     def post(self):
         req_data = json.loads(request.data.decode())
         if req_data is not None and len(req_data) > 0:
-            result = create_receiver(req_data['hostname'], req_data['receiver_type'])
+            result = create_prod_receiver(req_data['receiver_type'])
             response_text = result.text
             status_code = result.status_code
         else:
@@ -27,9 +27,15 @@ api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 class RegisterCard(Resource):
     def post(self):
         req_data = json.loads(request.data.decode())
-        # Validate input parameters here? Could use something like Marshmallow (overkill?) for serializing.
+
         try:
-            result = end_site_receiver(req_data['partner_slug'], req_data['payment_token'])
+            payment_token = req_data['payment_token']
+            partner_slug = req_data['partner_slug']
+        except KeyError:
+            return make_response('Payment token or partner slug not provided', 400)
+
+        try:
+            result = end_site_receiver(partner_slug, payment_token)
             response_text = result.content
             status_code = result.status_code
         except Exception as e:
