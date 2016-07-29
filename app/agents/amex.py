@@ -56,8 +56,8 @@ class Amex:
 
     def request_body(self, payment_token):
         msgId = time.mktime(datetime.now().timetuple())  # 'Can this be a guid or similar?'
-        partnerId = 'AAAA0045'  # 'Amex to provide'
-        distrChan = '39'  # 'Amex to provide'
+        partnerId = 'AADP0050'  # 'Amex to provide'
+        distrChan = '9999'  # 'Amex to provide'
 
         data = {
             "msgId": msgId,
@@ -109,7 +109,7 @@ def mac_auth_header():
     secret_key = client_secret.encode('utf-8')
 
     ts = str(int(time.time()))
-    nonce = ts + ":AMEX"
+    nonce = ts + ":BINK"
     base_string = client_id + "\n" + ts + "\n" + nonce + "\n" + "client_credentials" + "\n"
     base_string_bytes = base_string.encode('utf-8')
 
