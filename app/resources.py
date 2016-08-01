@@ -3,12 +3,14 @@ from app.services import create_prod_receiver, end_site_receiver
 from flask_restful import Resource, Api
 from flask import request, make_response
 from app.agents.agent_manager import AgentManager
+from app.auth import authorized
 # from app.celery_client import add_together
 
 api = Api()
 
 
 class CreateReceiver(Resource):
+    @authorized
     def post(self):
         req_data = json.loads(request.data.decode())
         if req_data is not None and len(req_data) > 0:
@@ -25,6 +27,7 @@ api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 
 
 class RegisterCard(Resource):
+    @authorized
     def post(self):
         req_data = json.loads(request.data.decode())
 

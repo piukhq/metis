@@ -1,7 +1,12 @@
+import httpretty
 import json
 import settings
 from flask.ext.testing import TestCase
 from app import create_app
+from unittest.mock import patch
+
+auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
+           'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
 
 
 class Testing:
@@ -30,13 +35,25 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({"receiver_type": "american_express"}))
         self.assertTrue(resp.status_code == 201)
 
-    def test_amex_receiver(self):
+    @patch('app.auth.parse_token')
+    @httpretty.activate
+    def test_amex_receiver(self, mock_parse_token):
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/register_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps({"partner_slug": "amex",
+                                                 "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
+        self.assertTrue(resp.status_code == 200)
+
+    def test_amex_receiver_auth_401(self):
         settings.TESTING = False
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({"partner_slug": "amex",
                                                  "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
-        self.assertTrue(resp.status_code == 200)
+        self.assertTrue(resp.status_code == 401)
 
     def test_spreedly_callback(self):
         settings.TESTING = True

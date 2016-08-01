@@ -8,4 +8,4 @@ git+ssh://git@gitlab.loyaltyangels.local/Olympus/cassandralib.git
 git+ssh://git@gitlab.loyaltyangels.local/Olympus/handylib.git
 httpretty==0.8.14
 requests==2.9.1
-
+PyJWT==1.4.1
