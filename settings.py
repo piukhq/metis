@@ -22,6 +22,8 @@ AMEX_RECEIVER = "spreedly_amex_token"
 VISA_RECEIVER = "spreedly_visa_token"
 MASTERCARD_RECEIVER = "spreedly_mastercard_token"
 
+TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
+
 # -------------------------------------------------------------------------------
 # Cassandra cluster
 # -------------------------------------------------------------------------------
