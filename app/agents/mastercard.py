@@ -43,6 +43,10 @@ class MasterCard:
     def request_body(self, card_ids):
         # app_id = 'Get app id from MasterCard'
         bank_customer_number = card_ids[0]
+        # *********** REMOVE THIS WHEN WE START ADDING CARDS**************
+        card_ids[0] = bank_customer_number
+        # ****************************************************************
+
         # member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
         # bank_product_code = 'MRS code for card product provided by MC'
         # program_identifier = 'MRS program id'
