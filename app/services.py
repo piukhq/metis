@@ -55,19 +55,21 @@ def create_sftp_receiver(sftp_details):
     return resp
 
 
-def end_site_receiver(partner_slug, payment_token):
+def end_site_receiver(card_info):
     """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
     Receiver_tokens kept in settings.py."""
-    agent_class = get_agent_class(partner_slug)
+
+    agent_class = get_agent_class(card_info[0]['partner_slug'])
     agent_instance = agent_class()
 
     url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token() + '/deliver.xml'
     xml_data = '<delivery>' \
-               '  <payment_method_token>' + payment_token + '</payment_method_token>' \
+               '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
                '  <url>' + agent_instance.url() + '</url>' \
                '  <headers>' + agent_instance.request_header() + '</headers>' \
-               '  <body>' + agent_instance.request_body(payment_token) + '</body>' \
+               '  <body>' + agent_instance.request_body(card_info) + '</body>' \
                '</delivery>'
+
     resp = requests.post(url, auth=(username, password), headers=header, data=xml_data)
     return resp
 
@@ -77,3 +79,5 @@ def get_agent_class(partner_slug):
         return resolve_agent(partner_slug)
     except KeyError:
         raise(404, 'No such agent')
+    except Exception as ex:
+        raise(404, ex)

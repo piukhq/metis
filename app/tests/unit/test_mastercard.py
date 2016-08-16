@@ -40,3 +40,18 @@ class TestMastercard(TestCase):
         result = self.mc.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
+
+    def test_get_hash(self):
+        result = self.mc.get_hash('Hello')
+        self.assertTrue(result == 'GF+NsyJx/iX1Yab8k4suJkMG7DBO2lGAB9F2SCY4GWk=')
+
+    def test_create_soap_request(self):
+        result = self.mc.create_soap_template()
+        self.assertIn('LoyaltyAngels', result)
+        self.assertIn('Hello', result)
+
+    def test_process_soap_xml(self):
+        test_xml = self.mc.create_soap_template()
+        result = self.mc.process_soap_xml(test_xml)
+        self.assertTrue(len(result) > 0)
+        # self.assertIn('Hello', result)

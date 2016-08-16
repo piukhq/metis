@@ -35,6 +35,17 @@ class TestVisa(TestCase):
         result = self.visa.request_header()
         self.assertIn('json', result)
 
+    def test_payment_method_data(self):
+        card_info = [{
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'test_slug',
+            'action_code': 'A'
+        }]
+        result = self.visa.payment_method_data(card_info)
+        self.assertIs(type(result), list)
+        self.assertIn('111111111111112', result)
+
     def test_request_body_correct_text(self):
         result = self.visa.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
@@ -43,5 +54,5 @@ class TestVisa(TestCase):
     def test_create_file_data(self):
         cards = [1234, 5678, 9876]
         result = self.visa.create_file_data(cards)
-        self.assertIn('1234', result)
+        self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)

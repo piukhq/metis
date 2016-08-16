@@ -36,7 +36,6 @@ class TestMetisResources(TestCase):
         self.assertTrue(resp.status_code == 201)
 
     @patch('app.auth.parse_token')
-    @httpretty.activate
     def test_amex_receiver(self, mock_parse_token):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"

@@ -32,13 +32,19 @@ class RegisterCard(Resource):
         req_data = json.loads(request.data.decode())
 
         try:
-            payment_token = req_data['payment_token']
-            partner_slug = req_data['partner_slug']
+            # payment_token = Spreedly payment method token
+            # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
+            card_info = [{
+                'payment_token': req_data['payment_token'],
+                'card_token': req_data['card_token'],
+                'partner_slug': req_data['partner_slug'],
+                'action_code':'A'
+            }]
         except KeyError:
             return make_response('Payment token or partner slug not provided', 400)
 
         try:
-            result = end_site_receiver(partner_slug, payment_token)
+            result = end_site_receiver(card_info)
             response_text = result.content
             status_code = result.status_code
         except Exception as e:
