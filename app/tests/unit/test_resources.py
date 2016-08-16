@@ -61,14 +61,18 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     @httpretty.activate
     def test_end_site_receiver(self, mock_parse_token):
+        card_info = {
+            'payment_token': '1111111111111111111111',
+            'card_token': '',
+            'partner_slug': 'mastercard'
+        }
         settings.TESTING = True
         mock_parse_token.return_value = "{'sub':''45'}"
         mc.testing_receiver_token = self.receiver_token
         self.end_site_receiver_route()
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps({"partner_slug": "mastercard",
-                                                 "payment_token": "12345678901234567890"}))
+                                data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
 
     @patch('app.auth.parse_token')

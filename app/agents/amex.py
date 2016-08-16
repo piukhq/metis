@@ -5,7 +5,6 @@ import hmac
 import hashlib
 import base64
 import requests
-import uuid
 from urllib import parse
 from datetime import datetime
 

@@ -41,21 +41,15 @@ class MasterCard:
         return header
 
     def request_body(self, card_ids):
-        app_id = 'Get app id from MasterCard'
+        # app_id = 'Get app id from MasterCard'
         bank_customer_number = card_ids[0]
-        member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
-        bank_product_code = 'MRS code for card product provided by MC'
-        program_identifier = 'MRS program id'
+        # member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
+        # bank_product_code = 'MRS code for card product provided by MC'
+        # program_identifier = 'MRS program id'
 
-        soap_xml = self.create_soap_request()
+        soap_xml = self.create_soap_template()
 
-        soap = soap_xml.substitute(app_id=app_id,
-                                  bank_customer_number=bank_customer_number,
-                                  member_ica=member_ica,
-                                  bank_product_code=bank_product_code,
-                                  program_identifier=program_identifier)
-
-        body_data = '![CDATA[{' + soap + '}]]'
+        body_data = '![CDATA[{' + soap_xml + '}]]'
         return body_data
 
     def create_soap_template(self):
@@ -138,4 +132,3 @@ class MasterCard:
         date_time_str = date_time.format('YYYY-MM-DDTHH:mm:ssZZ')
         date_time_str = date_time_str.replace('-00:00', 'Z')
         return date_time_str
-

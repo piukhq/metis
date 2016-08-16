@@ -1,4 +1,3 @@
-import httpretty
 import json
 import settings
 from flask.ext.testing import TestCase

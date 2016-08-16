@@ -1,8 +1,6 @@
 import arrow
 import settings
 import json
-import datetime
-import time
 from io import StringIO
 
 
@@ -146,6 +144,7 @@ j8rVVTbXvJIdnx7u6v9OOeyc6XO7AupV7zjQHE6bdDPnmhyM9Yf+1OkDxuGNywsv
 MFqkPdKpeZh2bO269TO8fMy82gx6ltzMtms2NrRL3NOWj6suLke7s8K8++JC
 =Zp6G
 -----END PGP PUBLIC KEY BLOCK-----""".replace('\n', r'\n')
+        return pem
 
 
 class Field(object):

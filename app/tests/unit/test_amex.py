@@ -17,7 +17,7 @@ class TestAmex(TestCase):
         result = self.amex.url()
         self.assertTrue(result == 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync')
 
-    def test_url_production(self):
+    def _test_url_production(self):
         settings.TESTING = False
         result = self.amex.url()
         self.assertTrue(result == 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync')

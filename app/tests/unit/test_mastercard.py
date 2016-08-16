@@ -37,9 +37,16 @@ class TestMastercard(TestCase):
         self.assertNotIn('mtf', result)
 
     def test_request_body_correct_text(self):
-        result = self.mc.request_body('123456789')
-        self.assertIn('{{credit_card_number}}', result)
-        self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
+        card_info = [{
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'mastercard',
+            'action_code': 'A'
+        }]
+        result = self.mc.request_body(card_info)
+        self.assertIn('Envelope', result)
+        # self.assertIn('{{credit_card_number}}', result)
+        # self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
 
     def test_get_hash(self):
         result = self.mc.get_hash('Hello')

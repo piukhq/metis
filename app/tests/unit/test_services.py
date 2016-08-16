@@ -47,9 +47,15 @@ class TestServices(unittest.TestCase):
 
     @httpretty.activate
     def test_end_site_receiver(self):
+        card_info = [{
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'mastercard',
+            'action_code': 'A'
+        }]
+
         self.test_route()
         mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
-        resp = end_site_receiver('mastercard',
-                                 self.payment_method_token)
+        resp = end_site_receiver(card_info)
         self.assertTrue(resp.status_code == 200)

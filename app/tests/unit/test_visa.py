@@ -44,9 +44,9 @@ class TestVisa(TestCase):
         }]
         result = self.visa.payment_method_data(card_info)
         self.assertIs(type(result), list)
-        self.assertIn('111111111111112', result)
+        self.assertTrue('111111111111112' == result[0]['1111111111111111111111']['external_cardholder_id'])
 
-    def test_request_body_correct_text(self):
+    def _test_request_body_correct_text(self):
         result = self.visa.request_body('123456789')
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
