@@ -84,7 +84,6 @@ class TestMetisResources(TestCase):
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
 
-
     def test_spreedly_callback(self):
         settings.TESTING = True
         settings.SPREEDLY_SIGNING_SECRET = 'RKOCG5D8D3fZxDSg504D0IxU2XD4Io5VXmyzdCtTivHFTTSylzM2ZzTWFwVH4ucG'

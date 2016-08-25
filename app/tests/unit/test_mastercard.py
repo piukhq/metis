@@ -19,17 +19,17 @@ class TestMastercard(TestCase):
     def test_url_production(self):
         settings.TESTING = False
         result = self.mc.url()
-        self.assertTrue(result == '')
+        self.assertIn("DiagnosticService", result)
 
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.mc.receiver_token()
-        self.assertTrue(result == '')
+        self.assertIn('XsXRs91pxREDW7TAFbUc1TgosxU', result)
 
     def test_request_header_testing(self):
         settings.TESTING = True
         result = self.mc.request_header()
-        self.assertIn('mtf', result)
+        self.assertIn('xml', result)
 
     def test_request_header_production(self):
         settings.TESTING = False
@@ -48,7 +48,8 @@ class TestMastercard(TestCase):
         # self.assertIn('{{credit_card_number}}', result)
         # self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
 
-    def test_get_hash(self):
+    # We are not hashing anymore.
+    def _test_get_hash(self):
         result = self.mc.get_hash('Hello')
         self.assertTrue(result == 'GF+NsyJx/iX1Yab8k4suJkMG7DBO2lGAB9F2SCY4GWk=')
 
