@@ -1,3 +1,4 @@
+import random
 import settings
 import json
 import time
@@ -6,7 +7,6 @@ import hashlib
 import base64
 import requests
 from urllib import parse
-from datetime import datetime
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -29,6 +29,8 @@ client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
 
 
 class Amex:
+    header = {'Content-Type': 'application/xml'}
+
     def url(self):
         if not settings.TESTING:
             service_url = production_create_url
@@ -41,7 +43,7 @@ class Amex:
             receiver_token = production_receiver_token
         else:
             receiver_token = testing_receiver_token
-        return receiver_token
+        return receiver_token + '/deliver.xml'
 
     def request_header(self):
         header_start = '<![CDATA['
@@ -58,12 +60,12 @@ class Amex:
         access_key = 'X-AMEX-ACCESS-KEY: {}'.format(access_token)
         header_end = ']]>'
 
-        header = "{0} {1}\n {2}\n {3}\n {4}\n {5}".format(header_start, content_type, authentication,
-                                                          api_key, access_key, header_end)
+        header = "{0}{1}\n{2}\n{3}\n{4}{5}".format(header_start, content_type, authentication,
+                                                   api_key, access_key, header_end)
         return header
 
     def request_body(self, card_ids):
-        msgId = time.mktime(datetime.now().timetuple())  # 'Can this be a guid or similar?'
+        msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
         partnerId = 'AADP0050'  # 'Amex to provide'
         distrChan = '9999'  # 'Amex to provide'
 
@@ -71,13 +73,22 @@ class Amex:
             "msgId": msgId,
             "partnerId": partnerId,
             "cardNbr": "{{credit_card_number}}",
-            "cmAlias1": card_ids[0],
+            "cmAlias1": card_ids[0]['payment_token'],
             "distrChan": distrChan
         }
         # Todo - check if "langCd": "en", "ctryCd": "US", required
 
         body_data = '<![CDATA[' + json.dumps(data) + ']]>'
         return body_data
+
+    def data_builder(self, card_info):
+        xml_data = '<delivery>' \
+                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <url>' + self.url() + '</url>' \
+                   '  <headers>' + self.request_header() + '</headers>' \
+                   '  <body>' + self.request_body(card_info) + '</body>' \
+                   '</delivery>'
+        return xml_data
 
     def amex_oauth(self, auth_header):
         # Call the Amex OAuth endpoint to obtain an API request token.
@@ -114,12 +125,11 @@ def mac_auth_header():
     iv. Base 64 encoding on output raw data
     :return: mac token.
     """
-    secret_key = client_secret.encode('utf-8')
     ts = str(int(time.time()))
-    nonce = ts + ":BINK"
+    nonce = ts + ":AMEX"  # ":BINK"
     base_string = client_id + "\n" + ts + "\n" + nonce + "\n" + "client_credentials" + "\n"
     base_string_bytes = base_string.encode('utf-8')
-    mac = generate_mac(base_string_bytes, secret_key)
+    mac = generate_mac(base_string_bytes, client_secret)
 
     auth_header = "MAC id=\"" + client_id + "\",ts=\"" + ts + "\",nonce=\"" + nonce + "\",mac=\"" + mac + "\""
 
@@ -144,20 +154,22 @@ def mac_api_header(access_token, mac_key):
     iv. Base 64 encoding on output raw data
     :return: mac token.
     """
-    secret_key = mac_key.encode('utf-8')
-    ts = str(int(time.time()))
-    nonce = ts + ":BINK"
-    base_string = ts+"\n"+nonce+"\n"+"POST\n"+resPath+"\n"+host+"\n"+port+"\n"
+    ts = int(time.time())
+    millis = int(round(time.time() * 1000))
+    random.seed(millis)
+    post_fix = 10000000 + random.randint(0, 90000000)
+    nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
+    base_string = str(ts)+"\n"+nonce+"\n"+"POST\n"+resPath+"\n"+host+"\n"+port+"\n\n"
     base_string_bytes = base_string.encode('utf-8')
-    mac = generate_mac(base_string_bytes, secret_key)
+    mac = generate_mac(base_string_bytes, mac_key)
 
-    auth_header = "MAC id=\"" + access_token + "\",ts=\"" + ts + "\",nonce=\"" + nonce + "\",mac=\"" + mac + "\""
+    auth_header = "MAC id=\"" + access_token + "\",ts=\"" + str(ts) + "\",nonce=\"" + nonce + "\",mac=\"" + mac + "\""
 
     return auth_header
 
 
-def generate_mac(encoded_base_string, secret_key):
-
+def generate_mac(encoded_base_string, secret):
+    secret_key = secret.encode('utf-8')
     dig = hmac.new(secret_key, msg=encoded_base_string, digestmod=hashlib.sha256).digest()
     mac = str(base64.b64encode(dig), 'utf-8')
     return mac

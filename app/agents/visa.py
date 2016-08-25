@@ -1,19 +1,22 @@
 import arrow
 import settings
 import json
+import time
 from io import StringIO
 
 
 testing_hostname = 'http://latestserver.com/post.php'
 testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
-testing_create_url = 'https://test.api.loyaltyangels.com/file_enroll'
+testing_create_url = ''
 testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
-production_receiver_token = ''
-production_create_url = 'test.api.loyaltyangels.com/file_enroll'
+production_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
+production_create_url = ''
 
 
 # ToDo work out the Visa file format and layout - code the request_body
 class Visa:
+    header = {'Content-Type': 'application/json'}
+
     def url(self):
         if not settings.TESTING:
             service_url = production_create_url
@@ -26,7 +29,7 @@ class Visa:
             receiver_token = production_receiver_token
         else:
             receiver_token = testing_receiver_token
-        return receiver_token
+        return receiver_token + '/export.json'
 
     def request_header(self):
         header = '![CDATA[Content-Type: application/json]]'
@@ -36,23 +39,30 @@ class Visa:
         recipient_id = 'nawes@visa.com'
         action_code = 'A'
 
+        body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
+        file_url = "sftp://sftp.bink.com/file_test_{}{}".format(str(int(time.time())), '.gpg')
         data = {
             "export": {
-                "payment_method_tokens": ["LyWyubSnJzQZtAxLvN8RYOYnSKv"],
+                "payment_method_tokens": [card_info[0]['payment_token']],
                 "payment_method_data": {
-                    "LyWyubSnJzQZtAxLvN8RYOYnSKv": {
-                        "external_cardholder_id": "1111111111111111111111111",
+                    card_info[0]['payment_token']: {
+                        "external_cardholder_id": card_info[0]['card_token'],
                         "action_code": action_code
                     }
                 },
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",
-                "url": "sftp://sftp.bink.com/file_test_8August2016_1.txt",
-                "body": self.create_file_data(card_info)
+                "url": file_url,
+                "body": "**body**"  # body_data
             }
         }
 
-        body_data = '{{#gpg}}' + self.visa_pem() + recipient_id + json.dumps(data) + '{{/gpg}}'
-        return body_data
+        json_data = json.dumps(data)
+        json_data = json_data.replace("**body**", body_data)
+        return json_data
+
+    def data_builder(self, card_info):
+        request_data = self.request_body(card_info)
+        return request_data
 
     def payment_method_data(self, card_info):
         """Construct the payment method data rows required for Spreedly
@@ -165,21 +175,24 @@ class Header(Field):
         ('file_create_date', 8, 'F'),
         ('file_format_version', 4, 'V'),
         ('test_file_indicator', 1, 'F'),
-        ('filler1', 2, 'F'),
-        ('filler2', 25, 'F'),
+        ('filler1', 2, 'V'),
+        ('filler2', 25, 'V'),
         ('file_type_indicator', 1, 'F'),
         ('file_unique_text', 20, 'V'),
-        ('filler3', 650, 'F')
+        ('filler3', 650, 'V')
     ]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.record_type = '00'
         self.record_sub_type = '00'
+        self.test_file_indicator = 'T'
+        """
         if not settings.TESTING:
             self.test_file_indicator = 'P'
         else:
             self.test_file_indicator = 'T'
+        """
 
 
 class Detail(Field):
@@ -201,7 +214,7 @@ class Detail(Field):
         ('external_cardholder_id', 25, 'P'),
         ('effective_date', 8, 'D'),
         ('termination_date', 8, 'F'),
-        ('filler', 712, 'F'),
+        ('filler', 712, 'V'),
     ]
 
     def __init__(self, **kwargs):
@@ -215,7 +228,7 @@ class Footer(Field):
         ('record_type', 2, 'F'),
         ('record_sub_type', 2, 'F'),
         ('record_count', 10, 'F'),
-        ('filler', 986, 'F'),
+        ('filler', 986, 'V'),
     ]
 
     def __init__(self, **kwargs):
@@ -250,7 +263,7 @@ class VisaCardFile(object):
                 data.append(str(getattr(fields, item[0])))
             elif item[2] == 'V':
                 str_data = str(getattr(fields, item[0]))
-                start_str = '{{#format_text}}%-{0}.{1},'.format(item[1], item[1])
+                start_str = '{0}%-{1}.{2}s,'.format('{{#format_text}}', item[1], item[1])
                 end_str = '{{/format_text}}'
                 complete_str = start_str + str_data + end_str
                 data.append(complete_str)
@@ -290,7 +303,7 @@ class VisaCardFile(object):
         add a detail record start marker to the file
         :return: None
         """
-        start_str = '{{#payment_methods}}{{#format_text}}%-1000.1000s,'
+        start_str = '{{#payment_methods}}'
         self.details.append({'detail': start_str})
 
     def add_detail_end(self):
@@ -298,7 +311,7 @@ class VisaCardFile(object):
         add a detail record end marker to the file
         :return: None
         """
-        end_str = '{{/payment_methods}}{{/format_text}}'
+        end_str = '{{/payment_methods}}'
         self.details.append({'detail': end_str})
 
     def add_detail(self, detail):
@@ -307,9 +320,11 @@ class VisaCardFile(object):
         :param detail: the detail to add
         :return: None
         """
+        start_str = '{{#format_text}}%-1000.1000s,'
+        end_str = '{{/format_text}}'
 
         self.details.append({
-            'detail': self._serialize(Detail, detail),
+            'detail': start_str + self._serialize(Detail, detail) + end_str,
         })
 
     def freeze(self):
@@ -321,4 +336,4 @@ class VisaCardFile(object):
         for detail in self.details:
             file_contents.append(detail['detail'])
         file_contents.append(self.footer_string)
-        return '\n'.join(file_contents)
+        return '\\n'.join(file_contents)

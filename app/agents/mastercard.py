@@ -8,14 +8,16 @@ import io
 from lxml import etree
 
 testing_url = 'http://latestserver.com/post.php'
-testing_receiver_token = 'YFteSZZ8lbjnxgHb1OR5tbR2oG7'
-testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
-production_url = ''
-production_receiver_token = ''
-production_endpoint = 'https://ws.mastercard.com/MRS/CustomerService'
+testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+production_url = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+production_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+production_endpoint = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
 
 
 class MasterCard:
+    header = {'Content-Type': 'application/xml'}
+
     def url(self):
         if not settings.TESTING:
             service_url = production_url
@@ -28,16 +30,10 @@ class MasterCard:
             receiver_token = production_receiver_token
         else:
             receiver_token = testing_receiver_token
-        return receiver_token
+        return receiver_token + '/deliver.xml'
 
     def request_header(self):
-        if not settings.TESTING:
-            endpoint = production_endpoint
-        else:
-            endpoint = testing_endpoint
-
-        header = '![CDATA[Content-Type: application/xml' \
-                 'SOAPAction: ' + endpoint + ']]'
+        header = '![CDATA[{Content-Type: text/xml}]]'
         return header
 
     def request_body(self, card_ids):
@@ -53,8 +49,17 @@ class MasterCard:
 
         soap_xml = self.create_soap_template()
 
-        body_data = '![CDATA[{' + soap_xml + '}]]'
+        body_data = '<![CDATA[{' + soap_xml + '}]]>'
         return body_data
+
+    def data_builder(self, card_info):
+        xml_data = '<delivery>' \
+                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <url>' + self.url() + '</url>' \
+                   '  <headers>' + self.request_header() + '</headers>' \
+                   '  <body>' + self.request_body(card_info) + '</body>' \
+                   '</delivery>'
+        return xml_data
 
     def create_soap_template(self):
         template_loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(__file__))
@@ -75,38 +80,48 @@ class MasterCard:
                          "body": 'Hello',
                          }
         output_text = template.render(template_vars)
-
+        output_text = self.process_soap_xml(output_text)
         return output_text
 
     def process_soap_xml(self, xml):
         xml_doc = etree.fromstring(xml.encode('ascii'))
         tree = etree.ElementTree(xml_doc)
 
-        bst_hash = self.hashed_section(tree, 'BinarySecurityToken')
+        bst_hash = self.digest_section(tree, 'BinarySecurityToken')
         xml = xml.replace('digest_1', bst_hash)
 
-        time_stamp_hash = self.hashed_section(tree, 'Timestamp')
+        time_stamp_hash = self.digest_section(tree, 'Timestamp')
         xml = xml.replace('digest_2', time_stamp_hash)
 
-        identity_hash = self.hashed_section(tree, 'identity')
+        identity_hash = self.digest_section(tree, 'identity')
         xml = xml.replace('digest_3', identity_hash)
 
-        body_hash = self.hashed_section(tree, 'Body')
+        body_hash = self.digest_section(tree, 'Body')
         xml = xml.replace('digest_4', body_hash)
 
-        # Now get the completed SignedInfo element and add it to th SignatureValue section
+        # Now get the completed SignedInfo element and add it to the SignatureValue section
         xml_doc1 = etree.fromstring(xml.encode('ascii'))
         tree1 = etree.ElementTree(xml_doc1)
         signed_info = self.get_xml_element(tree1, 'SignedInfo')
-        xml = xml.replace('signature_value', etree.tostring(signed_info).decode("utf-8"))
+        signed_info = self.canonicalize_xml(signed_info)
+        signed_info_str = signed_info.getvalue().decode("utf-8")
+        xml = xml.replace('signature_value', signed_info_str)
         # print(repr(xml))
         return xml
 
+    def digest_section(self, tree, element_tag):
+        elem = self.get_xml_element(tree, element_tag)
+        # string_elem = etree.tostring(elem)
+        can_b = self.canonicalize_xml(elem)
+        c14n_body_node = can_b.getvalue().decode("utf-8")
+        spreedly_digest_value = '{{#base64}}{{#digest}}sha256,'+c14n_body_node+'{{/digest}}{{/base64}}'
+        return spreedly_digest_value
+
     def hashed_section(self, tree, element_tag):
         elem = self.get_xml_element(tree, element_tag)
-
+        # string_elem = etree.tostring(elem)
         can_b = self.canonicalize_xml(elem)
-        section_xml = can_b.getvalue().decode("utf-8")
+        section_xml = can_b.getvalue()   # .decode("utf-8")
         return self.get_hash(section_xml)
 
     def get_xml_element(self, tree, element_tag):
@@ -117,13 +132,13 @@ class MasterCard:
         return elem
 
     def get_hash(self, input_text):
-        hash_object = hashlib.sha256(input_text.encode('utf-8'))
+        hash_object = hashlib.sha256(input_text)
         b_str = str(base64.b64encode(hash_object.digest()), 'utf-8')
         return b_str
 
     def canonicalize_xml(self, xml_part):
         canonicalized_xml = io.BytesIO()
-        xml_part.write_c14n(canonicalized_xml)
+        xml_part.write_c14n(canonicalized_xml, exclusive=True)
         return canonicalized_xml
 
     @staticmethod

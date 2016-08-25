@@ -5,13 +5,15 @@ from app.utils import resolve_agent
 # Username and password from Spreedly site - Loyalty Angels environments
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
 # Testing
-# username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
+# Username used for MasterCard and Visa testing only
+username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
 # Production
-username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
-header = {'Content-Type': 'application/xml'}
+# This username is used for Amex testing, Visa and MasterCard use one above
+# username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
 
 
 def create_receiver(hostname, receiver_type):
+    header = {'Content-Type': 'application/xml'}
     """Creates a receiver on the Spreedly environment.
     This is a single call for each Payment card endpoint, Eg MasterCard, Visa and Amex = 3 receivers created.
     This generates a token which LA would store and use for sending credit card details, without the PAN, to
@@ -26,6 +28,7 @@ def create_receiver(hostname, receiver_type):
 
 
 def create_prod_receiver(receiver_type):
+    header = {'Content-Type': 'application/xml'}
     """Creates a receiver on the Spreedly environment.
     This is a single call for each Payment card endpoint, Eg MasterCard, Visa and Amex = 3 receivers created.
     This generates a token which LA would store and use for sending credit card details, without the PAN, to
@@ -42,6 +45,7 @@ def create_sftp_receiver(sftp_details):
     """Creates a receiver on the Spreedly environment.
     This is a single call to create a receiver for an SFTP process.
     """
+    header = {'Content-Type': 'application/xml'}
     url = 'https://core.spreedly.com/v1/receivers.xml'
     xml_data = '<receiver>' \
                '  <receiver_type>' + sftp_details["receiver_type"] + '</receiver_type>' \
@@ -62,15 +66,11 @@ def end_site_receiver(card_info):
     agent_class = get_agent_class(card_info[0]['partner_slug'])
     agent_instance = agent_class()
 
-    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token() + '/deliver.xml'
-    xml_data = '<delivery>' \
-               '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
-               '  <url>' + agent_instance.url() + '</url>' \
-               '  <headers>' + agent_instance.request_header() + '</headers>' \
-               '  <body>' + agent_instance.request_body(card_info) + '</body>' \
-               '</delivery>'
+    header = agent_instance.header
+    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+    request_data = agent_instance.data_builder(card_info)
 
-    resp = requests.post(url, auth=(username, password), headers=header, data=xml_data)
+    resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
     return resp
 
 

@@ -41,7 +41,7 @@
                     </ds:Reference>
                 </ds:SignedInfo>
                 <ds:SignatureValue>
-                    {% raw %}{{#base64}}{{#rsa_sign}}sha256,{% endraw %}{{signature_value}}{% raw %}{{/rsa_sign}}{{/base64}}{% endraw %}
+                    {% raw %}{{#base64}}{{#rsa_sign}}sha512,{% endraw %}{{signature_value}}{% raw %}{{/rsa_sign}}{{/base64}}{% endraw %}
                 </ds:SignatureValue>
                 <ds:KeyInfo>
                     <wsse:SecurityTokenReference>
@@ -51,11 +51,7 @@
                     </wsse:SecurityTokenReference>
                 </ds:KeyInfo>
             </ds:Signature>
-            <wsse:BinarySecurityToken
-                    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
-                    EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"
-                    wsu:Id="pfxb65d8fe8-185a-4edc-6589-3a08270deca3"
-                    ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIICgjCCAeugAwIBAgIBADANBgkqhkiG9w0BAQUFADA6MQswCQYDVQQGEwJCRTENMAsGA1UECgwEVGVzdDENMAsGA1UECwwEVGVzdDENMAsGA1UEAwwEVGVzdDAeFw0xMzAxMTMxNTMzNDNaFw0xNDAxMTMxNTMzNDNaMDoxCzAJBgNVBAYTAkJFMQ0wCwYDVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MQ0wCwYDVQQDDARUZXN0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC37C0mhTmdr8iVfQPQuOKtzG/fhwG4ILuUX1Vk5uN9oSZJxhb5Kn8aBppny1BSekgk12wn4AE/6i7Jfix3SZWoqdaxpdDalvQSdNeyn6GmV2oP4lzp6XjXmtRxvOywgTYuhf/DBlpiq7B/vTF7kMwYgs0ahM3mRJG2V7LARTXUfwIDAQABo4GXMIGUMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFBRkMx3ZwHO3Zog0pWdYNB38NRmWMGIGA1UdIwRbMFmAFBRkMx3ZwHO3Zog0pWdYNB38NRmWoT6kPDA6MQswCQYDVQQGEwJCRTENMAsGA1UECgwEVGVzdDENMAsGA1UECwwEVGVzdDENMAsGA1UEAwwEVGVzdIIBADANBgkqhkiG9w0BAQUFAAOBgQBs8voSBDgN7HL1i5EP+G/ymWUVenpGvRZCnfkR9Wo4ORzj1Y7ohXHooOzDJ2oi0yDwatXnPpe3hauqQDid6d4i7F1Wpgdo2MibqXP8/DPzhuBARvPSzip+yS6ITjqKN/YN4K+kpja2Sh7DdxWND3opvVHZTXywjZpdF1OsmNhOCg==
+            <wsse:BinarySecurityToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="pfxb65d8fe8-185a-4edc-6589-3a08270deca3" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIFUzCCBDugAwIBAgIRAPDSQdw8J761Dm1SVcDEEDIwDQYJKoZIhvcNAQEFBQAwgZ8xEzARBgoJkiaJk/IsZAEZFgNjb20xGjAYBgoJkiaJk/IsZAEZFgptYXN0ZXJjYXJkMR0wGwYDVQQKExRNYXN0ZXJDYXJkIFdvcmxkV2lkZTEkMCIGA1UECxMbR2xvYmFsIEluZm9ybWF0aW9uIFNlY3VyaXR5MScwJQYDVQQDEx5QUkQgTUMgRXh0ZXJuYWwgQ2xpZW50cyBzdWIgQ0EwHhcNMTYwNDI1MDkyOTU4WhcNMjAwNDI0MDkyNzQ4WjBtMQswCQYDVQQGEwJVUzEqMCgGA1UEChMhTWFzdGVyQ2FyZCBXb3JsZHdpZGUgLSBTaWduaW5nIFNXMRcwFQYDVQQLEw5DSFMgMjAxNi0wMDU5MzEZMBcGA1UEAxMQbXRmLkNIUy5zcHJlZWRseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANIk17IFpIK16UfJ6C4sKglCJnqdk48OoCsSv3vHxFn8qB4+dNraJzBOuonwtdc5JXzGgy2s0aHoDCqGQ0q7kNG+JM/zQh8zR0/jZc1TU658koeuj/1Ri5i2PI0Dx/0VK/5u3Nat2NxGQHiajaPfQ+nd9uL7VMC0bvsqQ5JORmPzN9l9l4w1UjhGY6hgO38ddaqxiL2x7WE+vC4UzwXwg5OFB9RyWnsZuj0i5UAJfBji8V/BoakFA+uBXKOzKWspd6JXkR3kHBxfgVY7hN+VQPiaV182+KSkkLcJtTxIcTotK0RlYSuncHCWYhpKseXfJaeLV0Qj295LMzh+ik3k0pUCAwEAAaOCAbkwggG1MB8GA1UdIwQYMBaAFENfeEuRCsNlnNfMU6hVTel6fZtcMAkGA1UdEwQCMAAwggERBgNVHSAEggEIMIIBBDCCAQAGCSqGSIb3DQUGATCB8jAzBggrBgEFBQcCARYnaHR0cDovL2NlcnRpZmljYXRlcy5tYXN0ZXJjYXJkLmNvbS9DUFMvMIG6BggrBgEFBQcCAjCBrTAbFhRNYXN0ZXJDYXJkIFdvcmxkd2lkZTADAgEBGoGNVGhlIE1hc3RlckNhcmQgV29ybGR3aWRlIENlcnRpZmljYXRpb24gUHJhY3RpY2UgU3RhdGVtZW50IGdvdmVybnMgdGhpcyBjZXJ0aWZpY2F0ZSBhbmQgaXMgaW5jb3Jwb3JhdGVkIGJ5IHJlZmVyZW5jZSBoZXJlaW4uIExpbWl0ZWQgTGlhYmlsaXR5MEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jY3Iyd29vMC5tYXN0ZXJjYXJkLmNvbS9QUkRfQ1JML0VYQ19DUkwuY3JsMA4GA1UdDwEB/wQEAwIHgDAdBgNVHQ4EFgQUFLB216VsRQxgYh3hkFplNGutXbgwDQYJKoZIhvcNAQEFBQADggEBACsuZ1JVT0ntqx76Cdzc/YXLlkPOsmsJ6ipr2RuO2InwtWnZq18il5fOY3eZKmWDs8HEZCeADZYifOdbh5WHpGKCZnbArLoz/9TiuDPicErZVDp11tvXDTn8oYfJ/O8EkXzb54+NNCD4rbJjdtmrDCmxGOErXsmh1YCuodX+3GFZyVgoP/vImhVxYZswDTsHwEbKKpbuB9i4CFDismYafNPReXRKxbin/Cq0SvmEiuG2YgJI+b75FbdQTgxd3pv79pRMKoFdDpZuqZh2jnEsMBGDO4m3nOsevlHSdKEMxAaC9q3xNndv/LJYn32MopqjdkhzW6/1x5yPsDfeTbmkSBk=
             </wsse:BinarySecurityToken>
             <wsu:Timestamp
                     xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
