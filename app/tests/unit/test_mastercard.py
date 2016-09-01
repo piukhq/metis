@@ -40,8 +40,7 @@ class TestMastercard(TestCase):
         card_info = [{
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
-            'partner_slug': 'mastercard',
-            'action_code': 'A'
+            'partner_slug': 'mastercard'
         }]
         result = self.mc.request_body(card_info)
         self.assertIn('Envelope', result)

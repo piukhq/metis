@@ -39,10 +39,10 @@ class TestVisa(TestCase):
         card_info = [{
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
-            'partner_slug': 'test_slug',
-            'action_code': 'A'
+            'partner_slug': 'test_slug'
         }]
-        result = self.visa.payment_method_data(card_info)
+        action_code = 'A'
+        result = self.visa.payment_method_data(card_info, action_code)
         self.assertIs(type(result), list)
         self.assertTrue('111111111111112' == result[0]['1111111111111111111111']['external_cardholder_id'])
 
