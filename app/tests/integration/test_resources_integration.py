@@ -1,4 +1,3 @@
-import httpretty
 import json
 import settings
 from flask.ext.testing import TestCase
@@ -36,15 +35,15 @@ class TestMetisResources(TestCase):
         self.assertTrue(resp.status_code == 201)
 
     @patch('app.auth.parse_token')
-    @httpretty.activate
-    def test_amex_receiver(self, mock_parse_token):
+    def test_amex_register(self, mock_parse_token):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps({"partner_slug": "amex",
-                                                 "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
+                                data=json.dumps({'partner_slug': 'amex',
+                                                 'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                                                 'card_token': ''}))
         self.assertTrue(resp.status_code == 200)
 
     def test_amex_receiver_auth_401(self):
@@ -54,6 +53,48 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({"partner_slug": "amex",
                                                  "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
         self.assertTrue(resp.status_code == 401)
+
+    @patch('app.auth.parse_token')
+    def test_amex_remove_card(self, mock_parse_token):
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/remove_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps({'partner_slug': 'amex',
+                                                 'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                                                 'card_token': ''}))
+        self.assertTrue(resp.status_code == 200)
+
+    @patch('app.auth.parse_token')
+    def test_visa_receiver(self, mock_parse_token):
+        card_info = {
+            'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
+            'card_token': '111111111111111111111111',
+            'partner_slug': 'visa'
+        }
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/register_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps(card_info))
+        self.assertTrue(resp.status_code == 200)
+
+    @patch('app.auth.parse_token')
+    def test_mastercard_receiver(self, mock_parse_token):
+        card_info = {
+            'payment_token': 'WhtIyJrcpcLupNpBD4bSVx3qyY5',
+            'card_token': ' ',
+            'partner_slug': 'mastercard'
+        }
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/register_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps(card_info))
+        self.assertTrue(resp.status_code == 200)
 
     def test_spreedly_callback(self):
         settings.TESTING = True
