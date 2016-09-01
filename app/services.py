@@ -6,10 +6,10 @@ from app.utils import resolve_agent
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
 # Testing
 # Username used for MasterCard and Visa testing only
-username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
+# username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
 # Production
 # This username is used for Amex testing, Visa and MasterCard use one above
-# username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
+username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
 
 
 def create_receiver(hostname, receiver_type):
@@ -59,25 +59,42 @@ def create_sftp_receiver(sftp_details):
     return resp
 
 
-def end_site_receiver(card_info):
-    """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
-    Receiver_tokens kept in settings.py."""
-
-    agent_class = get_agent_class(card_info[0]['partner_slug'])
-    agent_instance = agent_class()
-
-    header = agent_instance.header
-    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
-    request_data = agent_instance.data_builder(card_info)
-
+def post_request(url, header, request_data):
     resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
     return resp
 
 
-def get_agent_class(partner_slug):
+def add_card(card_info):
+    """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
+    Receiver_tokens kept in settings.py."""
+    agent_instance = get_agent(card_info[0]['partner_slug'])
+    header = agent_instance.header
+    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+
+    request_data = agent_instance.add_card_body(card_info)
+
+    resp = post_request(url, header, request_data)
+    return resp
+
+
+def remove_card(card_info):
+    agent_instance = get_agent(card_info[0]['partner_slug'])
+
+    header = agent_instance.header
+    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+    request_data = agent_instance.remove_card_body(card_info)
+
+    resp = post_request(url, header, request_data)
+    return resp
+
+
+def get_agent(partner_slug):
     try:
-        return resolve_agent(partner_slug)
+        agent_class = resolve_agent(partner_slug)
+        return agent_class()
     except KeyError:
         raise(404, 'No such agent')
     except Exception as ex:
         raise(404, ex)
+
+

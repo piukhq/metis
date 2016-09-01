@@ -13,12 +13,12 @@ class TestMastercard(TestCase):
 
     def test_url_testing(self):
         settings.TESTING = True
-        result = self.mc.url()
+        result = self.mc.add_url()
         self.assertTrue(result == 'http://latestserver.com/post.php')
 
     def test_url_production(self):
         settings.TESTING = False
-        result = self.mc.url()
+        result = self.mc.add_url()
         self.assertIn("DiagnosticService", result)
 
     def test_receiver_token_production(self):
@@ -55,7 +55,7 @@ class TestMastercard(TestCase):
 
     def test_create_soap_request(self):
         result = self.mc.create_soap_template()
-        self.assertIn('LoyaltyAngels', result)
+        self.assertIn('loyaltyangels', result)
         self.assertIn('Hello', result)
 
     def test_process_soap_xml(self):

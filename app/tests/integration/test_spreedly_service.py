@@ -1,7 +1,7 @@
 import unittest
 import settings
 from app.agents.spreedly import Spreedly
-from app.services import create_receiver, create_sftp_receiver, end_site_receiver
+from app.services import create_receiver, create_sftp_receiver, post_request
 
 
 class TestServices(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestServices(unittest.TestCase):
     def test_end_site_receiver(self):
         settings.TESTING = True
         payment_method_token = '3rkN9aJFfNEjvr2LqYZE4606hgG'
-        resp = end_site_receiver('mastercard', payment_method_token)
+        resp = post_request('mastercard', payment_method_token)
         self.assertTrue(resp.status_code == 200)
 
     def test_create_visa_sftp_receiver(self):

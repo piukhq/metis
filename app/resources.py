@@ -1,5 +1,5 @@
 import json
-from app.services import create_prod_receiver, end_site_receiver
+from app.services import create_prod_receiver, add_card, remove_card
 from flask_restful import Resource, Api
 from flask import request, make_response
 from app.agents.agent_manager import AgentManager
@@ -44,7 +44,7 @@ class RegisterCard(Resource):
             return make_response('Payment token or partner slug not provided', 400)
 
         try:
-            result = end_site_receiver(card_info)
+            result = add_card(card_info)
             response_text = result.content
             status_code = result.status_code
         except Exception as e:
@@ -55,6 +55,34 @@ class RegisterCard(Resource):
 
 api.add_resource(RegisterCard, '/payment_service/register_card')
 
+class RemoveCard(Resource):
+    @authorized
+    def post(self):
+        req_data = json.loads(request.data.decode())
+
+        try:
+            # payment_token = Spreedly payment method token
+            # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
+            card_info = [{
+                'payment_token': req_data['payment_token'],
+                'card_token': req_data['card_token'],
+                'partner_slug': req_data['partner_slug'],
+                'action_code':'D'
+            }]
+        except KeyError:
+            return make_response('Payment token or partner slug not provided', 400)
+
+        try:
+            result = remove_card(card_info)
+            response_text = result.content
+            status_code = result.status_code
+        except Exception as e:
+            response_text = str({'Error': 'Problem removing the payment card. Message: {}'.format(e)})
+            status_code = 400
+
+        return make_response(response_text, status_code)
+
+api.add_resource(RemoveCard, '/payment_service/remove_card')
 
 class Notify(Resource):
     # This callback needs to respond within 5 seconds of receiving a request from Spreedly.

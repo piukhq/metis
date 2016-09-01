@@ -11,17 +11,25 @@ testing_create_url = ''
 testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 production_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
 production_create_url = ''
+production_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 
 
-# ToDo work out the Visa file format and layout - code the request_body
+# ToDo work out the Visa file format and layout - code the add_card_request_body
 class Visa:
     header = {'Content-Type': 'application/json'}
 
-    def url(self):
+    def add_url(self):
         if not settings.TESTING:
             service_url = production_create_url
         else:
             service_url = testing_create_url
+        return service_url
+
+    def remove_url(self):
+        if not settings.TESTING:
+            service_url = production_remove_url
+        else:
+            service_url = testing_remove_url
         return service_url
 
     def receiver_token(self):
@@ -60,7 +68,7 @@ class Visa:
         json_data = json_data.replace("**body**", body_data)
         return json_data
 
-    def data_builder(self, card_info):
+    def add_card_body(self, card_info):
         request_data = self.request_body(card_info)
         return request_data
 

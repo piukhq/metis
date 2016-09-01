@@ -35,7 +35,7 @@ class TestMetisResources(TestCase):
         self.assertTrue(resp.status_code == 201)
 
     @patch('app.auth.parse_token')
-    def test_amex_receiver(self, mock_parse_token):
+    def test_amex_register(self, mock_parse_token):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
@@ -53,6 +53,18 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({"partner_slug": "amex",
                                                  "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
         self.assertTrue(resp.status_code == 401)
+
+    @patch('app.auth.parse_token')
+    def test_amex_remove_card(self, mock_parse_token):
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/remove_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps({'partner_slug': 'amex',
+                                                 'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                                                 'card_token': ''}))
+        self.assertTrue(resp.status_code == 200)
 
     @patch('app.auth.parse_token')
     def test_visa_receiver(self, mock_parse_token):

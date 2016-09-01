@@ -13,15 +13,13 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
 
 testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
-resPath = parse.quote("/v3/smartoffers/sync", safe='')
 host = "api.qa.americanexpress.com"
 port = "443"
-testing_create_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync'
-testing_remove_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/unsync'
+testing_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
+testing_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
 production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
-# production_create_url = 'https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'
-# production_create_url = 'https://api.qa.americanexpress.com/v2/datapartnership/offers/sync'
 production_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
+production_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
 
 # Amex OAuth details
 client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
@@ -30,12 +28,21 @@ client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
 
 class Amex:
     header = {'Content-Type': 'application/xml'}
+    partnerId = 'AADP0050'  # 'Amex to provide'
+    distrChan = '9999'  # 'Amex to provide'
 
-    def url(self):
+    def add_url(self):
         if not settings.TESTING:
             service_url = production_create_url
         else:
             service_url = testing_create_url
+        return service_url
+
+    def remove_url(self):
+        if not settings.TESTING:
+            service_url = production_remove_url
+        else:
+            service_url = testing_remove_url
         return service_url
 
     def receiver_token(self):
@@ -45,7 +52,7 @@ class Amex:
             receiver_token = testing_receiver_token
         return receiver_token + '/deliver.xml'
 
-    def request_header(self):
+    def request_header(self, resPath):
         header_start = '<![CDATA['
         content_type = 'Content-Type: application/json'
         auth_header = mac_auth_header()
@@ -53,7 +60,7 @@ class Amex:
 
         access_token = oauth_resp['access_token']
         mac_key = oauth_resp['mac_key']
-        mac_header = mac_api_header(access_token, mac_key)
+        mac_header = mac_api_header(access_token, mac_key, resPath)
         authentication = 'Authorization: ' + "\"" + mac_header + "\""
 
         api_key = 'X-AMEX-API-KEY: {}'.format(client_id)
@@ -64,29 +71,51 @@ class Amex:
                                                    api_key, access_key, header_end)
         return header
 
-    def request_body(self, card_ids):
+    def add_card_request_body(self, card_ids):
         msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
-        partnerId = 'AADP0050'  # 'Amex to provide'
-        distrChan = '9999'  # 'Amex to provide'
 
         data = {
             "msgId": msgId,
-            "partnerId": partnerId,
+            "partnerId": self.partnerId,
             "cardNbr": "{{credit_card_number}}",
             "cmAlias1": card_ids[0]['payment_token'],
-            "distrChan": distrChan
+            "distrChan": self.distrChan
         }
-        # Todo - check if "langCd": "en", "ctryCd": "US", required
 
         body_data = '<![CDATA[' + json.dumps(data) + ']]>'
         return body_data
 
-    def data_builder(self, card_info):
+    def remove_card_request_body(self, card_ids):
+        msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
+
+        data = {
+            "msgId": msgId,
+            "partnerId": self.partnerId,
+            "cardNbr": "{{credit_card_number}}",
+            "cmAlias1": card_ids[0]['payment_token'],
+            "distrChan": self.distrChan
+        }
+
+        body_data = '<![CDATA[' + json.dumps(data) + ']]>'
+        return body_data
+
+    def add_card_body(self, card_info):
+        res_path = "/v3/smartoffers/sync"
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
-                   '  <url>' + self.url() + '</url>' \
-                   '  <headers>' + self.request_header() + '</headers>' \
-                   '  <body>' + self.request_body(card_info) + '</body>' \
+                   '  <url>' + self.add_url() + '</url>' \
+                   '  <headers>' + self.request_header(res_path) + '</headers>' \
+                   '  <body>' + self.add_card_request_body(card_info) + '</body>' \
+                   '</delivery>'
+        return xml_data
+
+    def remove_card_body(self, card_info):
+        res_path = "/v3/smartoffers/unsync"
+        xml_data = '<delivery>' \
+                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <url>' + self.remove_url() + '</url>' \
+                   '  <headers>' + self.request_header(res_path) + '</headers>' \
+                   '  <body>' + self.remove_card_request_body(card_info) + '</body>' \
                    '</delivery>'
         return xml_data
 
@@ -136,7 +165,7 @@ def mac_auth_header():
     return auth_header
 
 
-def mac_api_header(access_token, mac_key):
+def mac_api_header(access_token, mac_key, res_path_in):
     """
     Authentication=”MAC id=” client id value”,
     ts=”time stamp generated by client(In unix epoch time format)”,
@@ -154,12 +183,13 @@ def mac_api_header(access_token, mac_key):
     iv. Base 64 encoding on output raw data
     :return: mac token.
     """
+    res_path = parse.quote(res_path_in, safe='')
     ts = int(time.time())
     millis = int(round(time.time() * 1000))
     random.seed(millis)
     post_fix = 10000000 + random.randint(0, 90000000)
     nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-    base_string = str(ts)+"\n"+nonce+"\n"+"POST\n"+resPath+"\n"+host+"\n"+port+"\n\n"
+    base_string = str(ts)+"\n"+nonce+"\n"+"POST\n"+res_path+"\n"+host+"\n"+port+"\n\n"
     base_string_bytes = base_string.encode('utf-8')
     mac = generate_mac(base_string_bytes, mac_key)
 

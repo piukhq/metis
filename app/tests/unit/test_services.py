@@ -2,7 +2,7 @@ import app.agents.mastercard as mc
 import unittest
 import httpretty
 import settings
-from app.services import create_receiver, end_site_receiver
+from app.services import create_receiver, add_card
 
 
 class TestServices(unittest.TestCase):
@@ -46,7 +46,7 @@ class TestServices(unittest.TestCase):
         self.assertIn('token', resp.text)
 
     @httpretty.activate
-    def test_end_site_receiver(self):
+    def test_add_card(self):
         card_info = [{
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
@@ -57,5 +57,5 @@ class TestServices(unittest.TestCase):
         self.test_route()
         mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
-        resp = end_site_receiver(card_info)
+        resp = add_card(card_info)
         self.assertTrue(resp.status_code == 200)

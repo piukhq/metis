@@ -18,7 +18,14 @@ production_endpoint = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
 class MasterCard:
     header = {'Content-Type': 'application/xml'}
 
-    def url(self):
+    def add_url(self):
+        if not settings.TESTING:
+            service_url = production_url
+        else:
+            service_url = testing_url
+        return service_url
+
+    def remove_url(self):
         if not settings.TESTING:
             service_url = production_url
         else:
@@ -33,7 +40,8 @@ class MasterCard:
         return receiver_token + '/deliver.xml'
 
     def request_header(self):
-        header = '![CDATA[{Content-Type: text/xml}]]'
+        header = '<![CDATA[{Content-Type: text/xml; charset=utf-8}]]>'
+        # header = 'Content-Type: text/xml;charset=utf-8'
         return header
 
     def request_body(self, card_ids):
@@ -49,13 +57,13 @@ class MasterCard:
 
         soap_xml = self.create_soap_template()
 
-        body_data = '<![CDATA[{' + soap_xml + '}]]>'
+        body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
-    def data_builder(self, card_info):
+    def add_card_body(self, card_info):
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
-                   '  <url>' + self.url() + '</url>' \
+                   '  <url>' + self.add_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
                    '  <body>' + self.request_body(card_info) + '</body>' \
                    '</delivery>'
@@ -69,7 +77,7 @@ class MasterCard:
         template = template_env.get_template(template_file)
 
         template_vars = {"app_id": 0,
-                         "institution_name": "LoyaltyAngels",
+                         "institution_name": "loyaltyangels",
                          "digest_1": 'digest_1',
                          "digest_2": 'digest_2',
                          "digest_3": 'digest_3',

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://diagnostic.ws.mcrewards.mastercard.com/" xmlns:ns2="http://common.ws.mcrewards.mastercard.com/">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://diagnostic.ws.mcrewards.mastercard.com/">
     <soapenv:Header>
         <com:identity xmlns:com="http://common.ws.mcrewards.mastercard.com/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="pfxe07c3068-8f69-e115-2c9c-6c5f4df49fdd">
             <com:appID>{{app_id}}</com:appID>
