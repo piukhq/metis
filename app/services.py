@@ -96,5 +96,3 @@ def get_agent(partner_slug):
         raise(404, 'No such agent')
     except Exception as ex:
         raise(404, ex)
-
-

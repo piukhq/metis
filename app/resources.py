@@ -55,6 +55,7 @@ class RegisterCard(Resource):
 
 api.add_resource(RegisterCard, '/payment_service/register_card')
 
+
 class RemoveCard(Resource):
     @authorized
     def post(self):
@@ -83,6 +84,7 @@ class RemoveCard(Resource):
         return make_response(response_text, status_code)
 
 api.add_resource(RemoveCard, '/payment_service/remove_card')
+
 
 class Notify(Resource):
     # This callback needs to respond within 5 seconds of receiving a request from Spreedly.
