@@ -37,8 +37,7 @@ class RegisterCard(Resource):
             card_info = [{
                 'payment_token': req_data['payment_token'],
                 'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug'],
-                'action_code':'A'
+                'partner_slug': req_data['partner_slug']
             }]
         except KeyError:
             return make_response('Payment token or partner slug not provided', 400)
@@ -67,8 +66,7 @@ class RemoveCard(Resource):
             card_info = [{
                 'payment_token': req_data['payment_token'],
                 'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug'],
-                'action_code':'D'
+                'partner_slug': req_data['partner_slug']
             }]
         except KeyError:
             return make_response('Payment token or partner slug not provided', 400)

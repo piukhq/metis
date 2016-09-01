@@ -43,9 +43,8 @@ class Visa:
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def request_body(self, card_info):
+    def request_body(self, card_info, action_code):
         recipient_id = 'nawes@visa.com'
-        action_code = 'A'
 
         body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
         file_url = "sftp://sftp.bink.com/file_test_{}{}".format(str(int(time.time())), '.gpg')
@@ -69,10 +68,16 @@ class Visa:
         return json_data
 
     def add_card_body(self, card_info):
-        request_data = self.request_body(card_info)
+        action_code = 'A'
+        request_data = self.request_body(card_info, action_code)
         return request_data
 
-    def payment_method_data(self, card_info):
+    def remove_card_body(self, card_info):
+        action_code = 'D'
+        request_data = self.request_body(card_info, action_code)
+        return request_data
+
+    def payment_method_data(self, card_info, action_code):
         """Construct the payment method data rows required for Spreedly
         to process the card_ids and add PAN's. Two tokens are required for Visa.
         Payment method token, Spreedly's token - Used by Spreedly to associate the PAN.
@@ -80,7 +85,7 @@ class Visa:
         payment_data = [{
                 card['payment_token']: {
                     'external_cardholder_id': card['card_token'],
-                    'action_code': card['action_code']
+                    'action_code': action_code
                 }} for card in card_info]
         return payment_data
 
