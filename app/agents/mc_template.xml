@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://diagnostic.ws.mcrewards.mastercard.com/">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:ns1="http://diagnostic.ws.mcrewards.mastercard.com/"
+                  xmlns:ns2="http://common.ws.mcrewards.mastercard.com/">
     <soapenv:Header>
-        <com:identity xmlns:com="http://common.ws.mcrewards.mastercard.com/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="pfxe07c3068-8f69-e115-2c9c-6c5f4df49fdd">
+        <com:identity xmlns:com="http://common.ws.mcrewards.mastercard.com/"
+                      xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                      wsu:Id="pfxe07c3068-8f69-e115-2c9c-6c5f4df49fdd">
             <com:appID>{{app_id}}</com:appID>
             <com:institutionName>{{institution_name}}</com:institutionName>
         </com:identity>
@@ -41,7 +45,7 @@
                     </ds:Reference>
                 </ds:SignedInfo>
                 <ds:SignatureValue>
-                    {% raw %}{{#base64}}{{#rsa_sign}}sha512,{% endraw %}{{signature_value}}{% raw %}{{/rsa_sign}}{{/base64}}{% endraw %}
+                    {{signature_value}}
                 </ds:SignatureValue>
                 <ds:KeyInfo>
                     <wsse:SecurityTokenReference>
@@ -51,8 +55,12 @@
                     </wsse:SecurityTokenReference>
                 </ds:KeyInfo>
             </ds:Signature>
-            <wsse:BinarySecurityToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="pfxb65d8fe8-185a-4edc-6589-3a08270deca3" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIFUzCCBDugAwIBAgIRAPDSQdw8J761Dm1SVcDEEDIwDQYJKoZIhvcNAQEFBQAwgZ8xEzARBgoJkiaJk/IsZAEZFgNjb20xGjAYBgoJkiaJk/IsZAEZFgptYXN0ZXJjYXJkMR0wGwYDVQQKExRNYXN0ZXJDYXJkIFdvcmxkV2lkZTEkMCIGA1UECxMbR2xvYmFsIEluZm9ybWF0aW9uIFNlY3VyaXR5MScwJQYDVQQDEx5QUkQgTUMgRXh0ZXJuYWwgQ2xpZW50cyBzdWIgQ0EwHhcNMTYwNDI1MDkyOTU4WhcNMjAwNDI0MDkyNzQ4WjBtMQswCQYDVQQGEwJVUzEqMCgGA1UEChMhTWFzdGVyQ2FyZCBXb3JsZHdpZGUgLSBTaWduaW5nIFNXMRcwFQYDVQQLEw5DSFMgMjAxNi0wMDU5MzEZMBcGA1UEAxMQbXRmLkNIUy5zcHJlZWRseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANIk17IFpIK16UfJ6C4sKglCJnqdk48OoCsSv3vHxFn8qB4+dNraJzBOuonwtdc5JXzGgy2s0aHoDCqGQ0q7kNG+JM/zQh8zR0/jZc1TU658koeuj/1Ri5i2PI0Dx/0VK/5u3Nat2NxGQHiajaPfQ+nd9uL7VMC0bvsqQ5JORmPzN9l9l4w1UjhGY6hgO38ddaqxiL2x7WE+vC4UzwXwg5OFB9RyWnsZuj0i5UAJfBji8V/BoakFA+uBXKOzKWspd6JXkR3kHBxfgVY7hN+VQPiaV182+KSkkLcJtTxIcTotK0RlYSuncHCWYhpKseXfJaeLV0Qj295LMzh+ik3k0pUCAwEAAaOCAbkwggG1MB8GA1UdIwQYMBaAFENfeEuRCsNlnNfMU6hVTel6fZtcMAkGA1UdEwQCMAAwggERBgNVHSAEggEIMIIBBDCCAQAGCSqGSIb3DQUGATCB8jAzBggrBgEFBQcCARYnaHR0cDovL2NlcnRpZmljYXRlcy5tYXN0ZXJjYXJkLmNvbS9DUFMvMIG6BggrBgEFBQcCAjCBrTAbFhRNYXN0ZXJDYXJkIFdvcmxkd2lkZTADAgEBGoGNVGhlIE1hc3RlckNhcmQgV29ybGR3aWRlIENlcnRpZmljYXRpb24gUHJhY3RpY2UgU3RhdGVtZW50IGdvdmVybnMgdGhpcyBjZXJ0aWZpY2F0ZSBhbmQgaXMgaW5jb3Jwb3JhdGVkIGJ5IHJlZmVyZW5jZSBoZXJlaW4uIExpbWl0ZWQgTGlhYmlsaXR5MEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jY3Iyd29vMC5tYXN0ZXJjYXJkLmNvbS9QUkRfQ1JML0VYQ19DUkwuY3JsMA4GA1UdDwEB/wQEAwIHgDAdBgNVHQ4EFgQUFLB216VsRQxgYh3hkFplNGutXbgwDQYJKoZIhvcNAQEFBQADggEBACsuZ1JVT0ntqx76Cdzc/YXLlkPOsmsJ6ipr2RuO2InwtWnZq18il5fOY3eZKmWDs8HEZCeADZYifOdbh5WHpGKCZnbArLoz/9TiuDPicErZVDp11tvXDTn8oYfJ/O8EkXzb54+NNCD4rbJjdtmrDCmxGOErXsmh1YCuodX+3GFZyVgoP/vImhVxYZswDTsHwEbKKpbuB9i4CFDismYafNPReXRKxbin/Cq0SvmEiuG2YgJI+b75FbdQTgxd3pv79pRMKoFdDpZuqZh2jnEsMBGDO4m3nOsevlHSdKEMxAaC9q3xNndv/LJYn32MopqjdkhzW6/1x5yPsDfeTbmkSBk=
-            </wsse:BinarySecurityToken>
+            <wsse:BinarySecurityToken
+                    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                    EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"
+                    wsu:Id="pfxb65d8fe8-185a-4edc-6589-3a08270deca3"
+                    ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">
+                MIIFUzCCBDugAwIBAgIRAPDSQdw8J761Dm1SVcDEEDIwDQYJKoZIhvcNAQEFBQAwgZ8xEzARBgoJkiaJk/IsZAEZFgNjb20xGjAYBgoJkiaJk/IsZAEZFgptYXN0ZXJjYXJkMR0wGwYDVQQKExRNYXN0ZXJDYXJkIFdvcmxkV2lkZTEkMCIGA1UECxMbR2xvYmFsIEluZm9ybWF0aW9uIFNlY3VyaXR5MScwJQYDVQQDEx5QUkQgTUMgRXh0ZXJuYWwgQ2xpZW50cyBzdWIgQ0EwHhcNMTYwNDI1MDkyOTU4WhcNMjAwNDI0MDkyNzQ4WjBtMQswCQYDVQQGEwJVUzEqMCgGA1UEChMhTWFzdGVyQ2FyZCBXb3JsZHdpZGUgLSBTaWduaW5nIFNXMRcwFQYDVQQLEw5DSFMgMjAxNi0wMDU5MzEZMBcGA1UEAxMQbXRmLkNIUy5zcHJlZWRseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANIk17IFpIK16UfJ6C4sKglCJnqdk48OoCsSv3vHxFn8qB4+dNraJzBOuonwtdc5JXzGgy2s0aHoDCqGQ0q7kNG+JM/zQh8zR0/jZc1TU658koeuj/1Ri5i2PI0Dx/0VK/5u3Nat2NxGQHiajaPfQ+nd9uL7VMC0bvsqQ5JORmPzN9l9l4w1UjhGY6hgO38ddaqxiL2x7WE+vC4UzwXwg5OFB9RyWnsZuj0i5UAJfBji8V/BoakFA+uBXKOzKWspd6JXkR3kHBxfgVY7hN+VQPiaV182+KSkkLcJtTxIcTotK0RlYSuncHCWYhpKseXfJaeLV0Qj295LMzh+ik3k0pUCAwEAAaOCAbkwggG1MB8GA1UdIwQYMBaAFENfeEuRCsNlnNfMU6hVTel6fZtcMAkGA1UdEwQCMAAwggERBgNVHSAEggEIMIIBBDCCAQAGCSqGSIb3DQUGATCB8jAzBggrBgEFBQcCARYnaHR0cDovL2NlcnRpZmljYXRlcy5tYXN0ZXJjYXJkLmNvbS9DUFMvMIG6BggrBgEFBQcCAjCBrTAbFhRNYXN0ZXJDYXJkIFdvcmxkd2lkZTADAgEBGoGNVGhlIE1hc3RlckNhcmQgV29ybGR3aWRlIENlcnRpZmljYXRpb24gUHJhY3RpY2UgU3RhdGVtZW50IGdvdmVybnMgdGhpcyBjZXJ0aWZpY2F0ZSBhbmQgaXMgaW5jb3Jwb3JhdGVkIGJ5IHJlZmVyZW5jZSBoZXJlaW4uIExpbWl0ZWQgTGlhYmlsaXR5MEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jY3Iyd29vMC5tYXN0ZXJjYXJkLmNvbS9QUkRfQ1JML0VYQ19DUkwuY3JsMA4GA1UdDwEB/wQEAwIHgDAdBgNVHQ4EFgQUFLB216VsRQxgYh3hkFplNGutXbgwDQYJKoZIhvcNAQEFBQADggEBACsuZ1JVT0ntqx76Cdzc/YXLlkPOsmsJ6ipr2RuO2InwtWnZq18il5fOY3eZKmWDs8HEZCeADZYifOdbh5WHpGKCZnbArLoz/9TiuDPicErZVDp11tvXDTn8oYfJ/O8EkXzb54+NNCD4rbJjdtmrDCmxGOErXsmh1YCuodX+3GFZyVgoP/vImhVxYZswDTsHwEbKKpbuB9i4CFDismYafNPReXRKxbin/Cq0SvmEiuG2YgJI+b75FbdQTgxd3pv79pRMKoFdDpZuqZh2jnEsMBGDO4m3nOsevlHSdKEMxAaC9q3xNndv/LJYn32MopqjdkhzW6/1x5yPsDfeTbmkSBk=</wsse:BinarySecurityToken>
             <wsu:Timestamp
                     xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
                     wsu:Id="pfxbafb5d83-3a99-50af-d6b9-ceb1b8e64b5c">

@@ -32,7 +32,7 @@ def authorized(fn):
             return None
 
         try:
-            parse_token(request)
+            parse_token(request.headers['Authorization'])
         except jwt.DecodeError:
             response = jsonify(message='Token is invalid')
             response.status_code = 401

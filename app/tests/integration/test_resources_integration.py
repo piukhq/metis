@@ -46,6 +46,16 @@ class TestMetisResources(TestCase):
                                                  'card_token': ''}))
         self.assertTrue(resp.status_code == 200)
 
+    def test_amex_register_auth(self):
+        settings.TESTING = False
+
+        resp = self.client.post('/payment_service/register_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps({'partner_slug': 'amex',
+                                                 'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                                                 'card_token': ''}))
+        self.assertTrue(resp.status_code == 200)
+
     def test_amex_receiver_auth_401(self):
         settings.TESTING = False
         resp = self.client.post('/payment_service/register_card',
