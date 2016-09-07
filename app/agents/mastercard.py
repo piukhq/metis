@@ -120,7 +120,7 @@ class MasterCard:
         bst_hash = self.digest_section(tree, 'BinarySecurityToken')
         xml = xml.replace('digest_1', bst_hash)
 
-        time_stamp_hash = self.digest_section(tree, 'Timestamp') # 'ZLXxm0g2aXJbS077jHjl+/LsWAPQYhFnUN7qOTPtLvk='
+        time_stamp_hash = self.digest_section(tree, 'Timestamp')  # 'ZLXxm0g2aXJbS077jHjl+/LsWAPQYhFnUN7qOTPtLvk='
         xml = xml.replace('digest_2', time_stamp_hash)
 
         identity_hash = self.digest_section(tree, 'identity')
