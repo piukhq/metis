@@ -42,7 +42,7 @@ class TestMastercard(TestCase):
             'card_token': '111111111111112',
             'partner_slug': 'mastercard'
         }]
-        result = self.mc.request_body(card_info)
+        result = self.mc.add_card_request_body(card_info)
         self.assertIn('Envelope', result)
         # self.assertIn('{{credit_card_number}}', result)
         # self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)

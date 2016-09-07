@@ -40,32 +40,54 @@ class MasterCard:
         return receiver_token + '/deliver.xml'
 
     def request_header(self):
-        header = '<![CDATA[{Content-Type: text/xml; charset=utf-8}]]>'
+        header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
         # header = 'Content-Type: text/xml;charset=utf-8'
         return header
 
-    def request_body(self, card_ids):
-        # app_id = 'Get app id from MasterCard'
-        bank_customer_number = card_ids[0]
-        # *********** REMOVE THIS WHEN WE START ADDING CARDS**************
-        card_ids[0] = bank_customer_number
-        # ****************************************************************
-
-        # member_ica = '17597'  # confirmed in Letitia email of 11/05/2016
-        # bank_product_code = 'MRS code for card product provided by MC'
-        # program_identifier = 'MRS program id'
-
+    def add_card_request_body(self, card_ids):
+        # Add the card data method in once doEcho testing is complete.
+        # card_data(card_ids)
         soap_xml = self.create_soap_template()
-
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
+
+    def remove_card_request_body(self, card_ids):
+        # Add the card data method in once doEcho testing is complete.
+        # card_data(card_ids)
+        soap_xml = self.create_soap_template()
+        body_data = '<![CDATA[' + soap_xml + ']]>'
+        return body_data
+
+    # Use this method to set up the request data as json.
+    def card_data(self, card_ids):
+        # app_id = 'Get app id from MasterCard'
+        # bank_product_code = 'MRS code for card product provided by MC'
+        # program_identifier = 'MRS program id'
+        data = {
+            "app_id": 'Get app id from MasterCard',
+            "bank_customer_number": card_ids[0],
+            "member_ica": '17597',
+            "bank_product_code": 'MRS code for card product provided by MC',
+            "program_identifier": 'MRS program id'
+        }
+
+        return data
 
     def add_card_body(self, card_info):
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.add_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
-                   '  <body>' + self.request_body(card_info) + '</body>' \
+                   '  <body>' + self.add_card_request_body(card_info) + '</body>' \
+                   '</delivery>'
+        return xml_data
+
+    def remove_card_body(self, card_info):
+        xml_data = '<delivery>' \
+                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <url>' + self.add_url() + '</url>' \
+                   '  <headers>' + self.request_header() + '</headers>' \
+                   '  <body>' + self.remove_card_request_body(card_info) + '</body>' \
                    '</delivery>'
         return xml_data
 
@@ -92,13 +114,13 @@ class MasterCard:
         return output_text
 
     def process_soap_xml(self, xml):
-        xml_doc = etree.fromstring(xml.encode('ascii'))
+        xml_doc = etree.fromstring(xml.encode('utf-8'))
         tree = etree.ElementTree(xml_doc)
 
         bst_hash = self.digest_section(tree, 'BinarySecurityToken')
         xml = xml.replace('digest_1', bst_hash)
 
-        time_stamp_hash = self.digest_section(tree, 'Timestamp')
+        time_stamp_hash = self.digest_section(tree, 'Timestamp') # 'ZLXxm0g2aXJbS077jHjl+/LsWAPQYhFnUN7qOTPtLvk='
         xml = xml.replace('digest_2', time_stamp_hash)
 
         identity_hash = self.digest_section(tree, 'identity')
@@ -108,12 +130,13 @@ class MasterCard:
         xml = xml.replace('digest_4', body_hash)
 
         # Now get the completed SignedInfo element and add it to the SignatureValue section
-        xml_doc1 = etree.fromstring(xml.encode('ascii'))
+        xml_doc1 = etree.fromstring(xml.encode('utf-8'))
         tree1 = etree.ElementTree(xml_doc1)
         signed_info = self.get_xml_element(tree1, 'SignedInfo')
         signed_info = self.canonicalize_xml(signed_info)
         signed_info_str = signed_info.getvalue().decode("utf-8")
-        xml = xml.replace('signature_value', signed_info_str)
+        signature_value = '{{#base64}}{{#rsa_sign}}sha512,' + signed_info_str + '{{/rsa_sign}}{{/base64}}'
+        xml = xml.replace('signature_value', signature_value)
         # print(repr(xml))
         return xml
 
