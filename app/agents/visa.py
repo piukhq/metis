@@ -47,6 +47,7 @@ class Visa:
         recipient_id = 'nawes@visa.com'
 
         body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
+        # body_data = self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)
         file_url = "sftp://sftp.bink.com/file_test_{}{}".format(str(int(time.time())), '.gpg')
         data = {
             "export": {
@@ -92,10 +93,11 @@ class Visa:
     def create_file_data(self, card_info):
         detail_record_count = len(card_info)
         header = Header(
-            source_id='XXXX',
+            source_id='LOYANG',
             destination_id='VISA',
             file_description='Some text here',
             file_create_date=self.format_datetime(arrow.now()),
+            file_control_number='00',
             file_format_version='2.0',
             filler1='',
             filler2='',
@@ -118,14 +120,14 @@ class Visa:
         for card in card_info:
             file.add_detail(
                 Detail(
-                    promotion_type='XX',
-                    promotion_code='XXXX',
+                    promotion_type='VD',
+                    promotion_code='3GB16LOYANPVLOYANGSAUG16A',
                     action_code='{{action_code}}',
-                    endpoint_code='XXXXXX',
-                    promotion_group_id='XXXXXX',
+                    endpoint_code='LOYANG',
+                    promotion_group_id='LOYANG',
                     cardholder_account_number='{{credit_card_number}}',
                     external_cardholder_id='{{external_cardholder_id}}',
-                    effective_date='{{credit_card_created_at}}',
+                    effective_date=self.format_datetime(arrow.now()),
                     termination_date='',
                     filler=''
                 ),
@@ -186,6 +188,7 @@ class Header(Field):
         ('destination_id', 6, 'F'),
         ('file_description', 255, 'V'),
         ('file_create_date', 8, 'F'),
+        ('file_control_number', 2, 'V'),
         ('file_format_version', 4, 'V'),
         ('test_file_indicator', 1, 'F'),
         ('filler1', 2, 'V'),
@@ -223,7 +226,7 @@ class Detail(Field):
         ('action_code', 1, 'P'),
         ('endpoint_code', 6, 'F'),
         ('promotion_group_id', 6, 'F'),
-        ('cardholder_account_number', 19, 'P'),
+        ('cardholder_account_number', 19, 'V'),
         ('external_cardholder_id', 25, 'P'),
         ('effective_date', 8, 'D'),
         ('termination_date', 8, 'F'),
@@ -308,7 +311,7 @@ class VisaCardFile(object):
         """
         serialized_str = self._serialize(Footer, footer)
         start_str = '{{#format_text}}%-1000.1000s,'
-        end_str = '{{/format_text}}'
+        end_str = '{{/format_text}}\\n'
         self.footer_string = '{}{}{}'.format(start_str, serialized_str, end_str)
 
     def add_detail_start(self):
