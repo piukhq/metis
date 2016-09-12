@@ -1,4 +1,3 @@
-import arrow
 import base64
 import hashlib
 import settings
@@ -100,17 +99,15 @@ class MasterCard:
 
         template_vars = {"app_id": 0,
                          "institution_name": "loyaltyangels",
-                         "digest_1": 'digest_1',
-                         "digest_2": 'digest_2',
-                         "digest_3": 'digest_3',
-                         "digest_4": 'digest_4',
-                         "signature_value": 'signature_value',
-                         "time_created": self.format_datetime(arrow.utcnow()),
-                         "time_expires": self.format_datetime(arrow.utcnow().replace(hours=4)),
-                         "body": 'Hello',
+                         "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
+                         "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
+                         "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
+                         "body": 'Hello'
                          }
         output_text = template.render(template_vars)
-        output_text = self.process_soap_xml(output_text)
+
+        # Wrap the xml in {{#xmldsig}} tags for Spreedly to sign
+        output_text = '{{#xmldsig}}' + output_text + '{{/xmldsig}}'
         return output_text
 
     def process_soap_xml(self, xml):
@@ -120,7 +117,7 @@ class MasterCard:
         bst_hash = self.digest_section(tree, 'BinarySecurityToken')
         xml = xml.replace('digest_1', bst_hash)
 
-        time_stamp_hash = self.digest_section(tree, 'Timestamp')  # 'ZLXxm0g2aXJbS077jHjl+/LsWAPQYhFnUN7qOTPtLvk='
+        time_stamp_hash = self.digest_section(tree, 'Timestamp')
         xml = xml.replace('digest_2', time_stamp_hash)
 
         identity_hash = self.digest_section(tree, 'identity')
@@ -134,7 +131,7 @@ class MasterCard:
         tree1 = etree.ElementTree(xml_doc1)
         signed_info = self.get_xml_element(tree1, 'SignedInfo')
         signed_info = self.canonicalize_xml(signed_info)
-        signed_info_str = signed_info.getvalue().decode("utf-8")
+        signed_info_str = signed_info.getvalue().decode("utf-8")  # etree.tostring(signed_info)
         signature_value = '{{#base64}}{{#rsa_sign}}sha512,' + signed_info_str + '{{/rsa_sign}}{{/base64}}'
         xml = xml.replace('signature_value', signature_value)
         # print(repr(xml))
@@ -171,14 +168,3 @@ class MasterCard:
         canonicalized_xml = io.BytesIO()
         xml_part.write_c14n(canonicalized_xml, exclusive=True)
         return canonicalized_xml
-
-    @staticmethod
-    def format_datetime(date_time):
-        """
-        formats an <arrow> datetime into the format expected by Visa
-        :param date_time: the <arrow> datetime to be formatted
-        :return: a datetime string in the format 'YYYY-MM-DDTHH:mm:ssZZ'
-        """
-        date_time_str = date_time.format('YYYY-MM-DDTHH:mm:ssZZ')
-        date_time_str = date_time_str.replace('-00:00', 'Z')
-        return date_time_str
