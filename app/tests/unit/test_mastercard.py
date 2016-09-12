@@ -56,9 +56,3 @@ class TestMastercard(TestCase):
         result = self.mc.create_soap_template()
         self.assertIn('loyaltyangels', result)
         self.assertIn('Hello', result)
-
-    def test_process_soap_xml(self):
-        test_xml = self.mc.create_soap_template()
-        result = self.mc.process_soap_xml(test_xml)
-        self.assertTrue(len(result) > 0)
-        # self.assertIn('Hello', result)
