@@ -1,10 +1,6 @@
-import base64
-import hashlib
 import settings
 import jinja2
 import os
-import io
-from lxml import etree
 
 testing_url = 'http://latestserver.com/post.php'
 testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'

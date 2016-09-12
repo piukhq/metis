@@ -56,4 +56,3 @@ class TestMastercard(TestCase):
         result = self.mc.create_soap_template()
         self.assertIn('loyaltyangels', result)
         self.assertIn('Hello', result)
-
