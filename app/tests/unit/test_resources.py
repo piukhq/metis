@@ -58,9 +58,10 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({}))
         self.assertTrue(resp.status_code == 422)
 
+    @patch('app.resources.add_card')
     @patch('app.auth.parse_token')
     @httpretty.activate
-    def test_end_site_receiver(self, mock_parse_token):
+    def test_end_site_receiver(self, mock_parse_token, mock_add_card):
         card_info = {
             'payment_token': '1111111111111111111111',
             'card_token': '',
@@ -70,17 +71,18 @@ class TestMetisResources(TestCase):
         mock_parse_token.return_value = "{'sub':''45'}"
         mc.testing_receiver_token = self.receiver_token
         self.end_site_receiver_route()
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
+        mock_add_card.delay.assert_called_with([card_info])
 
     @patch('app.auth.parse_token')
     @httpretty.activate
     def test_end_site_receiver_invalid_param(self, mock_parse_token):
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({}))
         self.assertTrue(resp.status_code == 400)
@@ -90,7 +92,7 @@ class TestMetisResources(TestCase):
     def test_end_site_receiver_param_missing(self, mock_parse_token):
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({"partner_slug": "mastercard"}))
         self.assertTrue(resp.status_code == 400)
@@ -100,7 +102,7 @@ class TestMetisResources(TestCase):
     def test_end_site_blank_param(self, mock_parse_token):
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({"partner_slug": "mastercard",
                                                  "payment_token": " "}))
