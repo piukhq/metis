@@ -2,7 +2,11 @@
 
 Running add_card and remove_card requires the celery worker to be running.
 
-Run this command in the root directory of the project:
+First make sure you have a redis server running on redis://localhost:6379
 
-```shell
-celery -A app.tasks worker```
+Then, run this command in the root directory of the project:
+
+```bash
+celery -A app.tasks worker
+```
+x
