@@ -22,6 +22,11 @@ AMEX_RECEIVER = "spreedly_amex_token"
 VISA_RECEIVER = "spreedly_visa_token"
 MASTERCARD_RECEIVER = "spreedly_mastercard_token"
 
+# celery config
+BROKER_URL = env_var('CELERY_BROKER_URL', 'redis://localhost:6379')
+# if you need to read task results, uncomment and set this
+# CELERY_RESULT_BACKEND = env_var('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
+
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
 # -------------------------------------------------------------------------------
