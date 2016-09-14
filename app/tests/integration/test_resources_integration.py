@@ -13,6 +13,7 @@ class Testing:
 
 
 class TestMetisResources(TestCase):
+
     def create_app(self):
         return create_app(Testing)
 
@@ -39,7 +40,7 @@ class TestMetisResources(TestCase):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({'partner_slug': 'amex',
                                                  'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
@@ -49,7 +50,7 @@ class TestMetisResources(TestCase):
     def test_amex_register_auth(self):
         settings.TESTING = False
 
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({'partner_slug': 'amex',
                                                  'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
@@ -58,7 +59,7 @@ class TestMetisResources(TestCase):
 
     def test_amex_receiver_auth_401(self):
         settings.TESTING = False
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json'},
                                 data=json.dumps({"partner_slug": "amex",
                                                  "payment_token": "3ERtq3pUV5OiNpdTCuhhXLBmnv8"}))
@@ -69,11 +70,11 @@ class TestMetisResources(TestCase):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
-        resp = self.client.post('/payment_service/remove_card',
-                                headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps({'partner_slug': 'amex',
-                                                 'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
-                                                 'card_token': ''}))
+        resp = self.client.delete('/payment_service/payment_card',
+                                  headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                  data=json.dumps({'partner_slug': 'amex',
+                                                   'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                                                   'card_token': ''}))
         self.assertTrue(resp.status_code == 200)
 
     @patch('app.auth.parse_token')
@@ -86,7 +87,7 @@ class TestMetisResources(TestCase):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
@@ -101,7 +102,7 @@ class TestMetisResources(TestCase):
         settings.TESTING = False
         mock_parse_token.return_value = "{'sub':''45'}"
 
-        resp = self.client.post('/payment_service/register_card',
+        resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
