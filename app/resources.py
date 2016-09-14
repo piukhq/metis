@@ -28,7 +28,7 @@ class CreateReceiver(Resource):
 api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 
 
-class RegisterCard(Resource):
+class PaymentCard(Resource):
 
     @authorized
     def post(self):
@@ -69,7 +69,7 @@ class RegisterCard(Resource):
         return make_response('Success', 200)
 
 
-api.add_resource(RegisterCard, '/payment_service/register_card')
+api.add_resource(PaymentCard, '/payment_service/payment_card')
 
 
 class Notify(Resource):
