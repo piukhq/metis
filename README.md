@@ -7,6 +7,5 @@ First make sure you have a redis server running on redis://localhost:6379
 Then, run this command in the root directory of the project:
 
 ```bash
-celery -A app.tasks worker
+$ celery -A app.tasks worker
 ```
-x
