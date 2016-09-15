@@ -38,7 +38,7 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     def test_amex_register(self, mock_parse_token):
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -68,7 +68,7 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     def test_amex_remove_card(self, mock_parse_token):
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.delete('/payment_service/payment_card',
                                   headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -85,7 +85,7 @@ class TestMetisResources(TestCase):
             'partner_slug': 'visa'
         }
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -93,16 +93,31 @@ class TestMetisResources(TestCase):
         self.assertTrue(resp.status_code == 200)
 
     @patch('app.auth.parse_token')
-    def test_mastercard_receiver(self, mock_parse_token):
+    def test_mastercard_enroll(self, mock_parse_token):
         card_info = {
             'payment_token': 'WhtIyJrcpcLupNpBD4bSVx3qyY5',
             'card_token': ' ',
             'partner_slug': 'mastercard'
         }
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/payment_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps(card_info))
+        self.assertTrue(resp.status_code == 200)
+
+    @patch('app.auth.parse_token')
+    def test_mastercard_unenroll(self, mock_parse_token):
+        card_info = {
+            'payment_token': 'RjG4WgzYoBZWgJ1ZK3KsHd2nYRv',
+            'card_token': ' ',
+            'partner_slug': 'mastercard'
+        }
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':'45'}"
+
+        resp = self.client.post('/payment_service/remove_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)

@@ -1,0 +1,13 @@
+{% extends "mc_template.xml" %}
+{% block body %}<cus:enroll>
+            <cus:customerFields>
+                <cus:BANK_CUSTOMER_NUMBER>{{bank_customer_number}}</cus:BANK_CUSTOMER_NUMBER>
+                <cus:MEMBER_ICA>{{member_ica}}</cus:MEMBER_ICA>
+            </cus:customerFields>
+            <cus:customerAccountFields>
+                <cus:BANK_ACCOUNT_NUMBER>{{bank_account_number}}</cus:BANK_ACCOUNT_NUMBER>
+                <cus:ACCOUNT_STATUS_CODE>{{account_status_code}}</cus:ACCOUNT_STATUS_CODE>
+                <cus:BANK_PRODUCT_CODE>{{bank_product_code}}</cus:BANK_PRODUCT_CODE>
+                <cus:PROGRAM_IDENTIFIER>{{program_identifier}}</cus:PROGRAM_IDENTIFIER>
+            </cus:customerAccountFields>
+        </cus:enroll>{% endblock %}

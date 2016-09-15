@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:ns1="http://diagnostic.ws.mcrewards.mastercard.com/"
-                  xmlns:ns2="http://common.ws.mcrewards.mastercard.com/">
+                  xmlns:cus="http://customer.ws.mcrewards.mastercard.com/">
     <soapenv:Header>
         <com:identity xmlns:com="http://common.ws.mcrewards.mastercard.com/"
                       xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
@@ -69,6 +68,6 @@
     </soapenv:Header>
     <soapenv:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
                   wsu:Id="pfx1819ec29-f57f-d26e-e323-f5734617170e">
-        <ns1:doEcho>{{body}}</ns1:doEcho>
+        {% block body %}{% endblock %}
     </soapenv:Body>
 </soapenv:Envelope>

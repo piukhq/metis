@@ -19,12 +19,12 @@ class TestMastercard(TestCase):
     def test_url_production(self):
         settings.TESTING = False
         result = self.mc.add_url()
-        self.assertIn("DiagnosticService", result)
+        self.assertIn("CustomerService", result)
 
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.mc.receiver_token()
-        self.assertIn('XsXRs91pxREDW7TAFbUc1TgosxU', result)
+        self.assertIn('Dr77prY0vP4zXrkZcDlFkkGlZCN', result)
 
     def test_request_header_testing(self):
         settings.TESTING = True
@@ -52,7 +52,11 @@ class TestMastercard(TestCase):
         result = self.mc.get_hash('Hello')
         self.assertTrue(result == 'GF+NsyJx/iX1Yab8k4suJkMG7DBO2lGAB9F2SCY4GWk=')
 
-    def test_create_soap_request(self):
-        result = self.mc.create_soap_template()
+    def test_add_card_soap_template(self):
+        card_info = [{
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'mastercard'
+        }]
+        result = self.mc.add_card_soap_template(card_info)
         self.assertIn('loyaltyangels', result)
-        self.assertIn('Hello', result)
