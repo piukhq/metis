@@ -1,0 +1,2 @@
+{% extends "mc_template.xml" %}
+{% block body %}<ns1:doEcho>{{body}}</ns1:doEcho>{% endblock %}

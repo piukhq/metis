@@ -92,7 +92,7 @@ class TestMetisResources(TestCase):
         self.assertTrue(resp.status_code == 200)
 
     @patch('app.auth.parse_token')
-    def test_mastercard_receiver(self, mock_parse_token):
+    def test_mastercard_enroll(self, mock_parse_token):
         card_info = {
             'payment_token': 'WhtIyJrcpcLupNpBD4bSVx3qyY5',
             'card_token': ' ',
@@ -105,6 +105,22 @@ class TestMetisResources(TestCase):
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
+
+    @patch('app.auth.parse_token')
+    def test_mastercard_unenroll(self, mock_parse_token):
+        card_info = {
+            'payment_token': 'RjG4WgzYoBZWgJ1ZK3KsHd2nYRv',
+            'card_token': ' ',
+            'partner_slug': 'mastercard'
+        }
+        settings.TESTING = False
+        mock_parse_token.return_value = "{'sub':''45'}"
+
+        resp = self.client.post('/payment_service/remove_card',
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps(card_info))
+        self.assertTrue(resp.status_code == 200)
+
 
     def test_spreedly_callback(self):
         settings.TESTING = True
