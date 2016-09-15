@@ -9,3 +9,11 @@ Then, run this command in the root directory of the project:
 ```bash
 $ celery -A app.tasks worker
 ```
+
+For running the celery worker as a daemon, the following command is sufficient for dev:
+
+```bash
+$ /var/.virtualenvs/metis/bin/celery worker -A app.tasks --pidfile=/tmp/celery_metis.pid -D
+```
+
+For production environments, something more robust like systemd or supervisord is recommended.
