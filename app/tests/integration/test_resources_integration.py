@@ -37,7 +37,7 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     def test_amex_register(self, mock_parse_token):
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -67,7 +67,7 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     def test_amex_remove_card(self, mock_parse_token):
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/remove_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -84,7 +84,7 @@ class TestMetisResources(TestCase):
             'partner_slug': 'visa'
         }
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -99,7 +99,7 @@ class TestMetisResources(TestCase):
             'partner_slug': 'mastercard'
         }
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/register_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -114,7 +114,7 @@ class TestMetisResources(TestCase):
             'partner_slug': 'mastercard'
         }
         settings.TESTING = False
-        mock_parse_token.return_value = "{'sub':''45'}"
+        mock_parse_token.return_value = "{'sub':'45'}"
 
         resp = self.client.post('/payment_service/remove_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
