@@ -29,9 +29,35 @@ class TestServices(unittest.TestCase):
                                content_type='application/xml')
 
     def test_route(self):
-        xml_data = '<delivery>' \
-                   '<state>testing</state>' \
-                   '</delivery>'
+        xml_data = """<transaction>
+  <token>Rzvk2eGHx3jN8HlhzhWrHqzd3MS</token>
+  <transaction_type>DeliverPaymentMethod</transaction_type>
+  <state>succeeded</state>
+  <created_at type="dateTime">2016-09-15T14:59:18Z</created_at>
+  <updated_at type="dateTime">2016-09-15T14:59:20Z</updated_at>
+  <succeeded type="boolean">true</succeeded>
+  <message>Succeeded!</message>
+  <url>https://ws.mastercard.com/mtf/MRS/CustomerService</url>
+  <response>
+    <status type="integer">200</status>
+    <headers>
+      <![CDATA[Content-Type: text/xml
+Content-Length: 987
+Date: Thu, 15 Sep 2016 14:59:19 GMT
+Server: Information Not Disclosed]]>
+    </headers>
+    <body>
+      <![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header xmlns:kd4="http://www.ibm.com/KD4Soap" xmlns:dat="http://mastercard.com/eis/bnb/servicev1_1/datatypes" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"></soapenv:Header><env:Body>Something here</env:Body></env:Envelope>]]>
+    </body>
+  </response>
+  <receiver>
+    <receiver_type>mastercard_mtf</receiver_type>
+  </receiver>
+  <payment_method>
+    <token>RjG4WgzYoBZWgJ1ZK3KsHd2nYRv</token>
+  </payment_method>
+</transaction>"""  # noqa
 
         httpretty.register_uri(httpretty.POST, self.payment_url,
                                status=200,
@@ -57,4 +83,4 @@ class TestServices(unittest.TestCase):
         mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
         resp = add_card(card_info)
-        self.assertTrue(resp.status_code == 200)
+        self.assertTrue(resp['status_code'] == 200)
