@@ -52,7 +52,6 @@ class MasterCard:
             xml_start_point = xml_doc.xpath("//body")[0].text.find('<?xml')
             soap_xml = string_elem[xml_start_point:]
             xml_soap_doc = etree.fromstring(soap_xml.encode('utf-8'))
-            soap_tree = etree.ElementTree(xml_soap_doc)
             payment_method_token = xml_doc.xpath("//payment_method/token")
             mastercard_fault = xml_soap_doc.xpath("//faultstring")
             mastercard_fault_code = xml_soap_doc.xpath("//ns2:code",

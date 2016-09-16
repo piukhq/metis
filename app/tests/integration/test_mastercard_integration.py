@@ -44,8 +44,8 @@ class TestServices(unittest.TestCase):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
         # username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
-        #MTF receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU' + '/deliver.xml'
-        #Prod receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
+        # MTF receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU' + '/deliver.xml'
+        # Prod receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
         receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
         agent_instance = get_agent(card_info[0]['partner_slug'])
         header = agent_instance.header
