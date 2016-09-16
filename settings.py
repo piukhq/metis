@@ -1,3 +1,5 @@
+import graypy
+import logging
 import os
 from environment import env_var, read_env
 
@@ -41,3 +43,17 @@ CASSANDRA_CLUSTER = ('192.168.1.60', '192.168.1.61',  '192.168.1.62')
 # CASSANDRA_CLUSTER=(['unknown', 'unknown', 'unknown')
 
 CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
+
+#Logging settings
+# Use Graylog when setup, temporarily use local log files.
+logger = logging.getLogger('metis_logger')
+logger.setLevel(logging.DEBUG)
+tmp_logger = True
+
+GRAYLOG_HOST = env_var('GRAYLOG_HOST')
+if GRAYLOG_HOST:
+    handler = graypy.GELFHandler(GRAYLOG_HOST, 12201)
+    logger.addHandler(handler)
+elif tmp_logger:
+    handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
+    logger.addHandler(handler_loc)
