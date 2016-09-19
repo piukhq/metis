@@ -13,7 +13,11 @@ def parse_token(auth_header):
     auth = auth_header.encode(HTTP_HEADER_ENCODING).split()
     if not auth or auth[0].lower() != b'token':
         return None
+
     token = auth[1].decode()
+
+    if token == settings.SERVICE_API_KEY:
+        return True
 
     token_contents = jwt.decode(token, settings.TOKEN_SECRET)
 
