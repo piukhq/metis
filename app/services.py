@@ -82,8 +82,8 @@ def add_card(card_info):
         token = 'Token {}'.format(SERVICE_API_KEY)
         data = {"status": 1}
         resp = requests.put(update_status_url,
-                            headers={'Authorization': token},
-                            data=json.dumps(data))
+                            headers={'content-type': 'application/json', 'Authorization': token},
+                            json=data)
 
     return resp
 
