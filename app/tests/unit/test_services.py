@@ -39,7 +39,6 @@ class TestServices(unittest.TestCase):
                                body=json.dumps({"status_code": 200, "message": "success"}),
                                content_type='application/json')
 
-
     def test_route(self):
         xml_data = """<transaction>
   <token>Rzvk2eGHx3jN8HlhzhWrHqzd3MS</token>
