@@ -70,10 +70,11 @@ def add_card(card_info):
     agent_instance = get_agent(card_info[0]['partner_slug'])
     header = agent_instance.header
     url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
-
     request_data = agent_instance.add_card_body(card_info)
 
     resp = post_request(url, header, request_data)
+    resp = agent_instance.response_handler(resp)
+
     return resp
 
 

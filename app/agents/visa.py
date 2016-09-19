@@ -43,6 +43,9 @@ class Visa:
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
+    def response_handler(self, response):
+        return response
+
     def request_body(self, card_info, action_code):
         recipient_id = 'nawes@visa.com'
 

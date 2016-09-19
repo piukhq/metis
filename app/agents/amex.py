@@ -71,6 +71,9 @@ class Amex:
                                                    api_key, access_key, header_end)
         return header
 
+    def response_handler(self, response):
+        return response
+
     def add_card_request_body(self, card_ids):
         msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
 
