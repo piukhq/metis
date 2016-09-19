@@ -69,7 +69,7 @@ class MasterCard:
             else:
                 # could be a good response
                 message = "MasterCard Process successful - Token:{}, {}".format(payment_method_token[0].text,
-                                                                                "MasterCard successfully registered")
+                                                                                "MasterCard successfully processed")
                 settings.logger.info(message)
                 resp = {'message': 'Successful', 'status_code': response.status_code}
         except Exception as e:

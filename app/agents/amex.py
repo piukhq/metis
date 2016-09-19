@@ -93,7 +93,7 @@ class Amex:
             else:
                 # could be a good response
                 message = "Amex Process successful - Token:{}, {}".format(payment_method_token[0].text,
-                                                                          "Amex successfully registered")
+                                                                          "Amex successfully processed")
                 settings.logger.info(message)
                 resp = {'message': 'Successful', 'status_code': 200}
         except Exception as e:
