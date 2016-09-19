@@ -63,6 +63,7 @@ class TestMetisResources(TestCase):
     @httpretty.activate
     def test_end_site_receiver(self, mock_parse_token, mock_add_card):
         card_info = {
+            'id': 1,
             'payment_token': '1111111111111111111111',
             'card_token': '',
             'partner_slug': 'mastercard'

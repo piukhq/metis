@@ -37,6 +37,7 @@ class TestVisa(TestCase):
 
     def test_payment_method_data(self):
         card_info = [{
+            'id': 1,
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
             'partner_slug': 'test_slug'

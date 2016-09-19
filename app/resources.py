@@ -37,7 +37,9 @@ class PaymentCard(Resource):
         try:
             # payment_token = Spreedly payment method token
             # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
+            # id = the hermes database card id. Used for setting status back in Hermes.
             card_info = [{
+                'id': req_data['id'],
                 'payment_token': req_data['payment_token'],
                 'card_token': req_data['card_token'],
                 'partner_slug': req_data['partner_slug']

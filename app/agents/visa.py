@@ -3,7 +3,7 @@ import settings
 import json
 import time
 from io import StringIO
-
+from lxml import etree
 
 testing_hostname = 'http://latestserver.com/post.php'
 testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
@@ -44,7 +44,31 @@ class Visa:
         return header
 
     def response_handler(self, response):
-        return response
+        if response.status_code != 200:
+            return {'message': 'Unknown error', 'status_code': response.status_code}
+
+        try:
+            xml_doc = etree.fromstring(response.text)
+            payment_method_token = xml_doc.xpath("//payment_method/token")
+            string_elem = xml_doc.xpath("//body")[0].text
+            visa_data = json.loads(string_elem)
+
+            if visa_data["status"] == "Failure":
+                # Not a good news response.
+                message = " Visa Process unsuccessful - Token:{}".format(payment_method_token[0].text)
+                settings.logger.info(message)
+                resp = {'message': 'Visa Fault recorded ', 'status_code': 422}
+            else:
+                # could be a good response
+                message = "Visa Process successful - Token:{}, {}".format(payment_method_token[0].text,
+                                                                          "Check Handback file")
+                settings.logger.info(message)
+                resp = {'message': 'Successful', 'status_code': 200}
+        except Exception as e:
+            message = str({'Visa Problem processing response. Exception: {}'.format(e)})
+            resp = {'message': message, 'status_code': 422}
+
+        return resp
 
     def request_body(self, card_info, action_code):
         recipient_id = 'nawes@visa.com'

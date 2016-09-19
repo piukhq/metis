@@ -1,8 +1,12 @@
 import app.agents.mastercard as mc
+import json
 import unittest
 import httpretty
 import settings
 from app.services import create_receiver, add_card
+
+auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
+           'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
 
 
 class TestServices(unittest.TestCase):
@@ -27,6 +31,13 @@ class TestServices(unittest.TestCase):
                                status=201,
                                body=xml_response,
                                content_type='application/xml')
+
+    def hermes_status_route(self):
+        httpretty.register_uri(httpretty.PUT, '{}/payment_cards/accounts/status/{}'.format(settings.HERMES_URL, 1),
+                               status=200,
+                               headers={'Authorization': auth_key},
+                               body=json.dumps({"status_code": 200, "message": "success"}),
+                               content_type='application/json')
 
     def test_route(self):
         xml_data = """<transaction>
@@ -74,6 +85,7 @@ Server: Information Not Disclosed]]>
     @httpretty.activate
     def test_add_card(self):
         card_info = [{
+            'id': 1,
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
             'partner_slug': 'mastercard'
@@ -82,5 +94,6 @@ Server: Information Not Disclosed]]>
         self.test_route()
         mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
+        self.hermes_status_route()
         resp = add_card(card_info)
-        self.assertTrue(resp['status_code'] == 200)
+        self.assertTrue(resp.status_code == 200)
