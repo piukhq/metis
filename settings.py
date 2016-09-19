@@ -20,6 +20,9 @@ DEV_PORT = env_var("DEV_PORT", "5050")
 
 TESTING = env_var("METIS_TESTING", False)
 
+HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
+SERVICE_API_KEY = 'F616CE5C88744DD52DB628FAD8B3D'
+
 AMEX_RECEIVER = "spreedly_amex_token"
 VISA_RECEIVER = "spreedly_visa_token"
 MASTERCARD_RECEIVER = "spreedly_mastercard_token"

@@ -7,6 +7,7 @@ import hashlib
 import base64
 import requests
 from urllib import parse
+from lxml import etree
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -72,7 +73,34 @@ class Amex:
         return header
 
     def response_handler(self, response):
-        return response
+        if response.status_code != 200:
+            return {'message': 'Amex Unknown error', 'status_code': response.status_code}
+
+        try:
+            xml_doc = etree.fromstring(response.text)
+            payment_method_token = xml_doc.xpath("//payment_method/token")
+            string_elem = xml_doc.xpath("//body")[0].text
+            amex_data = json.loads(string_elem)
+
+            if amex_data["status"] == "Failure":
+                # Not a good news response.
+                message = "Amex Process unsuccessful - Token:{}, {}, {} {}".format(payment_method_token[0].text,
+                                                                                   amex_data["respDesc"],
+                                                                                   "Code:",
+                                                                                   amex_data["respCd"])
+                settings.logger.info(message)
+                resp = {'message': 'Amex Fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
+            else:
+                # could be a good response
+                message = "Amex Process successful - Token:{}, {}".format(payment_method_token[0].text,
+                                                                          "Amex successfully registered")
+                settings.logger.info(message)
+                resp = {'message': 'Successful', 'status_code': 200}
+        except Exception as e:
+            message = str({'Amex Problem processing response. Exception: {}'.format(e)})
+            resp = {'message': message, 'status_code': 422}
+
+        return resp
 
     def add_card_request_body(self, card_ids):
         msgId = str(int(time.time()))  # 'Can this be a guid or similar?'

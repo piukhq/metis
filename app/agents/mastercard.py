@@ -44,7 +44,7 @@ class MasterCard:
     def response_handler(self, response):
 
         if response.status_code != 200:
-            return {'message': 'Unknown error', 'status_code': response.status_code}
+            return {'message': 'MasterCard Unknown error', 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -59,20 +59,21 @@ class MasterCard:
 
             if mastercard_fault:
                 # Not a good response, log the MasterCard error message and code, respond with 422 status
-                message = "Register payment card - Token:{}, {}, {} {}".format(payment_method_token[0].text,
-                                                                               mastercard_fault[0].text,
-                                                                               "Code:",
-                                                                               mastercard_fault_code[0].text)
+                message = "MasterCard Process unsuccessful - Token:{}, {}, {} {}".format(payment_method_token[0].text,
+                                                                                         mastercard_fault[0].text,
+                                                                                         "Code:",
+                                                                                         mastercard_fault_code[0].text)
                 settings.logger.info(message)
-                resp = {'message': 'Card not registered. Code: ' + mastercard_fault_code[0].text, 'status_code': 422}
+                resp = {'message': 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
+                        'status_code': 422}
             else:
                 # could be a good response
-                message = "Register payment card - Token:{}, {}".format(payment_method_token[0].text,
-                                                                        "Successfully registered")
+                message = "MasterCard Process successful - Token:{}, {}".format(payment_method_token[0].text,
+                                                                                "MasterCard successfully registered")
                 settings.logger.info(message)
-                resp = {'message': 'Card registered', 'status_code': response.status_code}
+                resp = {'message': 'Successful', 'status_code': response.status_code}
         except Exception as e:
-            message = str({'Problem processing response. Exception: {}'.format(e)})
+            message = str({'MasterCard Problem processing response. Exception: {}'.format(e)})
             resp = {'message': message, 'status_code': 422}
 
         return resp

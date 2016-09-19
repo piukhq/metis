@@ -1,6 +1,7 @@
-# Calls to Spreedly API.
+import json
 import requests
 from app.utils import resolve_agent
+from settings import HERMES_URL, SERVICE_API_KEY
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
@@ -75,6 +76,15 @@ def add_card(card_info):
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp)
 
+    # Set card_payment status in hermes using 'id' HERMES_URL
+    if resp["status_code"] == 200:
+        update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info[0]['id'])
+        token = 'Token {}'.format(SERVICE_API_KEY)
+        data = {"status": 1}
+        resp = requests.put(update_status_url,
+                            headers={'Authorization': token},
+                            data=json.dumps(data))
+
     return resp
 
 
@@ -86,6 +96,7 @@ def remove_card(card_info):
     request_data = agent_instance.remove_card_body(card_info)
 
     resp = post_request(url, header, request_data)
+    resp = agent_instance.response_handler(resp)
     return resp
 
 
