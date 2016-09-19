@@ -1,4 +1,3 @@
-import json
 import requests
 from app.utils import resolve_agent
 from settings import HERMES_URL, SERVICE_API_KEY
