@@ -60,3 +60,5 @@ if GRAYLOG_HOST:
 elif tmp_logger:
     handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
     logger.addHandler(handler_loc)
+
+SENTRY_DSN = env_var("METIS_SENTRY_DSN")
