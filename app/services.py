@@ -6,10 +6,10 @@ from settings import HERMES_URL, SERVICE_API_KEY
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
 # Testing
 # Username used for MasterCard and Visa testing only
-# username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
+username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
 # Production
 # This username is used for Amex testing, Visa and MasterCard use one above
-username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
+# username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
 
 
 def create_receiver(hostname, receiver_type):
