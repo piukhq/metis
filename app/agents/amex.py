@@ -14,17 +14,23 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
 
 testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
-host = "api.qa.americanexpress.com"
+host = "api.americanexpress.com"
 port = "443"
 testing_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
 testing_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
 production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
-production_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
-production_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
+production_create_url = 'https://api.americanexpress.com/v3/smartoffers/sync'
+production_remove_url = 'https://api.americanexpress.com/v3/smartoffers/unsync'
 
 # Amex OAuth details
-client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
-client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
+# Testing
+# client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
+# client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
+# Testing end
+
+# Production
+client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
+client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
 
 
 class Amex:
@@ -152,7 +158,7 @@ class Amex:
 
     def amex_oauth(self, auth_header):
         # Call the Amex OAuth endpoint to obtain an API request token.
-        base_url = "https://api.qa.americanexpress.com"
+        base_url = "https://api.americanexpress.com"
         auth_url = base_url + "/apiplatform/v2/oauth/token/mac"
         # payload = "grant_type=client_credentials&app_spec_info=Apigee&guid_type=privateguid&scope=ThanxSmartOffers_"
         payload = "grant_type=client_credentials&scope="
