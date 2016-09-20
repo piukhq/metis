@@ -126,6 +126,8 @@ class Visa:
             file_create_date=self.format_datetime(arrow.now()),
             file_control_number='00',
             file_format_version='2.0',
+            not_used1='',
+            not_used2='',
             filler1='',
             filler2='',
             file_type_indicator='I',
@@ -218,6 +220,8 @@ class Header(Field):
         ('file_control_number', 2, 'V'),
         ('file_format_version', 4, 'V'),
         ('test_file_indicator', 1, 'F'),
+        ('not_used1', 8, 'V'),
+        ('not_used2', 8, 'V'),
         ('filler1', 2, 'V'),
         ('filler2', 25, 'V'),
         ('file_type_indicator', 1, 'F'),
@@ -257,7 +261,7 @@ class Detail(Field):
         ('external_cardholder_id', 25, 'P'),
         ('effective_date', 8, 'D'),
         ('termination_date', 8, 'F'),
-        ('filler', 712, 'V'),
+        ('filler', 896, 'V'),
     ]
 
     def __init__(self, **kwargs):
