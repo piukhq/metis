@@ -1,3 +1,4 @@
+import arrow
 import settings
 import jinja2
 import os
@@ -41,10 +42,10 @@ class MasterCard:
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
         return header
 
-    def response_handler(self, response):
-
+    def response_handler(self, response, action):
+        date_now = arrow.now()
         if response.status_code != 200:
-            return {'message': 'MasterCard Unknown error', 'status_code': response.status_code}
+            return {'message': action + ' MasterCard unknown error', 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -59,21 +60,25 @@ class MasterCard:
 
             if mastercard_fault:
                 # Not a good response, log the MasterCard error message and code, respond with 422 status
-                message = "MasterCard Process unsuccessful - Token:{}, {}, {} {}".format(payment_method_token[0].text,
-                                                                                         mastercard_fault[0].text,
-                                                                                         "Code:",
-                                                                                         mastercard_fault_code[0].text)
+                message = "{} MasterCard {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
+                                                                                       action,
+                                                                                       payment_method_token[0].text,
+                                                                                       mastercard_fault[0].text,
+                                                                                       "Code:",
+                                                                                       mastercard_fault_code[0].text)
                 settings.logger.info(message)
-                resp = {'message': 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
+                resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                         'status_code': 422}
             else:
                 # could be a good response
-                message = "MasterCard Process successful - Token:{}, {}".format(payment_method_token[0].text,
-                                                                                "MasterCard successfully processed")
+                message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
+                                                                              action,
+                                                                              payment_method_token[0].text,
+                                                                              "MasterCard successfully processed")
                 settings.logger.info(message)
-                resp = {'message': 'Successful', 'status_code': response.status_code}
+                resp = {'message': message, 'status_code': response.status_code}
         except Exception as e:
-            message = str({'MasterCard Problem processing response. Exception: {}'.format(e)})
+            message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
 
         return resp

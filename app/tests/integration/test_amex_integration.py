@@ -18,7 +18,7 @@ class TestServices(unittest.TestCase):
 
     def test_amex_unsync(self):
         card_info = [{
-            'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+            'payment_token': 'ETeIPfklcpSFHPOMy5nN0pFtA01',
             'card_token': ' ',
             'partner_slug': 'amex'
         }]

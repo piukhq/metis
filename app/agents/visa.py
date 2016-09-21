@@ -5,16 +5,16 @@ import time
 from io import StringIO
 from lxml import etree
 
-testing_hostname = 'http://latestserver.com/post.php'
-testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
-testing_create_url = ''
-testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 production_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
 production_create_url = ''
 production_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 
+testing_hostname = 'http://latestserver.com/post.php'
+testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
+testing_create_url = ''
+testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 
-# ToDo work out the Visa file format and layout - code the add_card_request_body
+
 class Visa:
     header = {'Content-Type': 'application/json'}
 
@@ -43,9 +43,10 @@ class Visa:
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def response_handler(self, response):
+    def response_handler(self, response, action):
+        date_now = arrow.now()
         if response.status_code != 200:
-            return {'message': 'Unknown error', 'status_code': response.status_code}
+            return {'message': action + ' Visa unknown error', 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -55,17 +56,19 @@ class Visa:
 
             if visa_data["status"] == "Failure":
                 # Not a good news response.
-                message = " Visa Process unsuccessful - Token:{}".format(payment_method_token[0].text)
+                message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
                 settings.logger.info(message)
-                resp = {'message': 'Visa Fault recorded ', 'status_code': 422}
+                resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
             else:
                 # could be a good response
-                message = "Visa Process successful - Token:{}, {}".format(payment_method_token[0].text,
-                                                                          "Check Handback file")
+                message = "{} Visa {} successful - Token:{}, {}".format(date_now,
+                                                                        action,
+                                                                        payment_method_token[0].text,
+                                                                        "Check Handback file")
                 settings.logger.info(message)
-                resp = {'message': 'Successful', 'status_code': 200}
+                resp = {'message': action + ' Successful', 'status_code': 200}
         except Exception as e:
-            message = str({'Visa Problem processing response. Exception: {}'.format(e)})
+            message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
 
         return resp
