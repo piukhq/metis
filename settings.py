@@ -23,10 +23,6 @@ TESTING = env_var("METIS_TESTING", False)
 HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
 SERVICE_API_KEY = 'F616CE5C88744DD52DB628FAD8B3D'
 
-AMEX_RECEIVER = "spreedly_amex_token"
-VISA_RECEIVER = "spreedly_visa_token"
-MASTERCARD_RECEIVER = "spreedly_mastercard_token"
-
 # celery config
 BROKER_URL = env_var('CELERY_BROKER_URL', 'redis://localhost:6379')
 # if you need to read task results, uncomment and set this
@@ -49,6 +45,7 @@ CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
 
 # Logging settings
 # Use Graylog when setup, temporarily use local log files.
+logging.basicConfig(format='%(process)s %(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger('metis_logger')
 logger.setLevel(logging.DEBUG)
 tmp_logger = True

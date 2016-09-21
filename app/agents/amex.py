@@ -1,3 +1,4 @@
+import arrow
 import random
 import settings
 import json
@@ -13,23 +14,32 @@ from lxml import etree
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
 
-testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
-host = "api.qa.americanexpress.com"
+host = "api.americanexpress.com"
 port = "443"
+res_path_sync = '/v3/smartoffers/sync'
+res_path_unsync = "/v3/smartoffers/unsync"
+production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
+production_create_url = 'https://{}{}'.format(host, res_path_sync)
+production_remove_url = 'https://{}{}'.format(host, res_path_unsync)
+
+testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
 testing_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
 testing_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
-production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
-production_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
-production_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
 
 # Amex OAuth details
-client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
-client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
+# Testing
+# client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
+# client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
+# Testing end
+
+# Production
+client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
+client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
 
 
 class Amex:
     header = {'Content-Type': 'application/xml'}
-    partnerId = 'AADP0050'  # 'Amex to provide'
+    partnerId = 'AADP0050'
     distrChan = '9999'  # 'Amex to provide'
 
     def add_url(self):
@@ -53,7 +63,7 @@ class Amex:
             receiver_token = testing_receiver_token
         return receiver_token + '/deliver.xml'
 
-    def request_header(self, resPath):
+    def request_header(self, res_path):
         header_start = '<![CDATA['
         content_type = 'Content-Type: application/json'
         auth_header = mac_auth_header()
@@ -61,7 +71,7 @@ class Amex:
 
         access_token = oauth_resp['access_token']
         mac_key = oauth_resp['mac_key']
-        mac_header = mac_api_header(access_token, mac_key, resPath)
+        mac_header = mac_api_header(access_token, mac_key, res_path)
         authentication = 'Authorization: ' + "\"" + mac_header + "\""
 
         api_key = 'X-AMEX-API-KEY: {}'.format(client_id)
@@ -72,9 +82,10 @@ class Amex:
                                                    api_key, access_key, header_end)
         return header
 
-    def response_handler(self, response):
+    def response_handler(self, response, action):
+        date_now = arrow.now()
         if response.status_code != 200:
-            return {'message': 'Amex Unknown error', 'status_code': response.status_code}
+            return {'message': action + 'Amex unknown error', 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -84,20 +95,25 @@ class Amex:
 
             if amex_data["status"] == "Failure":
                 # Not a good news response.
-                message = "Amex Process unsuccessful - Token:{}, {}, {} {}".format(payment_method_token[0].text,
-                                                                                   amex_data["respDesc"],
-                                                                                   "Code:",
-                                                                                   amex_data["respCd"])
+                message = "{} Amex {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
+                                                                                 action,
+                                                                                 payment_method_token[0].text,
+                                                                                 amex_data["respDesc"],
+                                                                                 "Code:",
+                                                                                 amex_data["respCd"])
                 settings.logger.info(message)
-                resp = {'message': 'Amex Fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
+                resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
             else:
                 # could be a good response
-                message = "Amex Process successful - Token:{}, {}".format(payment_method_token[0].text,
-                                                                          "Amex successfully processed")
+                message = "{} Amex {} successful - Token:{}, {}".format(date_now,
+                                                                        action,
+                                                                        payment_method_token[0].text,
+                                                                        "Amex successfully processed")
                 settings.logger.info(message)
-                resp = {'message': 'Successful', 'status_code': 200}
+
+                resp = {'message': message, 'status_code': 200}
         except Exception as e:
-            message = str({'Amex Problem processing response. Exception: {}'.format(e)})
+            message = str({'Amex {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
 
         return resp
@@ -131,30 +147,28 @@ class Amex:
         return body_data
 
     def add_card_body(self, card_info):
-        res_path = "/v3/smartoffers/sync"
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.add_url() + '</url>' \
-                   '  <headers>' + self.request_header(res_path) + '</headers>' \
+                   '  <headers>' + self.request_header(res_path_sync) + '</headers>' \
                    '  <body>' + self.add_card_request_body(card_info) + '</body>' \
                    '</delivery>'
         return xml_data
 
     def remove_card_body(self, card_info):
-        res_path = "/v3/smartoffers/unsync"
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
-                   '  <headers>' + self.request_header(res_path) + '</headers>' \
+                   '  <headers>' + self.request_header(res_path_unsync) + '</headers>' \
                    '  <body>' + self.remove_card_request_body(card_info) + '</body>' \
                    '</delivery>'
         return xml_data
 
     def amex_oauth(self, auth_header):
         # Call the Amex OAuth endpoint to obtain an API request token.
-        base_url = "https://api.qa.americanexpress.com"
-        auth_url = base_url + "/apiplatform/v2/oauth/token/mac"
-        # payload = "grant_type=client_credentials&app_spec_info=Apigee&guid_type=privateguid&scope=ThanxSmartOffers_"
+        # base_url = "https://api.americanexpress.com"
+        # base_url + "/apiplatform/v2/oauth/token/mac"
+        auth_url = 'https://{}{}'.format(host, "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",

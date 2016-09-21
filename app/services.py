@@ -10,6 +10,7 @@ password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
 # Production
 # This username is used for Amex testing, Visa and MasterCard use one above
 username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
+receiver_base_url = 'https://core.spreedly.com/v1/receivers'
 
 
 def create_receiver(hostname, receiver_type):
@@ -46,7 +47,7 @@ def create_sftp_receiver(sftp_details):
     This is a single call to create a receiver for an SFTP process.
     """
     header = {'Content-Type': 'application/xml'}
-    url = 'https://core.spreedly.com/v1/receivers.xml'
+    url = '{}{}'.format(receiver_base_url, '.xml')  # 'https://core.spreedly.com/v1/receivers.xml'
     xml_data = '<receiver>' \
                '  <receiver_type>' + sftp_details["receiver_type"] + '</receiver_type>' \
                '  <hostnames>' + sftp_details["hostnames"] + '</hostnames>' \
@@ -69,11 +70,12 @@ def add_card(card_info):
     Receiver_tokens kept in settings.py."""
     agent_instance = get_agent(card_info[0]['partner_slug'])
     header = agent_instance.header
-    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+    url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
+    # url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
     request_data = agent_instance.add_card_body(card_info)
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp)
+    resp = agent_instance.response_handler(resp, 'Add')
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
@@ -91,11 +93,12 @@ def remove_card(card_info):
     agent_instance = get_agent(card_info[0]['partner_slug'])
 
     header = agent_instance.header
-    url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+    url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
+    # url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
     request_data = agent_instance.remove_card_body(card_info)
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp)
+    resp = agent_instance.response_handler(resp, 'Delete')
     return resp
 
 
