@@ -46,6 +46,8 @@ class Visa:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code != 200:
+            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' MasterCard unknown error')
+            raise Exception(message)
             return {'message': action + ' Visa unknown error', 'status_code': response.status_code}
 
         try:
@@ -59,6 +61,7 @@ class Visa:
                 message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
                 settings.logger.info(message)
                 resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
+                raise Exception(message)
             else:
                 # could be a good response
                 message = "{} Visa {} successful - Token:{}, {}".format(date_now,
@@ -70,6 +73,7 @@ class Visa:
         except Exception as e:
             message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
+            raise Exception(message)
 
         return resp
 

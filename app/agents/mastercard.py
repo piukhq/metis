@@ -9,9 +9,8 @@ testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
 testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
 # MTF URL
 # production_url = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
-production_url = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
-
-production_receiver_token = 'Dr77prY0vP4zXrkZcDlFkkGlZCN'
+production_url = 'https://ws.mastercard.com/MRS/CustomerService'
+production_receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'
 
 
 class MasterCard:
@@ -45,7 +44,9 @@ class MasterCard:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code != 200:
-            return {'message': action + ' MasterCard unknown error', 'status_code': response.status_code}
+            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' MasterCard unknown error')
+            raise Exception(message)
+            return {'message': message, 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -69,6 +70,7 @@ class MasterCard:
                 settings.logger.info(message)
                 resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                         'status_code': 422}
+                raise Exception(message)
             else:
                 # could be a good response
                 message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
@@ -80,6 +82,7 @@ class MasterCard:
         except Exception as e:
             message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
+            raise Exception(message)
 
         return resp
 

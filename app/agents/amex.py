@@ -85,7 +85,9 @@ class Amex:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code != 200:
-            return {'message': action + 'Amex unknown error', 'status_code': response.status_code}
+            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' Amex unknown error')
+            raise Exception(message)
+            return {'message': message, 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -103,6 +105,7 @@ class Amex:
                                                                                  amex_data["respCd"])
                 settings.logger.info(message)
                 resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
+                raise Exception(message)
             else:
                 # could be a good response
                 message = "{} Amex {} successful - Token:{}, {}".format(date_now,
@@ -112,9 +115,11 @@ class Amex:
                 settings.logger.info(message)
 
                 resp = {'message': message, 'status_code': 200}
+
         except Exception as e:
             message = str({'Amex {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
+            raise Exception(message)
 
         return resp
 
