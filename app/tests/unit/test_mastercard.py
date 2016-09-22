@@ -24,7 +24,7 @@ class TestMastercard(TestCase):
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.mc.receiver_token()
-        self.assertIn('Dr77prY0vP4zXrkZcDlFkkGlZCN', result)
+        self.assertIn('SiXfsuR5TQJ87wjH2O5Mo1I5WR', result)
 
     def test_request_header_testing(self):
         settings.TESTING = True
