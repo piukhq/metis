@@ -1,6 +1,7 @@
+import arrow
 import requests
 from app.utils import resolve_agent
-from settings import HERMES_URL, SERVICE_API_KEY
+from settings import HERMES_URL, SERVICE_API_KEY, logger
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
@@ -61,6 +62,7 @@ def create_sftp_receiver(sftp_details):
 
 
 def post_request(url, header, request_data):
+    logger.info('{} POST Spreedly Request to URL: {}'.format(arrow.now(), url))
     resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
     return resp
 
@@ -68,6 +70,8 @@ def post_request(url, header, request_data):
 def add_card(card_info):
     """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
     Receiver_tokens kept in settings.py."""
+    logger.info('{} Start Add Card for {}'.format(arrow.now(), card_info[0]['partner_slug']))
+
     agent_instance = get_agent(card_info[0]['partner_slug'])
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
@@ -90,6 +94,8 @@ def add_card(card_info):
 
 
 def remove_card(card_info):
+    logger.info('{} Start Remove Card for {}'.format(arrow.now(), card_info[0]['partner_slug']))
+
     agent_instance = get_agent(card_info[0]['partner_slug'])
 
     header = agent_instance.header
