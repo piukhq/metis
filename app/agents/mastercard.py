@@ -58,31 +58,31 @@ class MasterCard:
             mastercard_fault = xml_soap_doc.xpath("//faultstring")
             mastercard_fault_code = xml_soap_doc.xpath("//ns2:code",
                                                        namespaces={'ns2': 'http://common.ws.mcrewards.mastercard.com/'})
-
-            if mastercard_fault:
-                # Not a good response, log the MasterCard error message and code, respond with 422 status
-                message = "{} MasterCard {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
-                                                                                       action,
-                                                                                       payment_method_token[0].text,
-                                                                                       mastercard_fault[0].text,
-                                                                                       "Code:",
-                                                                                       mastercard_fault_code[0].text)
-                settings.logger.info(message)
-                resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
-                        'status_code': 422}
-                raise Exception(message)
-            else:
-                # could be a good response
-                message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
-                                                                              action,
-                                                                              payment_method_token[0].text,
-                                                                              "MasterCard successfully processed")
-                settings.logger.info(message)
-                resp = {'message': message, 'status_code': response.status_code}
         except Exception as e:
             message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
             raise Exception(message)
+
+        if mastercard_fault:
+            # Not a good response, log the MasterCard error message and code, respond with 422 status
+            message = "{} MasterCard {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
+                                                                                   action,
+                                                                                   payment_method_token[0].text,
+                                                                                   mastercard_fault[0].text,
+                                                                                   "Code:",
+                                                                                   mastercard_fault_code[0].text)
+            settings.logger.info(message)
+            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
+                    'status_code': 422}
+            raise Exception(message)
+        else:
+            # could be a good response
+            message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
+                                                                          action,
+                                                                          payment_method_token[0].text,
+                                                                          "MasterCard successfully processed")
+            settings.logger.info(message)
+            resp = {'message': message, 'status_code': response.status_code}
 
         return resp
 

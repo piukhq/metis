@@ -55,25 +55,25 @@ class Visa:
             payment_method_token = xml_doc.xpath("//payment_method/token")
             string_elem = xml_doc.xpath("//body")[0].text
             visa_data = json.loads(string_elem)
-
-            if visa_data["status"] == "Failure":
-                # Not a good news response.
-                message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
-                settings.logger.info(message)
-                resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
-                raise Exception(message)
-            else:
-                # could be a good response
-                message = "{} Visa {} successful - Token:{}, {}".format(date_now,
-                                                                        action,
-                                                                        payment_method_token[0].text,
-                                                                        "Check Handback file")
-                settings.logger.info(message)
-                resp = {'message': action + ' Successful', 'status_code': 200}
         except Exception as e:
             message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
             raise Exception(message)
+
+        if visa_data["status"] == "Failure":
+            # Not a good news response.
+            message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
+            settings.logger.info(message)
+            resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
+            raise Exception(message)
+        else:
+            # could be a good response
+            message = "{} Visa {} successful - Token:{}, {}".format(date_now,
+                                                                    action,
+                                                                    payment_method_token[0].text,
+                                                                    "Check Handback file")
+            settings.logger.info(message)
+            resp = {'message': action + ' Successful', 'status_code': 200}
 
         return resp
 
