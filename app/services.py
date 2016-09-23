@@ -77,7 +77,7 @@ def add_card(card_info):
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
 
     request_data = agent_instance.add_card_body(card_info)
-    logger.info('{} POST URL {}, header: {}'.format(arrow.now(), url, header))
+    logger.info('{} POST URL {}, header: {} *-*'.format(arrow.now(), url, header, request_data))
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Add')
