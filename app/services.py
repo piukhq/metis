@@ -64,6 +64,7 @@ def create_sftp_receiver(sftp_details):
 def post_request(url, header, request_data):
     logger.info('{} POST Spreedly Request to URL: {}'.format(arrow.now(), url))
     resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
+    logger.info('{} After POST Spreedly response: {}'.format(arrow.now(), url, resp.text))
     return resp
 
 
@@ -77,7 +78,7 @@ def add_card(card_info):
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
 
     request_data = agent_instance.add_card_body(card_info)
-    logger.info('{} POST URL {}, header: {} *-*'.format(arrow.now(), url, header, request_data))
+    logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, header, request_data))
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Add')
