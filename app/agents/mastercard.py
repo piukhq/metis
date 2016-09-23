@@ -44,7 +44,9 @@ class MasterCard:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code != 200:
-            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' MasterCard unknown error')
+            message = 'Problem connecting to PSP. Action: {} {} Status_code: {}'.format(action,
+                                                                                        ' MasterCard unknown error',
+                                                                                        response.status_code)
             raise Exception(message)
             return {'message': message, 'status_code': response.status_code}
 
