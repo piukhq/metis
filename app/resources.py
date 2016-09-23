@@ -1,3 +1,4 @@
+import arrow
 import json
 from app.services import create_prod_receiver
 from flask_restful import Resource, Api
@@ -5,6 +6,7 @@ from flask import request, make_response
 from app.agents.agent_manager import AgentManager
 from app.auth import authorized
 from app.tasks import add_card, remove_card
+from settings import logger
 # from app.celery_client import add_together
 
 api = Api()
@@ -33,6 +35,7 @@ class PaymentCard(Resource):
     @authorized
     def post(self):
         req_data = json.loads(request.data.decode())
+        logger.info('{} Received Add payment card request: {}'.format(arrow.now(), req_data))
 
         try:
             # payment_token = Spreedly payment method token
@@ -45,7 +48,7 @@ class PaymentCard(Resource):
                 'partner_slug': req_data['partner_slug']
             }]
         except KeyError:
-            return make_response('Payment token or partner slug not provided', 400)
+            return make_response('Request parameters not complete', 400)
 
         add_card.delay(card_info)
 
@@ -64,7 +67,7 @@ class PaymentCard(Resource):
                 'partner_slug': req_data['partner_slug']
             }]
         except KeyError:
-            return make_response('Payment token or partner slug not provided', 400)
+            return make_response('Request parameters not complete', 400)
 
         remove_card.delay(card_info)
 

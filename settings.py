@@ -13,7 +13,7 @@ SPREEDLY_SIGNING_SECRET = env_var('SPREEDLY_SIGNING_SECRET',
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-DEBUG = env_var("ZEUS_DEBUG", False)
+DEBUG = env_var("METIS_DEBUG", False)
 
 DEV_HOST = env_var("DEV_HOST", "0.0.0.0")
 DEV_PORT = env_var("DEV_PORT", "5050")

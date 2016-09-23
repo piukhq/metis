@@ -75,14 +75,17 @@ def add_card(card_info):
     agent_instance = get_agent(card_info[0]['partner_slug'])
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
-    # url = 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+
     request_data = agent_instance.add_card_body(card_info)
+    logger.info('{} POST URL {}, header: {}'.format(arrow.now(), url, header))
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Add')
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
+        logger.info('{} Metis calling Hermes set Status.'.format(arrow.now()))
+
         update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info[0]['id'])
         token = 'Token {}'.format(SERVICE_API_KEY)
         data = {"status": 1}
