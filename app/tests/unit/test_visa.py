@@ -24,12 +24,12 @@ class TestVisa(TestCase):
     def test_receiver_token_testing(self):
         settings.TESTING = True
         result = self.visa.receiver_token()
-        self.assertIn('aDwu4ykovZVe7Gpto3rHkYWI5wI', result)
+        self.assertIn('256eVeJ1hYZF35RdrA8WDcJ1h0F', result)
 
     def test_receiver_token_production(self):
         settings.TESTING = False
         result = self.visa.receiver_token()
-        self.assertIn('256eVeJ1hYZF35RdrA8WDcJ1h0F', result)
+        self.assertIn('JKzJSKICIOZodDBMCyuRmttkRjO', result)
 
     def test_request_header_both(self):
         result = self.visa.request_header()
