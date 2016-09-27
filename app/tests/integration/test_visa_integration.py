@@ -8,10 +8,10 @@ class TestServices(unittest.TestCase):
     def test_visa_add_card(self):
         card_info = [{
             'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
-            'card_token': '111111111111111111111111',
+            'card_token': '1111111111111111111111112',
             'partner_slug': 'visa'
         }]
-        settings.TESTING = False
+        settings.TESTING = True
 
         resp = add_card(card_info)
         self.assertTrue(resp.status_code == 200)
@@ -19,7 +19,7 @@ class TestServices(unittest.TestCase):
     def test_visa_remove_card(self):
         card_info = [{
             'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
-            'card_token': '111111111111111111111111',
+            'card_token': '1111111111111111111111112',
             'partner_slug': 'visa'
         }]
         settings.TESTING = False

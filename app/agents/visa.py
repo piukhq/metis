@@ -5,12 +5,12 @@ import time
 from io import StringIO
 from lxml import etree
 
-production_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
+production_receiver_token = 'JKzJSKICIOZodDBMCyuRmttkRjO'
 production_create_url = ''
 production_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 
 testing_hostname = 'http://latestserver.com/post.php'
-testing_receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
+testing_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
 testing_create_url = ''
 testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
 
@@ -46,7 +46,7 @@ class Visa:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code != 200:
-            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' MasterCard unknown error')
+            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' Visa unknown error')
             raise Exception(message)
             return {'message': action + ' Visa unknown error', 'status_code': response.status_code}
 

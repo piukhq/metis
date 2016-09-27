@@ -64,7 +64,6 @@ def create_sftp_receiver(sftp_details):
 def post_request(url, header, request_data):
     logger.info('{} POST Spreedly Request to URL: {}'.format(arrow.now(), url))
     resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
-    logger.info('{} After POST Spreedly response: {}'.format(arrow.now(), url, resp.text))
     return resp
 
 
