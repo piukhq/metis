@@ -5,14 +5,14 @@ import time
 from io import StringIO
 from lxml import etree
 
-production_receiver_token = 'JKzJSKICIOZodDBMCyuRmttkRjO'
+production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
-production_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
+production_remove_url = ''
 
 testing_hostname = 'http://latestserver.com/post.php'
 testing_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
 testing_create_url = ''
-testing_remove_url = 'https://test.api.loyaltyangels.com/file_unenroll'
+testing_remove_url = ''
 
 
 class Visa:
@@ -82,7 +82,7 @@ class Visa:
 
         body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
         # body_data = self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)
-        file_url = "sftp://sftp.bink.com/file_test_{}{}".format(str(int(time.time())), '.gpg')
+        file_url = "sftp://sftp.bink.com/LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
         data = {
             "export": {
                 "payment_method_tokens": [card_info[0]['payment_token']],
@@ -129,7 +129,7 @@ class Visa:
         header = Header(
             source_id='LOYANG',
             destination_id='VISA',
-            file_description='Some text here',
+            file_description='Bink user card registration information',
             file_create_date=self.format_datetime(arrow.now()),
             file_control_number='00',
             file_format_version='2.0',
@@ -240,13 +240,10 @@ class Header(Field):
         super().__init__(**kwargs)
         self.record_type = '00'
         self.record_sub_type = '00'
-        self.test_file_indicator = 'T'
-        """
         if not settings.TESTING:
             self.test_file_indicator = 'P'
         else:
             self.test_file_indicator = 'T'
-        """
 
 
 class Detail(Field):
