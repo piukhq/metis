@@ -37,7 +37,8 @@ class TestServices(unittest.TestCase):
 
         self.assertTrue(resp.status_code == 200)
 
-    def test_visa_remove_card(self):
+    @patch('app.sentry')
+    def test_visa_remove_card(self, mock_sentry):
         card_info = [{
             'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
             'card_token': '1111111111111111111111112',
