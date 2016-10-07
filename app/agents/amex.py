@@ -100,7 +100,7 @@ class Amex:
         except Exception as e:
             message = str({'Amex {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
 
         if amex_data["status"] == "Failure":
             # Not a good news response.
@@ -112,7 +112,7 @@ class Amex:
                                                                              amex_data["respCd"])
             settings.logger.info(message)
             resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
         else:
             # could be a good response
             message = "{} Amex {} successful - Token:{}, {}".format(date_now,
