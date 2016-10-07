@@ -3,6 +3,7 @@ import settings
 import jinja2
 import os
 from lxml import etree
+from app import sentry
 
 testing_url = 'http://latestserver.com/post.php'
 testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
@@ -43,11 +44,11 @@ class MasterCard:
 
     def response_handler(self, response, action):
         date_now = arrow.now()
-        if response.status_code != 200:
-            message = 'Problem connecting to PSP. Action: {} {} Status_code: {}'.format(action,
-                                                                                        ' MasterCard unknown error',
-                                                                                        response.status_code)
-            raise Exception(message)
+        if response.status_code >= 300:
+            resp_content = response.json()
+            psp_message = resp_content['errors'][0]['message']
+            message = 'Problem connecting to PSP. Action: MasterCard {}. Error:{}'.format(action, psp_message)
+            sentry.captureMessage(message)
             return {'message': message, 'status_code': response.status_code}
 
         try:
@@ -63,7 +64,7 @@ class MasterCard:
         except Exception as e:
             message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
 
         if mastercard_fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
@@ -76,7 +77,7 @@ class MasterCard:
             settings.logger.info(message)
             resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                     'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
         else:
             # could be a good response
             message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
