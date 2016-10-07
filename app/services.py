@@ -76,6 +76,7 @@ def add_card(card_info):
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
 
+    logger.info('{} Create request data {}'.format(arrow.now(), card_info[0]))
     request_data = agent_instance.add_card_body(card_info)
     logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, header, request_data))
 
