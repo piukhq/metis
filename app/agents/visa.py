@@ -4,7 +4,7 @@ import json
 import time
 from io import StringIO
 from lxml import etree
-from app import sentry
+from app.celery import sentry
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
