@@ -14,11 +14,11 @@ class TestServices(unittest.TestCase):
             'partner_slug': 'visa'
         }]
 
-        settings.TESTING = True
+        settings.TESTING = False
 
         resp = add_card(card_info)
 
-        self.assertTrue(resp.status_code == 200)
+        self.assertTrue(resp['status_code'] == 202)
 
     @patch('app.agents.visa.sentry')
     def test_visa_add_card_wrong_token(self, mock_sentry):

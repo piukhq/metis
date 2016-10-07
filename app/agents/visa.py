@@ -54,29 +54,28 @@ class Visa:
             return {'message': message, 'status_code': response.status_code}
 
         try:
-            xml_doc = etree.fromstring(response.text)
-            payment_method_token = xml_doc.xpath("//payment_method/token")
-            string_elem = xml_doc.xpath("//body")[0].text
-            visa_data = json.loads(string_elem)
+            psp_json = response.json()
+            visa_data = psp_json['transaction']
         except Exception as e:
             message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
             sentry.captureMessage(message)
 
-        if visa_data["status"] == "Failure":
-            # Not a good news response.
-            message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
-            settings.logger.info(message)
-            resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
-            sentry.captureMessage(message)
-        else:
+        if visa_data["state"] == "pending":
             # could be a good response
             message = "{} Visa {} successful - Token:{}, {}".format(date_now,
                                                                     action,
-                                                                    payment_method_token[0].text,
+                                                                    visa_data['token'],
                                                                     "Check Handback file")
             settings.logger.info(message)
-            resp = {'message': action + ' Successful', 'status_code': 200}
+            resp = {'message': action + ' Successful', 'status_code': 202}
+
+        else:
+            # Not a good news response.
+            message = "{} Visa {} unsuccessful - Transaction Token:{}".format(date_now, action, visa_data['token'])
+            settings.logger.info(message)
+            resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
+            sentry.captureMessage(message)
 
         return resp
 
