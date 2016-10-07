@@ -64,7 +64,7 @@ class MasterCard:
         except Exception as e:
             message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
 
         if mastercard_fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
@@ -77,7 +77,7 @@ class MasterCard:
             settings.logger.info(message)
             resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                     'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
         else:
             # could be a good response
             message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
