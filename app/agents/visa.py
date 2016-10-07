@@ -3,7 +3,6 @@ import settings
 import json
 import time
 from io import StringIO
-from lxml import etree
 from app.celery import sentry
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
