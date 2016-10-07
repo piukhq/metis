@@ -9,7 +9,7 @@ import base64
 import requests
 from urllib import parse
 from lxml import etree
-from app import sentry
+from app.celery import sentry
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''

@@ -3,7 +3,7 @@ import settings
 import jinja2
 import os
 from lxml import etree
-from app import sentry
+from app.celery import sentry
 
 testing_url = 'http://latestserver.com/post.php'
 testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
