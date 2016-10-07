@@ -9,6 +9,7 @@ import base64
 import requests
 from urllib import parse
 from lxml import etree
+from app import sentry
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -84,9 +85,11 @@ class Amex:
 
     def response_handler(self, response, action):
         date_now = arrow.now()
-        if response.status_code != 200:
-            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' Amex unknown error')
-            raise Exception(message)
+        if response.status_code >= 300:
+            resp_content = response.json()
+            psp_message = resp_content['errors'][0]['message']
+            message = 'Problem connecting to PSP. Action: Amex {}. Error:{}'.format(action, psp_message)
+            sentry.captureMessage(message)
             return {'message': message, 'status_code': response.status_code}
 
         try:

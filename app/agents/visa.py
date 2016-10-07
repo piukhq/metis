@@ -4,6 +4,7 @@ import json
 import time
 from io import StringIO
 from lxml import etree
+from app import sentry
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
@@ -45,10 +46,12 @@ class Visa:
 
     def response_handler(self, response, action):
         date_now = arrow.now()
-        if response.status_code != 200:
-            message = 'Problem connecting to PSP. Action: {} {}'.format(action, ' Visa unknown error')
-            raise Exception(message)
-            return {'message': action + ' Visa unknown error', 'status_code': response.status_code}
+        if response.status_code >= 300:
+            resp_content = response.json()
+            psp_message = resp_content['errors'][0]['message']
+            message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
+            sentry.captureMessage(message)
+            return {'message': message, 'status_code': response.status_code}
 
         try:
             xml_doc = etree.fromstring(response.text)
@@ -58,14 +61,14 @@ class Visa:
         except Exception as e:
             message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
             resp = {'message': message, 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
 
         if visa_data["status"] == "Failure":
             # Not a good news response.
             message = "{} Visa {} unsuccessful - Token:{}".format(date_now, action, payment_method_token[0].text)
             settings.logger.info(message)
             resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
-            raise Exception(message)
+            sentry.captureMessage(message)
         else:
             # could be a good response
             message = "{} Visa {} successful - Token:{}, {}".format(date_now,
