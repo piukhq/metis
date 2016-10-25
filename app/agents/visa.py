@@ -2,7 +2,6 @@ import arrow
 import settings
 import json
 import time
-import os
 import psycopg2
 from io import StringIO
 from app.celery import sentry

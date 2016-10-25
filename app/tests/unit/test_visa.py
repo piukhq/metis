@@ -1,6 +1,6 @@
 import settings
 import app.agents.visa as agent
-from unittest import TestCase, mock
+from unittest import TestCase
 
 
 class Testing:
@@ -24,7 +24,7 @@ class TestVisa(TestCase):
     def test_receiver_token_testing(self):
         settings.TESTING = True
         result = self.visa.receiver_token()
-        self.assertIn('256eVeJ1hYZF35RdrA8WDcJ1h0F', result)
+        self.assertIn('JKzJSKICIOZodDBMCyuRmttkRjO', result)
 
     def test_receiver_token_production(self):
         settings.TESTING = False
@@ -57,4 +57,3 @@ class TestVisa(TestCase):
         result = self.visa.create_file_data(cards)
         self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)
-
