@@ -1,6 +1,6 @@
 import settings
 import app.agents.visa as agent
-from unittest import TestCase
+from unittest import TestCase, mock
 
 
 class Testing:
@@ -57,3 +57,4 @@ class TestVisa(TestCase):
         result = self.visa.create_file_data(cards)
         self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)
+

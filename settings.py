@@ -59,3 +59,9 @@ elif tmp_logger:
     logger.addHandler(handler_loc)
 
 SENTRY_DSN = env_var("METIS_SENTRY_DSN")
+
+PONTUS_DATABASE = env_var('PONTUS_DATABASE', 'pontus')
+PONTUS_USER = env_var('PONTUS_USER', 'laadmin')
+PONTUS_PASSWORD = env_var('PONTUS_PASSWORD', '!^LoyaltyDev2015')
+PONTUS_HOST = env_var('PONTUS_HOST', '192.168.1.53')
+PONTUS_PORT = env_var('PONTUS_PORT', '5432')
