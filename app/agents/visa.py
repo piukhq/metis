@@ -82,8 +82,8 @@ class Visa:
     def request_body(self, card_info, action_code):
         recipient_id = 'nawes@visa.com'
 
-        # body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
-        body_data = self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)
+        body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
+        # body_data = self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)
         file_url = "sftp://sftp.bink.com/LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
         data = {
             "export": {
