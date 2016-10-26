@@ -2,6 +2,7 @@ import arrow
 import settings
 import json
 import time
+import psycopg2
 from io import StringIO
 from app.celery import sentry
 
@@ -10,7 +11,7 @@ production_create_url = ''
 production_remove_url = ''
 
 testing_hostname = 'http://latestserver.com/post.php'
-testing_receiver_token = '256eVeJ1hYZF35RdrA8WDcJ1h0F'
+testing_receiver_token = 'JKzJSKICIOZodDBMCyuRmttkRjO'
 testing_create_url = ''
 testing_remove_url = ''
 
@@ -86,13 +87,11 @@ class Visa:
         file_url = "sftp://sftp.bink.com/LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
         data = {
             "export": {
-                "payment_method_tokens": [card_info[0]['payment_token']],
-                "payment_method_data": {
-                    card_info[0]['payment_token']: {
-                        "external_cardholder_id": card_info[0]['card_token'],
-                        "action_code": action_code
-                    }
-                },
+                "payment_method_tokens": [x['payment_token'] for x in card_info],
+                "payment_method_data": {x['payment_token']: {
+                    "external_cardholder_id": x['card_token'],
+                    "action_code": action_code
+                } for x in card_info},
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",
                 "url": file_url,
                 "body": "**body**"  # body_data
@@ -126,13 +125,15 @@ class Visa:
         return payment_data
 
     def create_file_data(self, card_info):
+        sequence_number = self.get_next_seq_number()
+
         detail_record_count = len(card_info)
         header = Header(
             source_id='LOYANG',
             destination_id='VISA',
             file_description='Bink user card registration information',
             file_create_date=self.format_datetime(arrow.now()),
-            file_control_number='00',
+            file_control_number=str(sequence_number).rjust(2, '0'),
             file_format_version='2.0',
             not_used1='',
             not_used2='',
@@ -154,21 +155,20 @@ class Visa:
 
         # Need to add a start and end markers for Spreedly.
         file.add_detail_start()
-        for card in card_info:
-            file.add_detail(
-                Detail(
-                    promotion_type='VD',
-                    promotion_code='3GB16LOYANPVLOYANGSAUG16A',
-                    action_code='{{action_code}}',
-                    endpoint_code='LOYANG',
-                    promotion_group_id='LOYANG',
-                    cardholder_account_number='{{credit_card_number}}',
-                    external_cardholder_id='{{external_cardholder_id}}',
-                    effective_date=self.format_datetime(arrow.now()),
-                    termination_date='',
-                    filler=''
-                ),
-            )
+        file.add_detail(
+            Detail(
+                promotion_type='VD',
+                promotion_code='3GB16LOYANPVLOYANGSAUG16A',
+                action_code='{{action_code}}',
+                endpoint_code='LOYANG',
+                promotion_group_id='LOYANG',
+                cardholder_account_number='{{credit_card_number}}',
+                external_cardholder_id='{{external_cardholder_id}}',
+                effective_date=self.format_datetime(arrow.now()),
+                termination_date='',
+                filler=''
+            ),
+        )
         file.add_detail_end()
 
         output_file = StringIO(file.freeze())
@@ -207,6 +207,34 @@ MFqkPdKpeZh2bO269TO8fMy82gx6ltzMtms2NrRL3NOWj6suLke7s8K8++JC
 =Zp6G
 -----END PGP PUBLIC KEY BLOCK-----""".replace('\n', r'\n')
         return pem
+
+    def get_next_seq_number(self):
+        # Visa have a sequence number limit of 99 per day.
+        # Re-zero when the day changes
+        with psycopg2.connect(database=settings.PONTUS_DATABASE,
+                              user=settings.PONTUS_USER,
+                              password=settings.PONTUS_PASSWORD,
+                              host=settings.PONTUS_HOST,
+                              port=settings.PONTUS_PORT) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT next_seq_number, sequence_date "
+                            "FROM sequence_numbers "
+                            "WHERE scheme_provider='visa' "
+                            "AND type='ENROL';")
+
+                seq_number, seq_date = cur.fetchone()
+
+                if arrow.get(seq_date).date() != arrow.now().date():
+                    seq_number = 0
+                elif seq_number > 99:
+                    raise ValueError('Visa file sequence number greater than 99. Cards not sent')
+
+                cur.execute("UPDATE sequence_numbers "
+                            "SET next_seq_number = %s, sequence_date=current_date "
+                            "WHERE scheme_provider='visa' "
+                            "AND type='ENROL';", (seq_number + 1,))
+
+        return seq_number
 
 
 class Field(object):

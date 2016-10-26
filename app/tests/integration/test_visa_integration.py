@@ -14,7 +14,27 @@ class TestServices(unittest.TestCase):
             'partner_slug': 'visa'
         }]
 
-        settings.TESTING = False
+        settings.TESTING = True
+
+        resp = add_card(card_info)
+
+        self.assertTrue(resp['status_code'] == 202)
+
+    @patch('app.agents.visa.sentry')
+    def test_visa_add_multi_cards(self, mock_sentry):
+        card_info = [{
+            'payment_token': 'ZWFirX98PzNjZFoJTuLZ9KK5qrt',
+            'card_token': '1111111111111111111111112',
+            'partner_slug': 'visa'
+        },
+            {
+                'payment_token': 'I78VlnwUL0gBgp8aBNA9Q3gKpja',
+                'card_token': '1111111111111111111111113',
+                'partner_slug': 'visa'
+            }
+        ]
+
+        settings.TESTING = True
 
         resp = add_card(card_info)
 
@@ -47,3 +67,13 @@ class TestServices(unittest.TestCase):
 
         resp = remove_card(card_info)
         self.assertTrue(resp.status_code == 200)
+
+    @patch('app.agents.visa.sentry')
+    def _test_visa_add_real_cards(self, mock_sentry):
+        card_info = [{"payment_token": "LyWyubSnJzQZtAxLvN8RYOYnSKv", "partner_slug": "visa",
+                      "card_token": "1111111111111111111111112"}]
+        settings.TESTING = False
+
+        resp = add_card(card_info)
+
+        self.assertTrue(resp['status_code'] == 202)
