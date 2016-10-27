@@ -1,6 +1,11 @@
+import httpretty
+import json
 import settings
 import app.agents.visa as agent
+import logging
 from unittest import TestCase
+from app.tests.unit.fixture import card_info
+from testfixtures import log_capture
 
 
 class Testing:
@@ -8,18 +13,27 @@ class Testing:
 
 
 class TestVisa(TestCase):
+
+    def spreedly_route(self):
+        url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
+        httpretty.register_uri(httpretty.POST, url,
+                               status=200,
+                               body=json.dumps({"transaction": {
+                                   "token": "123456789",
+                                   "transaction_type": "ExportPaymentMethods",
+                                   "state": "succeeded"}}),
+                               content_type='application/json')
+
     def setUp(self):
         self.visa = agent.Visa()
+        self.logger = logging.getLogger()
+        self.orig_handlers = self.logger.handlers
+        self.logger.handlers = []
+        self.level = self.logger.level
 
-    def _test_url_testing(self):
-        settings.TESTING = True
-        result = self.visa.url()
-        self.assertIn('test.api.loyaltyangels.com', result)
-
-    def _test_url_production(self):
-        settings.TESTING = False
-        result = self.visa.url()
-        self.assertIn('', result)
+    def tearDown(self):
+        self.logger.handlers = self.orig_handlers
+        self.logger.level = self.level
 
     def test_receiver_token_testing(self):
         settings.TESTING = True
@@ -35,25 +49,24 @@ class TestVisa(TestCase):
         result = self.visa.request_header()
         self.assertIn('json', result)
 
-    def test_payment_method_data(self):
-        card_info = [{
-            'id': 1,
-            'payment_token': '1111111111111111111111',
-            'card_token': '111111111111112',
-            'partner_slug': 'test_slug'
-        }]
-        action_code = 'A'
-        result = self.visa.payment_method_data(card_info, action_code)
-        self.assertIs(type(result), list)
-        self.assertTrue('111111111111112' == result[0]['1111111111111111111111']['external_cardholder_id'])
-
-    def _test_request_body_correct_text(self):
-        result = self.visa.request_body('123456789')
-        self.assertIn('{{credit_card_number}}', result)
-        self.assertIn('cmAlias1', result)
-
     def test_create_file_data(self):
         cards = [1234, 5678, 9876]
         result = self.visa.create_file_data(cards)
         self.assertIn('{{external_cardholder_id}}', result)
+        self.assertIn('{{credit_card_number}}', result)
+
+    @httpretty.activate
+    @log_capture(level=logging.INFO)
+    def test_create_cards(self, l):
+        settings.TESTING = True
+        self.spreedly_route()
+        self.visa.create_cards(card_info)
+        message = 'Visa batch successful'
+        self.assertTrue(any(message in r.msg for r in l.records))
+
+    def test_request_body_json(self):
+        settings.TESTING = True
+        result = self.visa.request_body(card_info)
+        self.assertIn('111111111111112', result)
+        self.assertIn('{{#gpg}}', result)
         self.assertIn('{{credit_card_number}}', result)
