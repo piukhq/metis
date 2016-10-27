@@ -5,9 +5,8 @@ from flask_restful import Resource, Api
 from flask import request, make_response
 from app.agents.agent_manager import AgentManager
 from app.auth import authorized
-from app.tasks import add_card, remove_card
+from app.card_router import process_card, ActionCode
 from settings import logger
-# from app.celery_client import add_together
 
 api = Api()
 
@@ -32,46 +31,36 @@ api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 
 class PaymentCard(Resource):
 
-    @authorized
-    def post(self):
+    def action(self, action_code):
         req_data = json.loads(request.data.decode())
-        logger.info('{} Received Add payment card request: {}'.format(arrow.now(), req_data))
+
+        action_name = {ActionCode.ADD: 'add', ActionCode.DELETE: 'delete'}[action_code]
+        logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
 
         try:
             # payment_token = Spreedly payment method token
             # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
             # id = the hermes database card id. Used for setting status back in Hermes.
-            card_info = [{
+            card_info = {
                 'id': req_data['id'],
                 'payment_token': req_data['payment_token'],
                 'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug']
-            }]
+                'partner_slug': req_data['partner_slug'],
+            }
         except KeyError:
             return make_response('Request parameters not complete', 400)
 
-        add_card.delay(card_info)
+        process_card(action_code, card_info)
 
         return make_response('Success', 200)
 
     @authorized
+    def post(self):
+        return self.action(ActionCode.ADD)
+
+    @authorized
     def delete(self):
-        req_data = json.loads(request.data.decode())
-
-        try:
-            # payment_token = Spreedly payment method token
-            # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
-            card_info = [{
-                'payment_token': req_data['payment_token'],
-                'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug']
-            }]
-        except KeyError:
-            return make_response('Request parameters not complete', 400)
-
-        remove_card.delay(card_info)
-
-        return make_response('Success', 200)
+        return self.action(ActionCode.DELETE)
 
 
 api.add_resource(PaymentCard, '/payment_service/payment_card')

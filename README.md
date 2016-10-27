@@ -1,4 +1,6 @@
-# Celery
+# Metis
+
+## Celery
 
 Running add_card and remove_card requires the celery worker to be running.
 
@@ -18,6 +20,17 @@ $ /var/.virtualenvs/metis/bin/celery worker -A app.tasks --pidfile=/tmp/celery_m
 
 For production environments, something more robust like systemd or supervisord is recommended.
 
+## RabbitMQ
+
+You can easily run RabbitMQ using the rabbitmq:management image as follows:
+
+```bash
+$ docker run -d --hostname rabbitmq --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:management
+```
+
+Navigate to `host-address:15672` in your browser to see the management dashboard. Default login is `guest / guest`.
+
+## Mastercard do-echo test
 Do Echo test
 Set the URL for doEcho testing
 MTF: https://ws.mastercard.com/mtf/MRS/DiagnosticService
