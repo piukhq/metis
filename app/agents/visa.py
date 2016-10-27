@@ -5,6 +5,7 @@ import time
 import psycopg2
 from io import StringIO
 from app.celery import sentry
+from app.agents.agent_base import AgentBase
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
@@ -16,22 +17,8 @@ testing_create_url = ''
 testing_remove_url = ''
 
 
-class Visa:
+class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
-
-    def add_url(self):
-        if not settings.TESTING:
-            service_url = production_create_url
-        else:
-            service_url = testing_create_url
-        return service_url
-
-    def remove_url(self):
-        if not settings.TESTING:
-            service_url = production_remove_url
-        else:
-            service_url = testing_remove_url
-        return service_url
 
     def receiver_token(self):
         if not settings.TESTING:
@@ -44,42 +31,37 @@ class Visa:
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def response_handler(self, response, action):
+    def response_handler(self, response):
         date_now = arrow.now()
         if response.status_code >= 300:
             resp_content = response.json()
             psp_message = resp_content['errors'][0]['message']
-            message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
+            message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format('batch', psp_message)
             sentry.captureMessage(message)
-            return {'message': message, 'status_code': response.status_code}
+            return
 
         try:
             psp_json = response.json()
             visa_data = psp_json['transaction']
         except Exception as e:
-            message = str({'Visa {} Problem processing response. Exception: {}'.format(action, e)})
-            resp = {'message': message, 'status_code': 422}
+            message = str({'Visa {} Problem processing response. Exception: {}'.format('batch', e)})
             sentry.captureMessage(message)
+            return
 
-        if visa_data["state"] == "pending":
+        if visa_data["state"] in ["pending", "succeeded"]:
             # could be a good response
             message = "{} Visa {} successful - Token:{}, {}".format(date_now,
-                                                                    action,
+                                                                    'batch',
                                                                     visa_data['token'],
                                                                     "Check Handback file")
-            settings.logger.info(message)
-            resp = {'message': action + ' Successful', 'status_code': 202}
-
         else:
             # Not a good news response.
-            message = "{} Visa {} unsuccessful - Transaction Token:{}".format(date_now, action, visa_data['token'])
-            settings.logger.info(message)
-            resp = {'message': 'Visa Fault recorded for ' + action, 'status_code': 422}
+            message = "{} Visa {} unsuccessful - Transaction Token:{}".format(date_now, 'batch', visa_data['token'])
             sentry.captureMessage(message)
 
-        return resp
+        settings.logger.info(message)
 
-    def request_body(self, card_info, action_code):
+    def request_body(self, card_info):
         recipient_id = 'nawes@visa.com'
 
         body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
@@ -89,7 +71,7 @@ class Visa:
                 "payment_method_tokens": [x['payment_token'] for x in card_info],
                 "payment_method_data": {x['payment_token']: {
                     "external_cardholder_id": x['card_token'],
-                    "action_code": action_code
+                    "action_code": x['action_code']
                 } for x in card_info},
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",
                 "url": file_url,
@@ -101,27 +83,21 @@ class Visa:
         json_data = json_data.replace("**body**", body_data)
         return json_data
 
-    def add_card_body(self, card_info):
-        action_code = 'A'
-        request_data = self.request_body(card_info, action_code)
-        return request_data
+    def create_cards(self, card_info):
+        """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
+        Receiver_tokens kept in settings.py."""
+        settings.logger.info('{} Start Batch Card Process for Visa'.format(arrow.now()))
 
-    def remove_card_body(self, card_info):
-        action_code = 'D'
-        request_data = self.request_body(card_info, action_code)
-        return request_data
+        url = '{}{}{}'.format(settings.SPREEDLY_RECEIVER_URL, '/', self.receiver_token())
 
-    def payment_method_data(self, card_info, action_code):
-        """Construct the payment method data rows required for Spreedly
-        to process the card_ids and add PAN's. Two tokens are required for Visa.
-        Payment method token, Spreedly's token - Used by Spreedly to associate the PAN.
-        External Cardholder ID, required for Visa, shorter token length, used for Transaction ID's"""
-        payment_data = [{
-                card['payment_token']: {
-                    'external_cardholder_id': card['card_token'],
-                    'action_code': action_code
-                }} for card in card_info]
-        return payment_data
+        settings.logger.info('{} Create request data {}'.format(arrow.now(), card_info[0]))
+        request_data = self.request_body(card_info)
+        settings.logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, self.header, request_data))
+
+        resp = self.post_request(url, self.header, request_data)
+        self.response_handler(resp)
+
+        # TODO Set card_payment status in hermes using 'id' HERMES_URL
 
     def create_file_data(self, card_info):
         sequence_number = self.get_next_seq_number()

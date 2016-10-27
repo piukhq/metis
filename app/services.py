@@ -1,14 +1,14 @@
 import arrow
 import requests
 from app.utils import resolve_agent
-from settings import HERMES_URL, SERVICE_API_KEY, logger
+from settings import HERMES_URL, SERVICE_API_KEY, logger, SPREEDLY_RECEIVER_URL
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
 # Production
 # This username is used for Amex testing, Visa and MasterCard use one above
 username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
-receiver_base_url = 'https://core.spreedly.com/v1/receivers'
+receiver_base_url = SPREEDLY_RECEIVER_URL
 # Testing
 # Username used for MasterCard and Visa testing only
 # username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'

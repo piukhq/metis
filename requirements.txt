@@ -16,3 +16,4 @@ PyJWT==1.4.1
 raven==5.27.1
 redis==2.10.5
 requests==2.9.1
+testfixtures==4.12.0
