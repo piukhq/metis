@@ -64,7 +64,7 @@ class TestVisa(TestCase):
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
-    def test_batch_request_body_json(self):
+    def test_request_body_json(self):
         settings.TESTING = True
         result = self.visa.request_body(card_info)
         self.assertIn('111111111111112', result)
