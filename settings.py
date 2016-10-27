@@ -29,6 +29,11 @@ BROKER_URL = env_var('CELERY_BROKER_URL', 'redis://localhost:6379')
 # if you need to read task results, uncomment and set this
 # CELERY_RESULT_BACKEND = env_var('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
 
+RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
+
+CARDS_PER_FILE = 100
+FILES_PER_DAY = 99
+
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
 # -------------------------------------------------------------------------------
