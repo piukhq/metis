@@ -36,8 +36,12 @@ class Visa(AgentBase):
     def response_handler(self, response):
         date_now = arrow.now()
         if response.status_code >= 300:
-            resp_content = response.json()
-            psp_message = resp_content['errors'][0]['message']
+            try:
+                resp_content = response.json()
+                psp_message = resp_content['errors'][0]['message']
+            except ValueError:
+                psp_message = 'Could not access the PSP receiver.'
+
             message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format('batch', psp_message)
             sentry.captureMessage(message)
             return
