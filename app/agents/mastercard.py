@@ -45,8 +45,12 @@ class MasterCard:
     def response_handler(self, response, action):
         date_now = arrow.now()
         if response.status_code >= 300:
-            resp_content = response.json()
-            psp_message = resp_content['errors'][0]['message']
+            try:
+                resp_content = response.json()
+                psp_message = resp_content['errors'][0]['message']
+            except ValueError:
+                psp_message = 'Could not access the PSP receiver'
+
             message = 'Problem connecting to PSP. Action: MasterCard {}. Error:{}'.format(action, psp_message)
             sentry.captureMessage(message)
             return {'message': message, 'status_code': response.status_code}
