@@ -6,6 +6,8 @@ from flask.ext.testing import TestCase
 from app import create_app
 from unittest.mock import patch
 
+from app.card_router import ActionCode
+
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
 
@@ -58,10 +60,10 @@ class TestMetisResources(TestCase):
                                 data=json.dumps({}))
         self.assertTrue(resp.status_code == 422)
 
-    @patch('app.resources.add_card')
+    @patch('app.resources.process_card')
     @patch('app.auth.parse_token')
     @httpretty.activate
-    def test_end_site_receiver(self, mock_parse_token, mock_add_card):
+    def test_end_site_receiver(self, mock_parse_token, mock_process_card):
         card_info = {
             'id': 1,
             'payment_token': '1111111111111111111111',
@@ -76,7 +78,7 @@ class TestMetisResources(TestCase):
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
-        mock_add_card.delay.assert_called_with(card_info)
+        mock_process_card.assert_called_with(ActionCode.ADD, card_info)
 
     @patch('app.auth.parse_token')
     @httpretty.activate

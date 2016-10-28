@@ -4,6 +4,8 @@ import json
 import time
 import psycopg2
 from io import StringIO
+
+from app.card_router import ActionCode
 from app.celery import sentry
 from app.agents.agent_base import AgentBase
 
@@ -66,12 +68,17 @@ class Visa(AgentBase):
 
         body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
         file_url = "sftp://sftp.bink.com/LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
+
+        def get_visa_action_code(action_code):
+            return {ActionCode.ADD: 'A',
+                    ActionCode.DELETE: 'D'}[action_code]
+
         data = {
             "export": {
                 "payment_method_tokens": [x['payment_token'] for x in card_info],
                 "payment_method_data": {x['payment_token']: {
                     "external_cardholder_id": x['card_token'],
-                    "action_code": x['action_code']
+                    "action_code": get_visa_action_code(x['action_code'])
                 } for x in card_info},
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",
                 "url": file_url,
