@@ -38,9 +38,9 @@ class TestAmex(TestCase):
         self.assertIn('X-AMEX-ACCESS-KEY', result)
 
     def test_request_body_correct_text(self):
-        card_info = [{'partner_slug': 'amex',
-                      'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
-                      'card_token': ''}]
+        card_info = {'partner_slug': 'amex',
+                     'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                     'card_token': ''}
         result = self.amex.add_card_request_body(card_info)
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)

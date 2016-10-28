@@ -125,28 +125,28 @@ class Amex:
 
         return resp
 
-    def add_card_request_body(self, card_ids):
+    def add_card_request_body(self, card_id):
         msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
 
         data = {
             "msgId": msgId,
             "partnerId": self.partnerId,
             "cardNbr": "{{credit_card_number}}",
-            "cmAlias1": card_ids[0]['payment_token'],
+            "cmAlias1": card_id['payment_token'],
             "distrChan": self.distrChan
         }
 
         body_data = '<![CDATA[' + json.dumps(data) + ']]>'
         return body_data
 
-    def remove_card_request_body(self, card_ids):
+    def remove_card_request_body(self, card_id):
         msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
 
         data = {
             "msgId": msgId,
             "partnerId": self.partnerId,
             "cardNbr": "{{credit_card_number}}",
-            "cmAlias1": card_ids[0]['payment_token'],
+            "cmAlias1": card_id['payment_token'],
             "distrChan": self.distrChan
         }
 
@@ -155,7 +155,7 @@ class Amex:
 
     def add_card_body(self, card_info):
         xml_data = '<delivery>' \
-                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.add_url() + '</url>' \
                    '  <headers>' + self.request_header(res_path_sync) + '</headers>' \
                    '  <body>' + self.add_card_request_body(card_info) + '</body>' \
@@ -164,7 +164,7 @@ class Amex:
 
     def remove_card_body(self, card_info):
         xml_data = '<delivery>' \
-                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
                    '  <headers>' + self.request_header(res_path_unsync) + '</headers>' \
                    '  <body>' + self.remove_card_request_body(card_info) + '</body>' \

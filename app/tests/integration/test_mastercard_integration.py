@@ -6,22 +6,22 @@ from app.services import post_request, add_card, remove_card, get_agent
 class TestServices(unittest.TestCase):
 
     def test_mastercard_enroll(self):
-        card_info = [{
+        card_info = {
             'payment_token': 'RjG4WgzYoBZWgJ1ZK3KsHd2nYRv',
             'card_token': ' ',
             'partner_slug': 'mastercard'
-        }]
+        }
         settings.TESTING = False
 
         resp = add_card(card_info)
         self.assertTrue(resp.status_code == 200)
 
     def test_mastercard_unenroll(self):
-        card_info = [{
+        card_info = {
             'payment_token': 'RjG4WgzYoBZWgJ1ZK3KsHd2nYRv',
             'card_token': ' ',
             'partner_slug': 'mastercard'
-        }]
+        }
         settings.TESTING = False
 
         resp = remove_card(card_info)
@@ -30,11 +30,11 @@ class TestServices(unittest.TestCase):
     def test_mastercard_do_echo(self):
         # Prod payment_token: RjG4WgzYoBZWgJ1ZK3KsHd2nYRv
         # MTF Payment token: WhtIyJrcpcLupNpBD4bSVx3qyY5
-        card_info = [{
+        card_info = {
             'payment_token': '4Bz7xSbcxCI0sHU9XN9lXvnvoMi',
             'card_token': ' ',
             'partner_slug': 'mastercard'
-        }]
+        }
         settings.TESTING = False
 
         resp = self.call_do_echo(card_info)
@@ -47,7 +47,7 @@ class TestServices(unittest.TestCase):
         # MTF receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU' + '/deliver.xml'
         # Prod receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
         receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
-        agent_instance = get_agent(card_info[0]['partner_slug'])
+        agent_instance = get_agent(card_info['partner_slug'])
         header = agent_instance.header
         url = 'https://core.spreedly.com/v1/receivers/' + receiver_token
 

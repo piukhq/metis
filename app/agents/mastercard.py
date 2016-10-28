@@ -91,21 +91,21 @@ class MasterCard:
 
     def add_card_body(self, card_info):
         xml_data = '<delivery>' \
-                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.add_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
                    '  <body>' + self.add_card_request_body(card_info) + '</body>' \
                    '</delivery>'
         return xml_data
 
-    def add_card_request_body(self, card_ids):
+    def add_card_request_body(self, card_id):
         # Add the card data method in once doEcho testing is complete.
         # card_data(card_ids)
-        soap_xml = self.add_card_soap_template(card_ids)
+        soap_xml = self.add_card_soap_template(card_id)
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
-    def add_card_soap_template(self, card_ids):
+    def add_card_soap_template(self, card_id):
         template_env = self.jinja_environment()
         template_file = 'mc_enroll_template.xml'
         template = template_env.get_template(template_file)
@@ -115,7 +115,7 @@ class MasterCard:
                          "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
                          "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
                          "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
-                         "bank_customer_number": card_ids[0]['payment_token'],
+                         "bank_customer_number": card_id['payment_token'],
                          "member_ica": '17597',
                          "bank_account_number": '{{credit_card_number}}',
                          "account_status_code": '1',
@@ -133,18 +133,16 @@ class MasterCard:
                    '  <payment_method_token>' + card_ids[0]['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
-                   '  <body>' + self.remove_card_request_body(card_ids) + '</body>' \
+                   '  <body>' + self.remove_card_request_body() + '</body>' \
                    '</delivery>'
         return xml_data
 
-    def remove_card_request_body(self, card_ids):
-        # Add the card data method in once doEcho testing is complete.
-        # card_data(card_ids)
-        soap_xml = self.remove_card_soap_template(card_ids)
+    def remove_card_request_body(self):
+        soap_xml = self.remove_card_soap_template()
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
-    def remove_card_soap_template(self, card_ids):
+    def remove_card_soap_template(self):
         template_env = self.jinja_environment()
         template_file = 'mc_remove_template.xml'
         template = template_env.get_template(template_file)
@@ -166,7 +164,7 @@ class MasterCard:
         # do_echo_url = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
         do_echo_url = 'https://ws.mastercard.com/MRS/DiagnosticService'
         xml_data = '<delivery>' \
-                   '  <payment_method_token>' + card_info[0]['payment_token'] + '</payment_method_token>' \
+                   '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + do_echo_url + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
                    '  <body>' + self.do_echo_request_body() + '</body>' \
