@@ -76,7 +76,7 @@ class TestMetisResources(TestCase):
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(card_info))
         self.assertTrue(resp.status_code == 200)
-        mock_add_card.delay.assert_called_with([card_info])
+        mock_add_card.delay.assert_called_with(card_info)
 
     @patch('app.auth.parse_token')
     @httpretty.activate

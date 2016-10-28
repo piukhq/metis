@@ -84,12 +84,12 @@ Server: Information Not Disclosed]]>
 
     @httpretty.activate
     def test_add_card(self):
-        card_info = [{
+        card_info = {
             'id': 1,
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
             'partner_slug': 'mastercard'
-        }]
+        }
 
         self.test_route()
         mc.testing_receiver_token = self.receiver_token

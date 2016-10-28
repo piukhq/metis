@@ -37,11 +37,11 @@ class TestMastercard(TestCase):
         self.assertNotIn('mtf', result)
 
     def test_request_body_correct_text(self):
-        card_info = [{
+        card_info = {
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
             'partner_slug': 'mastercard'
-        }]
+        }
         result = self.mc.add_card_request_body(card_info)
         self.assertIn('Envelope', result)
         # self.assertIn('{{credit_card_number}}', result)
@@ -53,10 +53,10 @@ class TestMastercard(TestCase):
         self.assertTrue(result == 'GF+NsyJx/iX1Yab8k4suJkMG7DBO2lGAB9F2SCY4GWk=')
 
     def test_add_card_soap_template(self):
-        card_info = [{
+        card_info = {
             'payment_token': '1111111111111111111111',
             'card_token': '111111111111112',
             'partner_slug': 'mastercard'
-        }]
+        }
         result = self.mc.add_card_soap_template(card_info)
         self.assertIn('loyaltyangels', result)

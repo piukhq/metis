@@ -90,7 +90,7 @@ class Visa(AgentBase):
 
         url = '{}{}{}'.format(settings.SPREEDLY_RECEIVER_URL, '/', self.receiver_token())
 
-        settings.logger.info('{} Create request data {}'.format(arrow.now(), card_info[0]))
+        settings.logger.info('{} Create request data {}'.format(arrow.now(), card_info))
         request_data = self.request_body(card_info)
         settings.logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, self.header, request_data))
 

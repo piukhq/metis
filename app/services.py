@@ -70,13 +70,13 @@ def post_request(url, header, request_data):
 def add_card(card_info):
     """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
     Receiver_tokens kept in settings.py."""
-    logger.info('{} Start Add Card for {}'.format(arrow.now(), card_info[0]['partner_slug']))
+    logger.info('{} Start Add Card for {}'.format(arrow.now(), card_info['partner_slug']))
 
-    agent_instance = get_agent(card_info[0]['partner_slug'])
+    agent_instance = get_agent(card_info['partner_slug'])
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
 
-    logger.info('{} Create request data {}'.format(arrow.now(), card_info[0]))
+    logger.info('{} Create request data {}'.format(arrow.now(), card_info))
     request_data = agent_instance.add_card_body(card_info)
     logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, header, request_data))
 
@@ -87,7 +87,7 @@ def add_card(card_info):
     if resp["status_code"] == 200:
         logger.info('{} Metis calling Hermes set Status.'.format(arrow.now()))
 
-        update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info[0]['id'])
+        update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info['id'])
         token = 'Token {}'.format(SERVICE_API_KEY)
         data = {"status": 1}
         resp = requests.put(update_status_url,
@@ -98,9 +98,9 @@ def add_card(card_info):
 
 
 def remove_card(card_info):
-    logger.info('{} Start Remove Card for {}'.format(arrow.now(), card_info[0]['partner_slug']))
+    logger.info('{} Start Remove Card for {}'.format(arrow.now(), card_info['partner_slug']))
 
-    agent_instance = get_agent(card_info[0]['partner_slug'])
+    agent_instance = get_agent(card_info['partner_slug'])
 
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
