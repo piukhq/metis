@@ -1,4 +1,3 @@
-import arrow
 import unittest
 import settings
 from app.services import add_card, remove_card

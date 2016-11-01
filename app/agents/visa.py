@@ -83,7 +83,7 @@ class Visa(AgentBase):
                 "payment_method_data": {x['payment_token']: {
                     "external_cardholder_id": x['card_token'],
                     "action_code": get_visa_action_code(x['action_code']),
-                    "effective_date": self.format_datetime(arrow.get(x['date']).to('BST')),
+                    "effective_date": self.format_datetime(arrow.get(x['date']).to('Europe/London')),
                     "termination_date": self.set_termination_date(get_visa_action_code(x['action_code']))
                 } for x in card_info},
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",

@@ -50,4 +50,7 @@ card_info_reduce = [{
 }
 ]
 
-real_list = [{"id": 1, "card_token": "1111111111111111111111", "payment_token": "1111111111111111111111", "date": 1477389675, "partner_slug": "visa"}, {"id": 2, "card_token": "2222222222222222222222222", "payment_token": "222222222222222222", "date": 1476807590, "partner_slug": "visa"}]
+real_list = [{"id": 1, "card_token": "1111111111111111111111", "payment_token": "1111111111111111111111",
+              "date": 1477389675, "partner_slug": "visa"},
+             {"id": 2, "card_token": "2222222222222222222222222",
+              "payment_token": "222222222222222222", "date": 1476807590, "partner_slug": "visa"}]
