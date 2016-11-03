@@ -2,6 +2,9 @@ import unittest
 import settings
 from app.services import add_card, remove_card
 from unittest.mock import patch
+from app.card_router import ActionCode
+from app.agents.visa import Visa
+from app.tests.unit.fixture import real_list
 
 
 class TestServices(unittest.TestCase):
@@ -23,11 +26,17 @@ class TestServices(unittest.TestCase):
     @patch('app.agents.visa.sentry')
     def test_visa_add_multi_cards(self, mock_sentry):
         card_info = [{
+            'id': 1,
+            'action_code': ActionCode.ADD,
+            'date': 1475920002,
             'payment_token': 'ZWFirX98PzNjZFoJTuLZ9KK5qrt',
             'card_token': '1111111111111111111111112',
             'partner_slug': 'visa'
         },
             {
+                'id': 2,
+                'action_code': ActionCode.ADD,
+                'date': 1475920002,
                 'payment_token': 'I78VlnwUL0gBgp8aBNA9Q3gKpja',
                 'card_token': '1111111111111111111111113',
                 'partner_slug': 'visa'
@@ -35,8 +44,8 @@ class TestServices(unittest.TestCase):
         ]
 
         settings.TESTING = True
-
-        resp = add_card(card_info)
+        visa = Visa()
+        resp = visa.create_cards(card_info)
 
         self.assertTrue(resp['status_code'] == 202)
 
@@ -70,10 +79,18 @@ class TestServices(unittest.TestCase):
 
     @patch('app.agents.visa.sentry')
     def _test_visa_add_real_cards(self, mock_sentry):
-        card_info = [{"payment_token": "LyWyubSnJzQZtAxLvN8RYOYnSKv", "partner_slug": "visa",
-                      "card_token": "1111111111111111111111112"}]
-        settings.TESTING = False
-
-        resp = add_card(card_info)
+        settings.TESTING = True
+        visa = Visa()
+        # load list and chunk
+        for card_info in chunks(real_list, 100):
+            for card in card_info:
+                card['action_code'] = ActionCode.ADD
+            resp = visa.create_cards(card_info)
 
         self.assertTrue(resp['status_code'] == 202)
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

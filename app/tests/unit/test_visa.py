@@ -4,7 +4,7 @@ import settings
 import app.agents.visa as agent
 import logging
 from unittest import TestCase
-from app.tests.unit.fixture import card_info
+from app.tests.unit.fixture import card_info, card_info_reduce
 from testfixtures import log_capture
 
 
@@ -66,7 +66,7 @@ class TestVisa(TestCase):
 
     def test_request_body_json(self):
         settings.TESTING = True
-        result = self.visa.request_body(card_info)
+        result = self.visa.request_body(card_info_reduce)
         self.assertIn('111111111111112', result)
         self.assertIn('{{#gpg}}', result)
         self.assertIn('{{credit_card_number}}', result)

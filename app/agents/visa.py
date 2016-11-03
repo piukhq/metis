@@ -8,6 +8,7 @@ from io import StringIO
 from app.card_router import ActionCode
 from app.celery import sentry
 from app.agents.agent_base import AgentBase
+from collections import defaultdict
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
@@ -41,7 +42,6 @@ class Visa(AgentBase):
                 psp_message = resp_content['errors'][0]['message']
             except ValueError:
                 psp_message = 'Could not access the PSP receiver.'
-
             message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format('batch', psp_message)
             sentry.captureMessage(message)
             return
@@ -82,7 +82,9 @@ class Visa(AgentBase):
                 "payment_method_tokens": [x['payment_token'] for x in card_info],
                 "payment_method_data": {x['payment_token']: {
                     "external_cardholder_id": x['card_token'],
-                    "action_code": get_visa_action_code(x['action_code'])
+                    "action_code": get_visa_action_code(x['action_code']),
+                    "effective_date": self.format_datetime(arrow.get(x['date']).to('Europe/London')),
+                    "termination_date": self.set_termination_date(get_visa_action_code(x['action_code']))
                 } for x in card_info},
                 "callback_url": "https://api.chingrewards.com/payment_service/notify/spreedly",
                 "url": file_url,
@@ -94,13 +96,19 @@ class Visa(AgentBase):
         json_data = json_data.replace("**body**", body_data)
         return json_data
 
+    def set_termination_date(self, action_code_in):
+        if action_code_in == 'D':
+            return self.format_datetime(arrow.now())
+        else:
+            return ''
+
     def create_cards(self, card_info):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
         settings.logger.info('{} Start Batch Card Process for Visa'.format(arrow.now()))
 
         url = '{}{}{}'.format(settings.SPREEDLY_RECEIVER_URL, '/', self.receiver_token())
-
+        card_info = self.reduce_card_data(card_info)
         settings.logger.info('{} Create request data {}'.format(arrow.now(), card_info))
         request_data = self.request_body(card_info)
         settings.logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, self.header, request_data))
@@ -150,8 +158,8 @@ class Visa(AgentBase):
                 promotion_group_id='LOYANG',
                 cardholder_account_number='{{credit_card_number}}',
                 external_cardholder_id='{{external_cardholder_id}}',
-                effective_date=self.format_datetime(arrow.now()),
-                termination_date='',
+                effective_date='{{effective_date}}',
+                termination_date='{{termination_date}}',
                 filler=''
             ),
         )
@@ -162,6 +170,33 @@ class Visa(AgentBase):
         output_file.close()
 
         return temp
+
+    @staticmethod
+    def reduce_card_data(card_info):
+        totals = defaultdict(int)
+        for ci in card_info:
+            payment_token = ci['payment_token']
+            action = ci['action_code']
+            delta = 1 if action is ActionCode.ADD else -1
+            totals[payment_token] += delta
+
+        def find_card(token):
+            return next(c for c in card_info if c['payment_token'] == token)
+
+        new_card_info = []
+        for payment_token, total in totals.items():
+            if total == 0:
+                continue
+
+            if total < 0:
+                action = ActionCode.DELETE
+            else:
+                action = ActionCode.ADD
+
+            card = find_card(payment_token)
+            card['action_code'] = action
+            new_card_info.append(card)
+        return new_card_info
 
     @staticmethod
     def format_datetime(date_time):
