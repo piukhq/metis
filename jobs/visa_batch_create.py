@@ -23,7 +23,10 @@ def sentry_exception_handler(exc_type, exc_value, exc_traceback):
 sys.excepthook = sentry_exception_handler
 
 if __name__ == '__main__':
-    connection = pika.BlockingConnection(pika.ConnectionParameters(settings.RABBITMQ_HOST))
+    credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
+    params = pika.ConnectionParameters(host=settings.RABBITMQ_HOST, port=5672, credentials=credentials)
+    connection = pika.BlockingConnection(params)
+
     channel = connection.channel()
     queue_name = 'visa'
 
