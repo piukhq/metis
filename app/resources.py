@@ -37,20 +37,7 @@ class PaymentCard(Resource):
         action_name = {ActionCode.ADD: 'add', ActionCode.DELETE: 'delete'}[action_code]
         logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
 
-        try:
-            # payment_token = Spreedly payment method token
-            # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
-            # id = the hermes database card id. Used for setting status back in Hermes.
-            card_info = {
-                'id': req_data['id'],
-                'payment_token': req_data['payment_token'],
-                'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug'],
-            }
-        except KeyError:
-            return make_response('Request parameters not complete', 400)
-
-        process_card(action_code, card_info)
+        process_card(action_code, req_data)
 
         return make_response('Success', 200)
 
