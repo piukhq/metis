@@ -16,7 +16,10 @@ def celery_handler(action_code, card_info):
 
 
 def rabbitmq_handler(action_code, card_info):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(settings.RABBITMQ_HOST))
+    credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
+    params = pika.ConnectionParameters(host=settings.RABBITMQ_HOST, port=5672, credentials=credentials)
+    connection = pika.BlockingConnection(params)
+
     channel = connection.channel()
     queue_name = card_info['partner_slug']
     channel.queue_declare(queue_name, durable=True)
