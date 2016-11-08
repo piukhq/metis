@@ -19,6 +19,7 @@ card_info_schema = Schema({
     Required('partner_slug'): All(str, Length(min=1)),
 })
 
+
 class CreateReceiver(Resource):
 
     @authorized
