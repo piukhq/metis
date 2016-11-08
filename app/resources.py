@@ -7,8 +7,17 @@ from app.agents.agent_manager import AgentManager
 from app.auth import authorized
 from app.card_router import process_card, ActionCode
 from settings import logger
+from voluptuous import Schema, Required, MultipleInvalid, All, Length
 
 api = Api()
+
+card_info_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1)),
+    Required('card_token'): All(str, Length(min=1)),
+    Required('date'): int,
+    Required('partner_slug'): All(str, Length(min=1)),
+})
 
 
 class CreateReceiver(Resource):
@@ -38,19 +47,11 @@ class PaymentCard(Resource):
         logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
 
         try:
-            # payment_token = Spreedly payment method token
-            # card_token = Bink token - shorter than Spreedly's, because of Visa Inc limit.
-            # id = the hermes database card id. Used for setting status back in Hermes.
-            card_info = {
-                'id': req_data['id'],
-                'payment_token': req_data['payment_token'],
-                'card_token': req_data['card_token'],
-                'partner_slug': req_data['partner_slug'],
-            }
-        except KeyError:
+            card_info_schema(req_data)
+        except MultipleInvalid as e:
             return make_response('Request parameters not complete', 400)
 
-        process_card(action_code, card_info)
+        process_card(action_code, req_data)
 
         return make_response('Success', 200)
 
