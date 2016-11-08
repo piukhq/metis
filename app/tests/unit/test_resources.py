@@ -64,11 +64,12 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     @httpretty.activate
     def test_end_site_receiver(self, mock_parse_token, mock_process_card):
-        card_info = {
+        test_card = {
             'id': 1,
             'payment_token': '1111111111111111111111',
-            'card_token': '',
-            'partner_slug': 'mastercard'
+            'card_token': '1111111111111111111111',
+            'partner_slug': 'mastercard',
+            'date': 1475920002
         }
         settings.TESTING = True
         mock_parse_token.return_value = "{'sub':''45'}"
@@ -76,9 +77,9 @@ class TestMetisResources(TestCase):
         self.end_site_receiver_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps(card_info))
-        self.assertTrue(resp.status_code == 200)
-        mock_process_card.assert_called_with(ActionCode.ADD, card_info)
+                                data=json.dumps(test_card))
+        self.assertEqual(resp.status_code, 200)
+        mock_process_card.assert_called_with(ActionCode.ADD, test_card)
 
     @patch('app.auth.parse_token')
     @httpretty.activate
@@ -88,7 +89,7 @@ class TestMetisResources(TestCase):
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({}))
-        self.assertTrue(resp.status_code == 400)
+        self.assertEqual(resp.status_code, 400)
 
     @patch('app.auth.parse_token')
     @httpretty.activate
@@ -103,10 +104,16 @@ class TestMetisResources(TestCase):
     @patch('app.auth.parse_token')
     @httpretty.activate
     def test_end_site_blank_param(self, mock_parse_token):
+        test_card = {
+            'id': 1,
+            'payment_token': '',
+            'card_token': '1111111111111111111111',
+            'partner_slug': 'visa',
+            'date': 1475920002
+        }
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps({"partner_slug": "mastercard",
-                                                 "payment_token": " "}))
+                                data=json.dumps(test_card))
         self.assertTrue(resp.status_code == 400)
