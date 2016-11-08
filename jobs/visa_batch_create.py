@@ -4,23 +4,10 @@ from raven import Client
 import settings
 import pickle
 import pika
-import sys
 
 if settings.SENTRY_DSN:
     sentry = Client(settings.SENTRY_DSN)
 
-
-def sentry_exception_handler(exc_type, exc_value, exc_traceback):
-    if not settings.SENTRY_DSN:
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-    sentry.captureException(exc_value)
-
-sys.excepthook = sentry_exception_handler
 
 if __name__ == '__main__':
     credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
