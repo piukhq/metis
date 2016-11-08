@@ -8,7 +8,6 @@ from io import StringIO
 from app.card_router import ActionCode
 from app.celery import sentry
 from app.agents.agent_base import AgentBase
-from collections import defaultdict
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
