@@ -1,9 +1,7 @@
-import arrow
 import settings
 import jinja2
 import os
 from lxml import etree
-from app.celery import sentry
 
 testing_url = 'http://latestserver.com/post.php'
 testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
@@ -43,7 +41,6 @@ class MasterCard:
         return header
 
     def response_handler(self, response, action):
-        date_now = arrow.now()
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -52,7 +49,7 @@ class MasterCard:
                 psp_message = 'Could not access the PSP receiver'
 
             message = 'Problem connecting to PSP. Action: MasterCard {}. Error:{}'.format(action, psp_message)
-            sentry.captureMessage(message)
+            settings.logger.error(message)
             return {'message': message, 'status_code': response.status_code}
 
         try:
@@ -66,28 +63,25 @@ class MasterCard:
             mastercard_fault_code = xml_soap_doc.xpath("//ns2:code",
                                                        namespaces={'ns2': 'http://common.ws.mcrewards.mastercard.com/'})
         except Exception as e:
-            message = str({'MasterCard {} Problem processing response. Exception: {}'.format(action, e)})
+            message = str('MasterCard {} problem processing response.'.format(action))
             resp = {'message': message, 'status_code': 422}
-            sentry.captureMessage(message)
+            settings.logger.error(message, exc_info=1)
 
         if mastercard_fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
-            message = "{} MasterCard {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
-                                                                                   action,
-                                                                                   payment_method_token[0].text,
-                                                                                   mastercard_fault[0].text,
-                                                                                   "Code:",
-                                                                                   mastercard_fault_code[0].text)
+            message = "MasterCard {} unsuccessful - Token:{}, {}, {} {}".format(action,
+                                                                                payment_method_token[0].text,
+                                                                                mastercard_fault[0].text,
+                                                                                "Code:",
+                                                                                mastercard_fault_code[0].text)
             settings.logger.info(message)
             resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                     'status_code': 422}
-            sentry.captureMessage(message)
         else:
             # could be a good response
-            message = "{} MasterCard {} successful - Token:{}, {}".format(date_now,
-                                                                          action,
-                                                                          payment_method_token[0].text,
-                                                                          "MasterCard successfully processed")
+            message = "MasterCard {} successful - Token:{}, {}".format(action,
+                                                                       payment_method_token[0].text,
+                                                                       "MasterCard successfully processed")
             settings.logger.info(message)
             resp = {'message': message, 'status_code': response.status_code}
 

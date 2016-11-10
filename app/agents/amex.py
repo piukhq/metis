@@ -1,4 +1,3 @@
-import arrow
 import random
 import settings
 import json
@@ -9,7 +8,6 @@ import base64
 import requests
 from urllib import parse
 from lxml import etree
-from app.celery import sentry
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -84,7 +82,6 @@ class Amex:
         return header
 
     def response_handler(self, response, action):
-        date_now = arrow.now()
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -93,7 +90,7 @@ class Amex:
                 psp_message = 'Could not access the PSP receiver.'
 
             message = 'Problem connecting to PSP. Action: Amex {}. Error:{}'.format(action, psp_message)
-            sentry.captureMessage(message)
+            settings.logger.error(message)
             return {'message': message, 'status_code': response.status_code}
 
         try:
@@ -102,27 +99,24 @@ class Amex:
             string_elem = xml_doc.xpath("//body")[0].text
             amex_data = json.loads(string_elem)
         except Exception as e:
-            message = str({'Amex {} Problem processing response. Exception: {}'.format(action, e)})
+            message = str({'Amex {} problem processing response.'.format(action)})
             resp = {'message': message, 'status_code': 422}
-            sentry.captureMessage(message)
+            settings.logger.error(message, exc_info=1)
 
         if amex_data["status"] == "Failure":
             # Not a good news response.
-            message = "{} Amex {} unsuccessful - Token:{}, {}, {} {}".format(date_now,
-                                                                             action,
-                                                                             payment_method_token[0].text,
-                                                                             amex_data["respDesc"],
-                                                                             "Code:",
-                                                                             amex_data["respCd"])
+            message = "Amex {} unsuccessful - Token:{}, {}, {} {}".format(action,
+                                                                          payment_method_token[0].text,
+                                                                          amex_data["respDesc"],
+                                                                          "Code:",
+                                                                          amex_data["respCd"])
             settings.logger.info(message)
             resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
-            sentry.captureMessage(message)
         else:
             # could be a good response
-            message = "{} Amex {} successful - Token:{}, {}".format(date_now,
-                                                                    action,
-                                                                    payment_method_token[0].text,
-                                                                    "Amex successfully processed")
+            message = "Amex {} successful - Token:{}, {}".format(action,
+                                                                 payment_method_token[0].text,
+                                                                 "Amex successfully processed")
             settings.logger.info(message)
 
             resp = {'message': message, 'status_code': 200}

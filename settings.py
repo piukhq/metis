@@ -56,11 +56,12 @@ CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
 logging.basicConfig(format='%(process)s %(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger('metis_logger')
 logger.setLevel(logging.DEBUG)
-tmp_logger = True
+tmp_logger = False
 
 GRAYLOG_HOST = env_var('GRAYLOG_HOST')
 if GRAYLOG_HOST:
-    handler = graypy.GELFHandler(GRAYLOG_HOST, 12201)
+    GRAYLOG_PORT = env_var('GRAYLOG_PORT')
+    handler = graypy.GELFHandler(GRAYLOG_HOST, GRAYLOG_PORT)
     logger.addHandler(handler)
 elif tmp_logger:
     handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
