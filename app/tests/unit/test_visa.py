@@ -3,13 +3,19 @@ import json
 import settings
 import app.agents.visa as agent
 import logging
+import re
 from unittest import TestCase
-from app.tests.unit.fixture import card_info, card_info_reduce
+from app.tests.unit.fixture import card_info_reduce
 from testfixtures import log_capture
+from app.card_router import ActionCode
 
 
 class Testing:
     TESTING = True
+
+
+auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
+           'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
 
 
 class TestVisa(TestCase):
@@ -22,6 +28,14 @@ class TestVisa(TestCase):
                                    "token": "123456789",
                                    "transaction_type": "ExportPaymentMethods",
                                    "state": "succeeded"}}),
+                               content_type='application/json')
+
+    def hermes_status_route(self):
+        httpretty.register_uri(httpretty.PUT,
+                               re.compile('{}/payment_cards/accounts/status/([0-9]+)'.format(settings.HERMES_URL)),
+                               status=200,
+                               headers={'Authorization': auth_key},
+                               body=json.dumps({"status_code": 200, "message": "success"}),
                                content_type='application/json')
 
     def setUp(self):
@@ -59,14 +73,32 @@ class TestVisa(TestCase):
     @log_capture(level=logging.INFO)
     def test_create_cards(self, l):
         settings.TESTING = True
+        card_info_add = [{
+            'id': 1,
+            'payment_token': '1111111111111111111112',
+            'card_token': '111111111111112',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }, {
+            'id': 2,
+            'payment_token': '1111111111111111111113',
+            'card_token': '111111111111113',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }]
+
         self.spreedly_route()
-        self.visa.create_cards(card_info)
+        self.hermes_status_route()
+        self.visa.create_cards(card_info_add)
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
     def test_request_body_json(self):
         settings.TESTING = True
-        result = self.visa.request_body(card_info_reduce)
+        result, file_name = self.visa.request_body(card_info_reduce)
         self.assertIn('111111111111112', result)
         self.assertIn('{{#gpg}}', result)
         self.assertIn('{{credit_card_number}}', result)
+        self.assertTrue(len(file_name))
