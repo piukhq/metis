@@ -3,6 +3,9 @@ import settings
 import json
 import time
 import psycopg2
+import requests
+
+from settings import HERMES_URL, SERVICE_API_KEY
 from io import StringIO
 
 from app.card_router import ActionCode
@@ -101,12 +104,25 @@ class Visa(AgentBase):
     def create_cards(self, card_info):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
-        settings.logger.info('{} Start Batch Card Process for Visa'.format(arrow.now()))
+        settings.logger.info('Start Batch Card Process for Visa')
+        card_log = []
+        token = 'Token {}'.format(SERVICE_API_KEY)
+        data = {"status": 1}
+
+        for card in card_info:
+            update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card['id'])
+            requests.put(update_status_url,
+                         headers={'content-type': 'application/json', 'Authorization': token},
+                         json=data)
+            card_log.append(card['payment_token'])
+
+        if len(card_log) > 0:
+            settings.logger.info(str(card_log))
 
         url = '{}{}{}'.format(settings.SPREEDLY_RECEIVER_URL, '/', self.receiver_token())
-        settings.logger.info('{} Create request data {}'.format(arrow.now(), card_info))
+        settings.logger.info('Create request data {}'.format(card_info))
         request_data = self.request_body(card_info)
-        settings.logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, self.header, request_data))
+        settings.logger.info('POST URL {}, header: {}'.format(url, self.header))
 
         resp = self.post_request(url, self.header, request_data)
         self.response_handler(resp)
