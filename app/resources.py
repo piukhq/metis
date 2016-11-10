@@ -83,9 +83,9 @@ class Notify(Resource):
 
             agent_instance.save(req_data)
         except Exception as e:
-            response_text = str({'Error': 'Problem processing request. Message: {}'.format(e)})
+            response_text = str({'Error': 'Problem processing request.'})
             status_code = 400
-
+            logger.error(response_text, exc_info=1)
         return make_response(response_text, status_code)
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')

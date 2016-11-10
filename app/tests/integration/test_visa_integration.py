@@ -9,22 +9,29 @@ from app.tests.unit.fixture import real_list
 
 class TestServices(unittest.TestCase):
 
-    @patch('app.agents.visa.sentry')
-    def test_visa_add_card(self, mock_sentry):
-        card_info = {
+    """
+    Visa agent is different from the other agents in that we call the agent directly to
+    add or delete a card. Amex and MasterCard agents are called through the services module.
+    So, to test Visa here we pass all the parameters, including action_code, in the card_info.
+    """
+    def test_visa_add_card(self):
+        card_info = [{
+            'id': 1,
             'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
             'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa'
-        }
+            'partner_slug': 'visa',
+            'date': 1475920002,
+            'action_code': ActionCode.ADD
+        }]
 
+        visa = Visa()
         settings.TESTING = True
 
-        resp = add_card(card_info)
+        resp = visa.create_cards(card_info)
 
         self.assertTrue(resp['status_code'] == 202)
 
-    @patch('app.agents.visa.sentry')
-    def test_visa_add_multi_cards(self, mock_sentry):
+    def test_visa_add_multi_cards(self):
         card_info = [{
             'id': 1,
             'action_code': ActionCode.ADD,
@@ -49,36 +56,39 @@ class TestServices(unittest.TestCase):
 
         self.assertTrue(resp['status_code'] == 202)
 
-    @patch('app.agents.visa.sentry')
-    def test_visa_add_card_wrong_token(self, mock_sentry):
+    def test_visa_add_card_wrong_token(self):
         card_info = [{
-            'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnS11',
+            'id': 1,
+            'payment_token': 'teWyubSnJzQZtAxLvN8RYOYnS11',
             'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa'
+            'partner_slug': 'visa',
+            'date': 1475920002,
+            'action_code': ActionCode.ADD
         }]
 
+        visa = Visa()
         settings.TESTING = True
 
-        resp = add_card(card_info)
+        resp = visa.create_cards(card_info)
 
-        mock_sentry.captureMessage.assert_called_with(
-            'Problem connecting to PSP. Action: Visa Add. Error:Unable to find the specified receiver.')
         self.assertTrue(resp['status_code'] == 404)
 
-    @patch('app.agents.visa.sentry')
-    def test_visa_remove_card(self, mock_sentry):
+    def test_visa_remove_card(self):
         card_info = [{
+            'id': 1,
             'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
             'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa'
+            'partner_slug': 'visa',
+            'date': 1475920002,
+            'action_code': ActionCode.DELETE
         }]
-        settings.TESTING = False
+        visa = Visa()
+        settings.TESTING = True
 
-        resp = remove_card(card_info)
+        resp = visa.create_cards(card_info)
         self.assertTrue(resp.status_code == 200)
 
-    @patch('app.agents.visa.sentry')
-    def _test_visa_add_real_cards(self, mock_sentry):
+    def _test_visa_add_real_cards(self):
         settings.TESTING = True
         visa = Visa()
         # load list and chunk

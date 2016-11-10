@@ -6,7 +6,6 @@ import psycopg2
 from io import StringIO
 
 from app.card_router import ActionCode
-from app.celery import sentry
 from app.agents.agent_base import AgentBase
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
@@ -34,35 +33,33 @@ class Visa(AgentBase):
         return header
 
     def response_handler(self, response):
-        date_now = arrow.now()
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
                 psp_message = resp_content['errors'][0]['message']
             except ValueError:
                 psp_message = 'Could not access the PSP receiver.'
+
             message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format('batch', psp_message)
-            sentry.captureMessage(message)
+            settings.logger.error(message)
             return
 
         try:
             psp_json = response.json()
             visa_data = psp_json['transaction']
         except Exception as e:
-            message = str({'Visa {} Problem processing response. Exception: {}'.format('batch', e)})
-            sentry.captureMessage(message)
+            message = 'Visa batch problem processing response.'
+            settings.logger.error(message, exc_info=1)
             return
 
         if visa_data["state"] in ["pending", "succeeded"]:
             # could be a good response
-            message = "{} Visa {} successful - Token:{}, {}".format(date_now,
-                                                                    'batch',
-                                                                    visa_data['token'],
-                                                                    "Check Handback file")
+            message = "Visa {} successful - Token:{}, {}".format('batch',
+                                                                 visa_data['token'],
+                                                                 "Check Handback file")
         else:
             # Not a good news response.
-            message = "{} Visa {} unsuccessful - Transaction Token:{}".format(date_now, 'batch', visa_data['token'])
-            sentry.captureMessage(message)
+            message = "Visa {} unsuccessful - Transaction Token:{}".format('batch', visa_data['token'])
 
         settings.logger.info(message)
 
