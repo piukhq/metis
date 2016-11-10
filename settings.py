@@ -60,7 +60,7 @@ tmp_logger = False
 
 GRAYLOG_HOST = env_var('GRAYLOG_HOST')
 if GRAYLOG_HOST:
-    GRAYLOG_PORT = env_var('GRAYLOG_PORT')
+    GRAYLOG_PORT = int(env_var('GRAYLOG_PORT'))
     handler = graypy.GELFHandler(GRAYLOG_HOST, GRAYLOG_PORT)
     logger.addHandler(handler)
 elif tmp_logger:
