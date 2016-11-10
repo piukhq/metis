@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 import pickle
+import time
+import os
 
 from raven import Client
 import pika
@@ -66,8 +68,33 @@ if __name__ == '__main__':
 
     card_infos = reduce_card_data(card_infos)
 
-    for chunk in chunks(card_infos, settings.CARDS_PER_FILE):
-        agent = Visa()
-        agent.create_cards(chunk)
+    for chunk_index, chunk in enumerate(chunks(card_infos, settings.CARDS_PER_FILE)):
+        print('processing card group #{}'.format(chunk_index + 1))
+        file_exists = False
+        while not file_exists:
+            agent = Visa()
+
+            print('sending cards to spreedly...')
+            file_name = agent.create_cards(chunk)
+            file_path = os.path.join('/home/spreedlyftp/', file_name)
+
+            for i in range(0, 20):
+                print('[{}] checking for spreedly file...'.format(i))
+
+                try:
+                    size = os.path.getsize(file_path)
+                except OSError:
+                    print('[{}] file is not there yet, waiting 30 seconds...'.format(i))
+                    time.sleep(30)
+                    continue
+
+                if size > 0:
+                    print('[{}] found the file.'.format(i))
+                    file_exists = True
+                else:
+                    print('[{}] the file is empty. trying again.')
+                break
+            else:
+                print('the file is not there. trying again.')
 
     connection.close()
