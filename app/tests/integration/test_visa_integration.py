@@ -1,7 +1,5 @@
 import unittest
 import settings
-from app.services import add_card, remove_card
-from unittest.mock import patch
 from app.card_router import ActionCode
 from app.agents.visa import Visa
 from app.tests.unit.fixture import real_list

@@ -1,4 +1,3 @@
-import arrow
 import settings
 import jinja2
 import os
