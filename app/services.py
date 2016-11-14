@@ -1,4 +1,3 @@
-import arrow
 import requests
 from app.utils import resolve_agent
 from settings import HERMES_URL, SERVICE_API_KEY, logger, SPREEDLY_RECEIVER_URL
@@ -62,30 +61,31 @@ def create_sftp_receiver(sftp_details):
 
 
 def post_request(url, header, request_data):
-    logger.info('{} POST Spreedly Request to URL: {}'.format(arrow.now(), url))
+    logger.info('POST Spreedly Request to URL: {}'.format(url))
     resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
+    logger.info('Spreedly POST response: {}'.format(resp.text))
     return resp
 
 
 def add_card(card_info):
     """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
     Receiver_tokens kept in settings.py."""
-    logger.info('{} Start Add Card for {}'.format(arrow.now(), card_info['partner_slug']))
+    logger.info('Start Add card for {}'.format(card_info['partner_slug']))
 
     agent_instance = get_agent(card_info['partner_slug'])
     header = agent_instance.header
     url = '{}{}{}'.format(receiver_base_url, '/', agent_instance.receiver_token())
 
-    logger.info('{} Create request data {}'.format(arrow.now(), card_info))
+    logger.info('Create request data {}'.format(card_info))
     request_data = agent_instance.add_card_body(card_info)
-    logger.info('{} POST URL {}, header: {} *-* {}'.format(arrow.now(), url, header, request_data))
+    logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Add')
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
-        logger.info('{} Metis calling Hermes set Status.'.format(arrow.now()))
+        logger.info('Metis calling Hermes set Status.')
 
         update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info['id'])
         token = 'Token {}'.format(SERVICE_API_KEY)
@@ -98,7 +98,7 @@ def add_card(card_info):
 
 
 def remove_card(card_info):
-    logger.info('{} Start Remove Card for {}'.format(arrow.now(), card_info['partner_slug']))
+    logger.info('Start Remove card for {}'.format(card_info['partner_slug']))
 
     agent_instance = get_agent(card_info['partner_slug'])
 
