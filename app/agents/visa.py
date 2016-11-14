@@ -105,7 +105,7 @@ class Visa(AgentBase):
     def create_cards(self, card_info):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
-        settings.logger.info('Start Batch Card Process for Visa')
+        settings.logger.info('Start batch bard process for Visa')
         card_log = []
         token = 'Token {}'.format(SERVICE_API_KEY)
         data = {"status": 1}
