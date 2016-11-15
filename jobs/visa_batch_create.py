@@ -78,14 +78,14 @@ if __name__ == '__main__':
             file_name = agent.create_cards(chunk)
             file_path = os.path.join('/home/spreedlyftp/', file_name)
 
-            for i in range(0, 20):
+            for i in range(0, 6):
                 print('[{}] checking for spreedly file...'.format(i))
 
                 try:
                     size = os.path.getsize(file_path)
                 except OSError:
-                    print('[{}] file is not there yet, waiting 30 seconds...'.format(i))
-                    time.sleep(30)
+                    print('[{}] file is not there yet, waiting 5 seconds...'.format(i))
+                    time.sleep(5)
                     continue
 
                 if size > 0:
