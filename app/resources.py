@@ -72,20 +72,11 @@ class Notify(Resource):
     # Therefore setup async. call to save data, and return 200 response to Spreedly.
 
     def post(self, provider_slug):
-        req_data = request.data
-        response_text = 'OK'
-        status_code = 200
-        # Process the incoming response async.
-        # Write to Cassandra?
+        req_data = request.json
 
-        try:
-            agent_instance = AgentManager.get_agent(provider_slug)
+        agent_instance = AgentManager.get_agent(provider_slug)
+        agent_instance.save(req_data)
 
-            agent_instance.save(req_data)
-        except Exception as e:
-            response_text = str({'Error': 'Problem processing request.'})
-            status_code = 400
-            logger.error(response_text, exc_info=1)
-        return make_response(response_text, status_code)
+        return make_response('OK', 200)
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
