@@ -1,9 +1,6 @@
-import arrow
 import hashlib
 import hmac
-import os
 import settings
-import xml.etree.ElementTree as et
 from handylib.factory import create_factory
 
 
@@ -14,26 +11,19 @@ class Spreedly(object):
     def __init__(self, provider):
         assert self.provider == provider
 
-    def save(self, xml):
-        root = et.fromstring(xml)
-        if signature_for(root, settings.SPREEDLY_SIGNING_SECRET, xml):
-            date_now = arrow.now()
-            list_logs = []
-            saved = True
-            file_path = os.path.join(settings.APP_DIR, 'logs', 'file_log.txt')
-            for transaction in root.findall('transaction'):
-                date = date_now
-                succeeded = transaction.find('succeeded').text
-                state = transaction.find('state').text
-                token = transaction.find('token').text
-                out_item = '{}, {}, {}, {} \n'.format(date, succeeded, state, token)
-                list_logs.append(out_item)
+    # https://docs.spreedly.com/guides/payment-method-distribution/batch-export/#callback
+    def save(self, data):
+        for transaction in data['transactions']:
+            exclusions = transaction['payment_methods_excluded']
+            if exclusions:
+                settings.logger.warning('transaction {}: the following payment methods were excluded:\n{}'.format(
+                    transaction['token'],
+                    exclusions))
+            else:
+                settings.logger.info('transaction {} was processed successfully.'.format(transaction['token']))
+            settings.logger.info('a transaction file was created at {}'.format(transaction['url']))
 
-            with open(file_path, 'a') as log_file:
-                for item in list_logs:
-                    log_file.write(item)
-
-            return saved
+            # TODO(cl): get this transaction file exported to Visa.
 
 
 def signature_for(root, secret, xml):

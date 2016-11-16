@@ -18,8 +18,8 @@ class Testing:
 
 class TestMetisResources(TestCase):
     xml_response = '<receiver>' \
-               '<receiver_type>test1</receiver_type>' \
-               '</receiver>'
+        '<receiver_type>test1</receiver_type>' \
+        '</receiver>'
 
     receiver_token = "testing_624624613fgae3"
 
@@ -117,3 +117,53 @@ class TestMetisResources(TestCase):
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(test_card))
         self.assertTrue(resp.status_code == 400)
+
+    def test_spreedly_notify(self):
+        json = '''{
+  "transactions": [
+    {
+      "token": "OZCXojxhJki4Ch8CINYg2Iw58An",
+      "transaction_type": "ExportPaymentMethods",
+      "state": "completed",
+      "created_at": "2016-10-07T15:01:18Z",
+      "updated_at": "2016-10-07T15:01:19Z",
+      "succeeded": true,
+      "message": "Succeeded",
+      "payment_methods_submitted": [
+        "Q5zPG5NbwmUujR8IOrte9ds6BlK",
+        "ELKQxIL9lCdjjfujUzYXTtnqEp8",
+        "badCardToken"
+      ],
+      "payment_method_data": null,
+      "payment_methods_included": [
+        "Q5zPG5NbwmUujR8IOrte9ds6BlK",
+        "ELKQxIL9lCdjjfujUzYXTtnqEp8"
+      ],
+      "encode_response": null,
+      "callback_url": "https://example.com",
+      "url": "sftp://posttestserver.com/path/to/filename.txt",
+      "payment_methods_excluded": [
+        {
+          "badCardToken": "Unable to find the specified payment method."
+        }
+      ],
+      "receiver": {
+        "receiver_type": "test",
+        "token": "OJDBOWuRDIZ2GlXKpxBxfU9AwIV",
+        "hostnames": "sftp://posttestserver.com",
+        "state": "retained",
+        "created_at": "2016-10-07T15:01:18Z",
+        "updated_at": "2016-10-07T15:01:18Z",
+        "credentials": null,
+        "protocol": {
+          "user": "user"
+        }
+      }
+    }
+  ]
+}'''
+        resp = self.client.post('/payment_service/notify/spreedly',
+                                headers={'Content-Type': 'application/json'},
+                                data=json)
+
+        self.assertEqual(resp.status_code, 200)
