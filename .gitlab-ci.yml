@@ -1,10 +1,10 @@
 tests:
   script:
     - pip3 install -r requirements.txt
-    - export PONTUS_DATABASE="{POSTGRES_NAME}"
+    - export PONTUS_DATABASE="${POSTGRES_NAME}"
     - export PONTUS_USER="postgres"
     - export PONTUS_PASSWORD=""
-    - export PONTUS_HOST="{POSTGRES_PORT_5432_TCP_ADDR}"
+    - export PONTUS_HOST="${POSTGRES_PORT_5432_TCP_ADDR}"
     - export PONTUS_PORT="5432"
     - py.test app/tests/unit --cov=app
   services:
