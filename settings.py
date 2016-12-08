@@ -36,6 +36,10 @@ RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
 CARDS_PER_FILE = 80000
 FILES_PER_DAY = 99
 
+# 10 retries of 30 seconds each; 5 minutes maximum wait time before retry.
+SPREEDLY_FILE_RETRY_COUNT = 10
+SPREEDLY_FILE_RETRY_DELAY = 30
+
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
 # -------------------------------------------------------------------------------
