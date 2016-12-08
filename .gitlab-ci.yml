@@ -7,6 +7,8 @@ tests:
     - export PONTUS_HOST="{POSTGRES_PORT_5432_TCP_ADDR}"
     - export PONTUS_PORT="5432"
     - py.test app/tests/unit --cov=app
+  services:
+    - postgres:9.4.4
 
 complexity:
   script:
