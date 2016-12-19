@@ -5,6 +5,7 @@ import app.agents.visa as agent
 import logging
 import re
 from unittest import TestCase
+from unittest import mock
 from app.tests.unit.fixture import card_info_reduce
 from testfixtures import log_capture
 from app.card_router import ActionCode
@@ -19,6 +20,8 @@ auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
 
 
 class TestVisa(TestCase):
+    mock_get_next_seq_number = mock.Mock()
+    mock_get_next_seq_number.return_value = 1
 
     def spreedly_route(self):
         url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
@@ -63,12 +66,14 @@ class TestVisa(TestCase):
         result = self.visa.request_header()
         self.assertIn('json', result)
 
+    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_create_file_data(self):
         cards = [1234, 5678, 9876]
         result = self.visa.create_file_data(cards)
         self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)
 
+    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
     @httpretty.activate
     @log_capture(level=logging.INFO)
     def test_create_cards(self, l):
@@ -95,6 +100,7 @@ class TestVisa(TestCase):
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
+    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_request_body_json(self):
         settings.TESTING = True
         result, file_name = self.visa.request_body(card_info_reduce)

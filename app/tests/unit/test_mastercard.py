@@ -47,6 +47,15 @@ class TestMastercard(TestCase):
         # self.assertIn('{{credit_card_number}}', result)
         # self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
 
+    def test_remove_card_request_body(self):
+        card_info = {
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'mastercard'
+        }
+        result = self.mc.remove_card_body(card_info)
+        self.assertIn('<payment_method_token>1111111111111111111111</payment_method_token>', result)
+
     # We are not hashing anymore.
     def _test_get_hash(self):
         result = self.mc.get_hash('Hello')
