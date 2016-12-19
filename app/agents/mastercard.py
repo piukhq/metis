@@ -126,9 +126,9 @@ class MasterCard:
         output_text = '{{#xml_dsig}}' + output_text + '{{/xml_dsig}}'
         return output_text
 
-    def remove_card_body(self, card_ids):
+    def remove_card_body(self, card_id):
         xml_data = '<delivery>' \
-                   '  <payment_method_token>' + card_ids[0]['payment_token'] + '</payment_method_token>' \
+                   '  <payment_method_token>' + card_id['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
                    '  <body>' + self.remove_card_request_body() + '</body>' \
