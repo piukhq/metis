@@ -9,6 +9,7 @@ import pika
 
 from app.agents.visa import Visa
 from app.card_router import ActionCode
+from app.slack import payment_card_notify
 import settings
 
 if settings.SENTRY_DSN:
@@ -68,34 +69,21 @@ if __name__ == '__main__':
 
     card_infos = reduce_card_data(card_infos)
 
+    processed_files = []
     for chunk_index, chunk in enumerate(chunks(card_infos, settings.CARDS_PER_FILE)):
         print('processing card group #{}'.format(chunk_index + 1))
-        file_exists = False
-        while not file_exists:
-            agent = Visa()
+        agent = Visa()
+        print('sending cards to spreedly...')
+        file_name = agent.create_cards(chunk)
+        file_path = os.path.join('/home/spreedlyftp/', file_name)
 
-            print('sending cards to spreedly...')
-            file_name = agent.create_cards(chunk)
-            file_path = os.path.join('/home/spreedlyftp/', file_name)
+        processed_files.append(file_name)
 
-            for i in range(0, settings.SPREEDLY_FILE_RETRY_COUNT):
-                print('[{}] checking for spreedly file...'.format(i))
-
-                try:
-                    size = os.path.getsize(file_path)
-                except OSError:
-                    print('[{}] file is not there yet, waiting {} seconds...'
-                          .format(i, settings.SPREEDLY_FILE_RETRY_DELAY))
-                    time.sleep(settings.SPREEDLY_FILE_RETRY_DELAY)
-                    continue
-
-                if size > 0:
-                    print('[{}] found the file.'.format(i))
-                    file_exists = True
-                else:
-                    print('[{}] the file is empty. trying again.')
-                break
-            else:
-                print('the file is not there. trying again.')
+        print('giving spreedly a moment to catch up...')
+        time.sleep(settings.SPREEDLY_SEND_DELAY)
 
     connection.close()
+
+    payment_card_notify(
+        'Card enrolments have been sent to Visa. Relevant files: [{}]'.format(
+            ', '.join('`{}`'.format(x) for x in processed_files)))
