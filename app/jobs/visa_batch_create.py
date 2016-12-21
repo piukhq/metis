@@ -85,5 +85,5 @@ if __name__ == '__main__':
     connection.close()
 
     payment_card_notify(
-        'Card enrolments have been sent to Visa. Relevant files: [{}]'.format(
+        'Visa card enrolments have been sent to Spreedly. Relevant files: [{}]'.format(
             ', '.join('`{}`'.format(x) for x in processed_files)))
