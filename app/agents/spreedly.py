@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import settings
 from handylib.factory import create_factory
+from app.slack import payment_card_notify
 
 
 class Spreedly(object):
@@ -24,6 +25,7 @@ class Spreedly(object):
             settings.logger.info('a transaction file was created at {}'.format(transaction['url']))
 
             # TODO(cl): get this transaction file exported to Visa.
+        payment_card_notify('Received notify request from Spreedly.')
 
 
 def signature_for(root, secret, xml):
