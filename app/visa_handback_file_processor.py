@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 from collections import OrderedDict
-import arrow
 
 from handylib.fixedcolumnfile import FixedColumnFileReader
 
@@ -63,8 +62,11 @@ class VisaHandback(object):
         self.text_file_suffix = '.unencrypted.txt'
 
     def bink_error_lookup(self, return_code):
+        """It is anticipated that this function will call (possibly indirectly) hermes with a requests call to
+        obtain the dict of bink error messages based on code lookups for visa"""
+
         bink_code_lookup = {
-            '514':'This is an example Bink lookup error message',
+            '514': 'This is an example Bink lookup error message',
         }
 
         if str(return_code).strip() in bink_code_lookup.keys():
@@ -104,8 +106,7 @@ class VisaHandback(object):
 
                 rows += 1
             settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by Bink: {}".format(txt_file, rows-1, bink_rows))
-            #self.archive_files(txt_file)
-
+            # self.archive_files(txt_file)
         return rows
 
     def file_list(self, payment_files):
