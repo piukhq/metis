@@ -60,7 +60,7 @@ CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
 logging.basicConfig(format='%(process)s %(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger('metis_logger')
 logger.setLevel(logging.DEBUG)
-tmp_logger = False
+tmp_logger = True
 
 GRAYLOG_HOST = env_var('GRAYLOG_HOST')
 if GRAYLOG_HOST:

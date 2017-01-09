@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 from collections import OrderedDict
+import arrow
 
 from handylib.fixedcolumnfile import FixedColumnFileReader
 
@@ -68,16 +69,15 @@ class VisaHandback(object):
 
         for txt_file in txt_files:
             for row in reader(txt_file):
+                log_string = ""
                 for col in self.column_keep:
                     if col in row.keys():
-                        print(row[str(col)])
-
-                #for field in self.field_delete:
-                #    del (row[field])
+                        log_string += row[str(col)]
+                if log_string:
+                    settings.logger.info("{} {}".format(arrow.now(), log_string))
 
                 rows += 1
-            #self.archive_files(txt_file)
-        print("rows:", rows-1)
+            self.archive_files(txt_file)
 
         return rows
 
@@ -145,5 +145,5 @@ class VisaHandback(object):
 
 if __name__ == '__main__':
     v = VisaHandback()
-    payment_files = ['/home/oe/Downloads/metis_visa/LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp',]
+    payment_files = ['/home/oe/Downloads/metis_visa/LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp', ]
     v.import_transactions(payment_files)
