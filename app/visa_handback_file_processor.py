@@ -3,6 +3,11 @@ import shutil
 import subprocess
 from collections import OrderedDict
 
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
+
 from handylib.fixedcolumnfile import FixedColumnFileReader
 
 import settings
@@ -105,7 +110,8 @@ class VisaHandback(object):
                             settings.logger.info("{}".format(' '.join(log_string)))
 
                 rows += 1
-            settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by Bink: {}".format(txt_file, rows-1, bink_rows))
+            settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by "
+                                 "Bink: {}".format(txt_file, rows-1, bink_rows))
             # self.archive_files(txt_file)
         return rows
 
@@ -171,7 +177,18 @@ class VisaHandback(object):
             raise
 
 
+def get_dir_contents(src_dir):
+    """Send an email with generated MID data to each agent that requires it"""
+    files = []
+    for entry in scandir(src_dir):
+        if entry.is_file(follow_symlinks=False):
+            files.append(entry.path)
+
+    return files
+
+
+
 if __name__ == '__main__':
     v = VisaHandback()
-    payment_files = ['/home/oe/Downloads/metis_visa/LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp', ]
+    payment_files = get_dir_contents(settings.VISA_SOURCE_FILES_DIR)
     v.import_transactions(payment_files)
