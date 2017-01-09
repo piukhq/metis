@@ -29,7 +29,7 @@ class VisaHandback(object):
     ])
 
     column_keep = {
-        'return_code': 'record_code',
+        'external_cardholder_id': 'external_cardholder_id',
         'return_description': 'return_description',
     }
 
@@ -62,22 +62,49 @@ class VisaHandback(object):
         self.gpg_file_ext = gpg_file_ext
         self.text_file_suffix = '.unencrypted.txt'
 
+    def bink_error_lookup(self, return_code):
+        bink_code_lookup = {
+            '514':'This is an example Bink lookup error message',
+        }
+
+        if str(return_code).strip() in bink_code_lookup.keys():
+            return True, bink_code_lookup[str(return_code).strip()]
+        else:
+            return False, 'None'
+
     def import_transactions(self, payment_files):
         rows = 0
         reader = FixedColumnFileReader(self.columns, self.column_keep)
         txt_files = self.file_list(payment_files)
+        bink_rows = 0
 
         for txt_file in txt_files:
             for row in reader(txt_file):
-                log_string = ""
+                log_string = []
+                description_found = False
+                token_found = False
                 for col in self.column_keep:
                     if col in row.keys():
-                        log_string += row[str(col)]
-                if log_string:
-                    settings.logger.info("{} {}".format(arrow.now(), log_string))
+                        if col == 'return_description':
+                            bink_row, bink_error_text = self.bink_error_lookup(row[str(col)][:4])
+                            if bink_row:
+                                log_string.append(row[str(col)][:4].strip())
+                                log_string.append(bink_error_text)
+                                bink_rows += 1
+                            else:
+                                log_string.append(row[str(col)])
+                            description_found = True
+                        else:
+                            log_string.append(row[str(col)])
+                            token_found = True
+
+                    if description_found and token_found:
+                        if len(log_string[0]):
+                            settings.logger.info("{}".format(' '.join(log_string)))
 
                 rows += 1
-            self.archive_files(txt_file)
+            settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by Bink: {}".format(txt_file, rows-1, bink_rows))
+            #self.archive_files(txt_file)
 
         return rows
 

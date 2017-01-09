@@ -60,7 +60,7 @@ CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
 logging.basicConfig(format='%(process)s %(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger('metis_logger')
 logger.setLevel(logging.DEBUG)
-tmp_logger = False
+tmp_logger = True
 
 GRAYLOG_HOST = env_var('GRAYLOG_HOST')
 if GRAYLOG_HOST:
@@ -80,6 +80,6 @@ PONTUS_HOST = env_var('PONTUS_HOST', '192.168.1.53')
 PONTUS_PORT = env_var('PONTUS_PORT', '5432')
 
 # Store VISA private key separately from other keys
-VISA_KEYRING_DIR = env_var('VISA_KEYRING_DIR', '/home/oe/.gnupg/')
+VISA_KEYRING_DIR = env_var('VISA_KEYRING_DIR', '../../.gnupg')
 VISA_ARCHIVE_DIR = env_var('VISA_ARCHIVE_DIR', '/tmp/archive/visa')
 VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
