@@ -33,12 +33,12 @@ RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
 
+# how many card enrolments can we fit in a single file, and how many files can we send per day?
 CARDS_PER_FILE = 80000
 FILES_PER_DAY = 99
 
-# 10 retries of 30 seconds each; 5 minutes maximum wait time before retry.
-SPREEDLY_FILE_RETRY_COUNT = 10
-SPREEDLY_FILE_RETRY_DELAY = 30
+# how long to wait in between each file transfer to spreedly
+SPREEDLY_SEND_DELAY = 30
 
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
@@ -79,8 +79,12 @@ PONTUS_PASSWORD = env_var('PONTUS_PASSWORD', '!^LoyaltyDev2015')
 PONTUS_HOST = env_var('PONTUS_HOST', '192.168.1.53')
 PONTUS_PORT = env_var('PONTUS_PORT', '5432')
 
+
 # Store VISA private key separately from other keys
 VISA_SOURCE_FILES_DIR = env_var('VISA_SOURCE_FILES_DIR', '../visa_handback_files')
 VISA_KEYRING_DIR = env_var('VISA_KEYRING_DIR', '../../.gnupg')
 VISA_ARCHIVE_DIR = env_var('VISA_ARCHIVE_DIR', '/tmp/archive/visa')
 VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
+
+SLACK_API_TOKEN = 'xoxb-119487439522-Lsefc6ykOx3RIXC89WN8wx3h'
+
