@@ -187,7 +187,6 @@ def get_dir_contents(src_dir):
     return files
 
 
-
 if __name__ == '__main__':
     v = VisaHandback()
     payment_files = get_dir_contents(settings.VISA_SOURCE_FILES_DIR)
