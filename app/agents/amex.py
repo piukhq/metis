@@ -239,7 +239,7 @@ def mac_api_header(access_token, mac_key, res_path_in):
     random.seed(millis)
     post_fix = 10000000 + random.randint(0, 90000000)
     nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-    base_string = str(ts)+"\n"+nonce+"\n"+"POST\n"+res_path+"\n"+host+"\n"+port+"\n\n"
+    base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path + "\n" + host + "\n" + port + "\n\n"
     base_string_bytes = base_string.encode('utf-8')
     mac = generate_mac(base_string_bytes, mac_key)
 

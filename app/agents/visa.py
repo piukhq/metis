@@ -69,7 +69,8 @@ class Visa(AgentBase):
     def request_body(self, card_info):
         recipient_id = 'nawes@visa.com'
 
-        body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
+        body_data = '{{#gpg}}' + self.visa_pem() + "," + recipient_id + "," + \
+            self.create_file_data(card_info) + '{{/gpg}}'
         file_name = "LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
         file_url = "sftp://sftp.bink.com/{}".format(file_name)
 
