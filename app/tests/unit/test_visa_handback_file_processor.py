@@ -1,16 +1,11 @@
 import os
-import sys
 import mock
-import unittest
-from pyfakefs import fake_filesystem_unittest, fake_filesystem
+from pyfakefs import fake_filesystem_unittest
 # The module under test is pyfakefs.visa_handback_file_processor
 from scandir import scandir
 
 import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p
-
-
-filesystem = fake_filesystem.FakeFilesystem()
 
 
 def scandir_function(path=''):

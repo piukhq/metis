@@ -1,7 +1,6 @@
 import os
 import mock
-import unittest
-from pyfakefs import fake_filesystem_unittest, fake_filesystem
+from pyfakefs import fake_filesystem_unittest
 # The module under test is pyfakefs.visa_handback_file_processor
 from scandir import scandir
 
@@ -9,13 +8,8 @@ import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
 
-filesystem = fake_filesystem.FakeFilesystem()
-os_module = fake_filesystem.FakeOsModule(filesystem)
-
-
 def scandir_function():
     pass
-
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
