@@ -70,18 +70,18 @@ class MasterCard:
         if mastercard_fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
             message = "MasterCard {} unsuccessful - Token: {}, {}, {} {}".format(action,
-                                                                                payment_method_token[0].text,
-                                                                                mastercard_fault[0].text,
-                                                                                "Code:",
-                                                                                mastercard_fault_code[0].text)
+                                                                                 payment_method_token[0].text,
+                                                                                 mastercard_fault[0].text,
+                                                                                 "Code:",
+                                                                                 mastercard_fault_code[0].text)
             settings.logger.info(message)
             resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
                     'status_code': 422}
         else:
             # could be a good response
             message = "MasterCard {} successful - Token: {}, {}".format(action,
-                                                                       payment_method_token[0].text,
-                                                                       "MasterCard successfully processed")
+                                                                        payment_method_token[0].text,
+                                                                        "MasterCard successfully processed")
             settings.logger.info(message)
             resp = {'message': message, 'status_code': response.status_code}
 

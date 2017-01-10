@@ -106,17 +106,17 @@ class Amex:
         if amex_data["status"] == "Failure":
             # Not a good news response.
             message = "Amex {} unsuccessful - Token: {}, {}, {} {}".format(action,
-                                                                          payment_method_token[0].text,
-                                                                          amex_data["respDesc"],
-                                                                          "Code:",
-                                                                          amex_data["respCd"])
+                                                                           payment_method_token[0].text,
+                                                                           amex_data["respDesc"],
+                                                                           "Code:",
+                                                                           amex_data["respCd"])
             settings.logger.info(message)
             resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
         else:
             # could be a good response
             message = "Amex {} successful - Token: {}, {}".format(action,
-                                                                 payment_method_token[0].text,
-                                                                 "Amex successfully processed")
+                                                                  payment_method_token[0].text,
+                                                                  "Amex successfully processed")
             settings.logger.info(message)
 
             resp = {'message': message, 'status_code': 200}

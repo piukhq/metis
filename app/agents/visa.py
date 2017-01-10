@@ -58,8 +58,8 @@ class Visa(AgentBase):
         if visa_data["state"] in ["pending", "succeeded"]:
             # could be a good response
             message = "Visa {} successful - Token: {}, {}".format('batch',
-                                                                 visa_data['token'],
-                                                                 "Check Handback file")
+                                                                  visa_data['token'],
+                                                                  "Check Handback file")
         else:
             # Not a good news response.
             message = "Visa {} unsuccessful - Transaction Token: {}".format('batch', visa_data['token'])
