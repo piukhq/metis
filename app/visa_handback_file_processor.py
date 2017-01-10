@@ -1,61 +1,13 @@
 import os
+import errno
 import shutil
 import subprocess
-from collections import OrderedDict
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
-from handylib.fixedcolumnfile import FixedColumnFileReader
+from os import scandir
 
 import settings
 
 
 class VisaHandback(object):
-
-    columns = OrderedDict([
-        ('record_type', 2),
-        ('record_subtype', 2),
-        ('promotion_type', 2),
-        ('promotion_code', 25),
-        ('action_code', 1),
-        ('endpoint_code', 6),
-        ('promotion_group_id', 6),
-        ('cardholder_account_number', 19),
-        ('external_cardholder_id', 25),
-        ('effective_date', 8),
-        ('termination_date', 8),
-        ('filler', 503),
-        ('return_code', 4),
-        ('return_description', 255),
-    ])
-
-    column_keep = {
-        'external_cardholder_id': 'external_cardholder_id',
-        'return_description': 'return_description',
-    }
-
-    field_delete = [
-        'record_type',
-        'record_subtype',
-        'promotion_type',
-        'promotion_code',
-        'action_code',
-        'endpoint_code',
-        'promotion_group_id',
-        'cardholder_account_number',
-        'external_cardholder_id',
-        'effective_date',
-        'termination_date',
-        'filler',
-    ]
-
-    # useful to find and fetch transaction files
-    file_extension = '.txt'
-    plain_text_file_extension = '.VISA'
-
     def __init__(self,
                  keyring=settings.VISA_KEYRING_DIR,
                  archive_dir=settings.VISA_ARCHIVE_DIR,
@@ -74,54 +26,47 @@ class VisaHandback(object):
             '514': 'This is an example Bink lookup error message',
         }
 
-        if str(return_code).strip() in bink_code_lookup.keys():
-            return True, bink_code_lookup[str(return_code).strip()]
+        if return_code in bink_code_lookup.keys():
+            return True, bink_code_lookup[return_code]
         else:
             return False, 'None'
 
-    def import_transactions(self, payment_files):
+    def read_handback_file(self, payment_files):
         rows = 0
-        reader = FixedColumnFileReader(self.columns, self.column_keep)
         txt_files = self.file_list(payment_files)
         bink_rows = 0
+        first_row = True
 
         for txt_file in txt_files:
-            for row in reader(txt_file):
-                log_string = []
-                description_found = False
-                token_found = False
-                for col in self.column_keep:
-                    if col in row.keys():
-                        if col == 'return_description':
-                            bink_row, bink_error_text = self.bink_error_lookup(row[str(col)][:4])
-                            if bink_row:
-                                log_string.append(row[str(col)][:4].strip())
-                                log_string.append(bink_error_text)
-                                bink_rows += 1
-                            else:
-                                log_string.append(row[str(col)])
-                            description_found = True
+            with open(txt_file) as file:
+                for row in file:
+                    if first_row:
+                        first_row = False
+                        continue
+                    token_field = (63, 88)
+                    token = row[token_field[0]:token_field[1]].strip()
+                    return_code_field = (741, 745)
+                    return_code = row[return_code_field[0]:return_code_field[1]].strip()
+                    return_description_field = (745, 1000)
+                    return_description = row[return_description_field[0]:return_description_field[1]].strip()
+
+                    bink_row, bink_error_text = self.bink_error_lookup(return_code)
+                    if return_description:
+                        if bink_row:
+                            bink_rows += 1
+                            settings.logger.info("{} {} {}".format(token, return_code, bink_error_text))
                         else:
-                            log_string.append(row[str(col)])
-                            token_found = True
+                            settings.logger.info("{} {} {}".format(token, return_code, return_description))
+                    rows += 1
 
-                    if description_found and token_found:
-                        if len(log_string[0]):
-                            settings.logger.info("{}".format(' '.join(log_string)))
-
-                rows += 1
-            settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by "
-                                 "Bink: {}".format(txt_file, rows-1, bink_rows))
-            # self.archive_files(txt_file)
+                settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by "
+                                     "Bink: {}".format(txt_file, rows-1, bink_rows))
+                self.archive_files(txt_file)
         return rows
 
     def file_list(self, payment_files):
         txt_files = [self._decrypt_file(encrypted_file) for encrypted_file in payment_files
-                     if encrypted_file.endswith(self.gpg_file_ext) or
-                     encrypted_file.endswith(self.plain_text_file_extension)
-                     # Kafka cannot guarantee the import file has already been processed
-                     #  so filter out any files in the archive directory
-                     if os.path.isfile(encrypted_file)]
+                     if (encrypted_file.endswith(self.gpg_file_ext) and os.path.isfile(encrypted_file))]
         return txt_files
 
     @staticmethod
@@ -150,25 +95,22 @@ class VisaHandback(object):
             # Special case: Visa send plain transaction files to Bink where a problem occurred in the normal
             # encrypted file process. We manually add the .VISA extension to these plain text files to
             # differentiate from other files in the Visa directory.
-            if encrypted_file[-5:] == ".VISA":
-                output_file_name = encrypted_file
-            else:
-                output_file_name = encrypted_file + self.text_file_suffix
-                # If the output file exists GPG will fail so handle this case
-                if os.path.exists(output_file_name):
-                    os.remove(output_file_name)
+            output_file_name = encrypted_file + self.text_file_suffix
+            # If the output file exists GPG will fail so handle this case
+            if os.path.exists(output_file_name):
+                os.remove(output_file_name)
 
-                gpg_args = [
-                    "gpg",
-                    "--homedir",
-                    self.keyring,
-                    "--output",
-                    output_file_name,
-                    "--decrypt",
-                    encrypted_file]
+            gpg_args = [
+                "gpg",
+                "--homedir",
+                self.keyring,
+                "--output",
+                output_file_name,
+                "--decrypt",
+                encrypted_file]
 
-                # The check parameter means subprocess raises an exception if return value != 0
-                subprocess.check_call(gpg_args, timeout=2)
+            # The check parameter means subprocess raises an exception if return value != 0
+            subprocess.check_call(gpg_args, timeout=2)
 
             return output_file_name
         except(subprocess.SubprocessError, OSError, ValueError) as gpg_error:
@@ -187,7 +129,17 @@ def get_dir_contents(src_dir):
     return files
 
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
 if __name__ == '__main__':
     v = VisaHandback()
     payment_files = get_dir_contents(settings.VISA_SOURCE_FILES_DIR)
-    v.import_transactions(payment_files)
+    v.read_handback_file(payment_files)
