@@ -26,7 +26,6 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         v = VisaHandback()
         v.read_handback_file(payment_files)
         target_files = get_dir_contents(settings.VISA_ARCHIVE_DIR)
-        print(target_files)
         self.assertTrue(len(target_files))
 
 
