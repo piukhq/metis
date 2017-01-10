@@ -121,7 +121,6 @@ class VisaHandback(object):
 
 
 def get_dir_contents(src_dir):
-    """Send an email with generated MID data to each agent that requires it"""
     files = []
     for entry in scandir(src_dir):
         if entry.is_file(follow_symlinks=False):
