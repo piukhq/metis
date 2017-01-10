@@ -8,8 +8,8 @@ import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
 
-def scandir_function():
-    pass
+def scandir_function(path=''):
+    return ['./']
 
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
