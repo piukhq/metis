@@ -5,8 +5,8 @@ from pyfakefs import fake_filesystem_unittest
 import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
-class TestVisaHandback(fake_filesystem_unittest.TestCase):
 
+class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
