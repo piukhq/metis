@@ -2,7 +2,8 @@ import os
 import errno
 import shutil
 import subprocess
-from os import scandir
+
+from scandir import scandir
 
 import settings
 
