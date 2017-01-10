@@ -1,9 +1,14 @@
 import os
+import mock
 import unittest
 from pyfakefs import fake_filesystem_unittest
 # The module under test is pyfakefs.visa_handback_file_processor
 import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p
+
+
+def scandir_function():
+    pass
 
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
@@ -14,7 +19,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         # It is no longer necessary to add self.tearDownPyfakefs()
         pass
 
-    def test_get_dir_contents(self):
+    @mock.patch('app.visa_handback_file_processor.scandir', side_effect=os.scandir)
+    def test_get_dir_contents(self, scandir_function):
         '''Test visa_handback_file_processor.dir_exists()'''
         # The os module has been replaced with the fake os module so all of the
         # following occurs in the fake filesystem.
