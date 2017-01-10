@@ -11,6 +11,7 @@ from app.visa_handback_file_processor import get_dir_contents, mkdir_p
 def scandir_function(path=''):
     pass
 
+
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
         self.setUpPyfakefs()
