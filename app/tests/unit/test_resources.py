@@ -118,7 +118,8 @@ class TestMetisResources(TestCase):
                                 data=json.dumps(test_card))
         self.assertTrue(resp.status_code == 400)
 
-    def test_spreedly_notify(self):
+    @patch('app.agents.spreedly.payment_card_notify')
+    def test_spreedly_notify(self, mock_payment_card_notify):
         json = '''{
   "transactions": [
     {
@@ -162,6 +163,7 @@ class TestMetisResources(TestCase):
     }
   ]
 }'''
+        mock_payment_card_notify.return_value = 'Slack called'
         resp = self.client.post('/payment_service/notify/spreedly',
                                 headers={'Content-Type': 'application/json'},
                                 data=json)
