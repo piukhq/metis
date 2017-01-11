@@ -7,13 +7,17 @@ import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
 
+def setup_encrypted_file():
+    file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
+    path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
+    with open(self.path,
+              'rb') as gpg_file:
+        encrypted_file = gpg_file.read()
+        return path, encrypted_file
+
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
-        file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
-        self.path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
-        with open(self.path,
-                  'rb') as gpg_file:
-            self.file_to_write = gpg_file.read()
+        self.path, self.encrypted_file = setup_encrypted_file()
         self.setUpPyfakefs()
 
     @patch('app.visa_handback_file_processor.scandir')
@@ -49,9 +53,9 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def test__decrypt_file(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
         mkdir_p('../../' + settings.VISA_SOURCE_FILES_DIR)
-        if self.path and self.file_to_write:
+        if self.path and self.encrypted_file:
             with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.file_to_write)
+                test_gpg_file.write(self.encrypted_file)
         v = VisaHandback()
         payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
         self.assertTrue(len(payment_files))
@@ -85,10 +89,6 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     @patch('app.visa_handback_file_processor.scandir')
     def test_file_list(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
-        mkdir_p('../../' + settings.VISA_SOURCE_FILES_DIR)
-        if self.path and self.file_to_write:
-            with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.file_to_write)
         v = VisaHandback()
         payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
         txt_files = v.file_list(payment_files)
