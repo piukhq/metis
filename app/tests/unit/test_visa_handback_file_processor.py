@@ -51,26 +51,12 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         self.assertTrue(type(state) is bool)
         self.assertTrue(type(err_string) is str)
 
-    @patch('app.visa_handback_file_processor.scandir')
-    def test__decrypt_file(self, mock_scandir):
-        mock_scandir.side_effect = self.fs.ScanDir
-        mkdir_p(fixture_path)
-        with open(self.path, 'wb') as pgp_file:
-            pgp_file.write(self.encrypted_file)
-        v = VisaHandback()
-        payment_files = get_dir_contents(fixture_path)
-        self.assertTrue(len(payment_files))
-        for encrypted_file in payment_files:
-            if encrypted_file.endswith(v.gpg_file_ext):
-                output_file_name = v._decrypt_file(encrypted_file)
-                self.assertTrue(len(output_file_name))
-
     def test_archive_files(self):
         filename = 'afile.txt'
         mkdir_p(fixture_path)
         touched_file = fixture_path + filename
         with open(touched_file, 'a'):
-            os.utime(touched_file, None)
+            os.utime(touched_file, None)test__decrypt_file
         v = VisaHandback()
         v.archive_files(touched_file)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + filename)
@@ -86,14 +72,3 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         v.perform_file_archive(touched_file, settings.VISA_ARCHIVE_DIR)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + filename)
         self.assertTrue(result)
-
-    @patch('app.visa_handback_file_processor.scandir')
-    def test_file_list(self, mock_scandir):
-        mock_scandir.side_effect = self.fs.ScanDir
-        v = VisaHandback()
-        mkdir_p(fixture_path)
-        with open(self.path, 'wb') as pgp_file:
-            pgp_file.write(self.encrypted_file)
-        payment_files = get_dir_contents(fixture_path)
-        txt_files = v.file_list(payment_files)
-        self.assertTrue(len(txt_files))
