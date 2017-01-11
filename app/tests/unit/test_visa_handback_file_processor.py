@@ -32,9 +32,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         mkdir_p(fixture_path)
         self.assertTrue(os.path.isdir(fixture_path))
         # This is the equivalent of `touch` on unix
-        if self.path and self.encrypted_file:
-            with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.encrypted_file)
+        with open(self.path, 'wb') as test_gpg_file:
+            test_gpg_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
         self.assertIsInstance(payment_files, list)
         self.assertEqual(len(payment_files), 1)
@@ -56,9 +55,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def test__decrypt_file(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
         mkdir_p(fixture_path)
-        if self.path and self.encrypted_file:
-            with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.encrypted_file)
+        with open(self.path, 'wb') as test_gpg_file:
+            test_gpg_file.write(self.encrypted_file)
         v = VisaHandback()
         payment_files = get_dir_contents(fixture_path)
         self.assertTrue(len(payment_files))
@@ -94,9 +92,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         mock_scandir.side_effect = self.fs.ScanDir
         v = VisaHandback()
         mkdir_p(fixture_path)
-        if self.path and self.encrypted_file:
-            with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.encrypted_file)
+        with open(self.path, 'wb') as test_gpg_file:
+            test_gpg_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
         txt_files = v.file_list(payment_files)
         self.assertTrue(len(txt_files))

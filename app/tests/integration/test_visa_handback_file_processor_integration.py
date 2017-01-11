@@ -27,9 +27,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def test_read_handback_file(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
         mkdir_p(fixture_path)
-        if self.path and self.encrypted_file:
-            with open(self.path, 'wb') as test_gpg_file:
-                test_gpg_file.write(self.encrypted_file)
+        with open(self.path, 'wb') as test_gpg_file:
+            test_gpg_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
         self.assertTrue(len(payment_files))
         mkdir_p(settings.VISA_ARCHIVE_DIR)
