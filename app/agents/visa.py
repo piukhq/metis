@@ -57,19 +57,20 @@ class Visa(AgentBase):
 
         if visa_data["state"] in ["pending", "succeeded"]:
             # could be a good response
-            message = "Visa {} successful - Token:{}, {}".format('batch',
-                                                                 visa_data['token'],
-                                                                 "Check Handback file")
+            message = "Visa {} successful - Token: {}, {}".format('batch',
+                                                                  visa_data['token'],
+                                                                  "Check Handback file")
         else:
             # Not a good news response.
-            message = "Visa {} unsuccessful - Transaction Token:{}".format('batch', visa_data['token'])
+            message = "Visa {} unsuccessful - Transaction Token: {}".format('batch', visa_data['token'])
 
         settings.logger.info(message)
 
     def request_body(self, card_info):
         recipient_id = 'nawes@visa.com'
 
-        body_data = '{{#gpg}}'+self.visa_pem()+","+recipient_id+","+self.create_file_data(card_info)+'{{/gpg}}'
+        body_data = '{{#gpg}}' + self.visa_pem() + "," + recipient_id + "," + \
+            self.create_file_data(card_info) + '{{/gpg}}'
         file_name = "LOYANG_REG_PAN_{}{}".format(str(int(time.time())), '.gpg')
         file_url = "sftp://sftp.bink.com/{}".format(file_name)
 

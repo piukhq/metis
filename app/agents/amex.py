@@ -105,18 +105,18 @@ class Amex:
 
         if amex_data["status"] == "Failure":
             # Not a good news response.
-            message = "Amex {} unsuccessful - Token:{}, {}, {} {}".format(action,
-                                                                          payment_method_token[0].text,
-                                                                          amex_data["respDesc"],
-                                                                          "Code:",
-                                                                          amex_data["respCd"])
+            message = "Amex {} unsuccessful - Token: {}, {}, {} {}".format(action,
+                                                                           payment_method_token[0].text,
+                                                                           amex_data["respDesc"],
+                                                                           "Code:",
+                                                                           amex_data["respCd"])
             settings.logger.info(message)
             resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
         else:
             # could be a good response
-            message = "Amex {} successful - Token:{}, {}".format(action,
-                                                                 payment_method_token[0].text,
-                                                                 "Amex successfully processed")
+            message = "Amex {} successful - Token: {}, {}".format(action,
+                                                                  payment_method_token[0].text,
+                                                                  "Amex successfully processed")
             settings.logger.info(message)
 
             resp = {'message': message, 'status_code': 200}
@@ -239,7 +239,7 @@ def mac_api_header(access_token, mac_key, res_path_in):
     random.seed(millis)
     post_fix = 10000000 + random.randint(0, 90000000)
     nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-    base_string = str(ts)+"\n"+nonce+"\n"+"POST\n"+res_path+"\n"+host+"\n"+port+"\n\n"
+    base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path + "\n" + host + "\n" + port + "\n\n"
     base_string_bytes = base_string.encode('utf-8')
     mac = generate_mac(base_string_bytes, mac_key)
 
