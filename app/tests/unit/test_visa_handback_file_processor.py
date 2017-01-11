@@ -13,7 +13,6 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         self.path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
         with open(self.path,
                   'rb') as gpg_file:
-            print("THIS IS A TEST")
             self.file_to_write = gpg_file.read()
         self.setUpPyfakefs()
 
