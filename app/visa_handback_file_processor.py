@@ -72,7 +72,11 @@ class VisaHandback(object):
 
     @staticmethod
     def perform_file_archive(source_file, archive_dir):
-        os.makedirs(archive_dir, exist_ok=True)
+        try:
+            os.makedirs(archive_dir)
+        except FileExistsError:
+            # If the dir already exists we don't care.
+            pass
         archive_file_path = os.path.join(archive_dir, os.path.basename(source_file))
         if not os.path.exists(archive_file_path):
             shutil.move(source_file, archive_dir)

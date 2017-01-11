@@ -17,6 +17,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
 
     @patch('app.visa_handback_file_processor.scandir')
     def test_read_handback_file(self, mock_scandir):
+        import sys
+        print(sys.version)
         mock_scandir.side_effect = self.fs.ScanDir
         payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
         self.assertTrue(len(payment_files))
