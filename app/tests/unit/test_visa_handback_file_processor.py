@@ -10,14 +10,11 @@ from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHand
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
         v = VisaHandback()
-        payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
-        self.assertTrue(len(payment_files))
-        for file in payment_files:
-            if file.endswith(v.gpg_file_ext):
-                with open(file, 'rb') as gpg_file:
-                    self.path = file
-                    self.file_to_write = gpg_file.read()
-                    break
+        file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
+        self.path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
+        with open(self.path,
+                  'rb') as gpg_file:
+            self.file_to_write = gpg_file.read()
         self.setUpPyfakefs()
 
     @patch('app.visa_handback_file_processor.scandir')
