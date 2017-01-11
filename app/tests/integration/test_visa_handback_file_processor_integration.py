@@ -7,20 +7,27 @@ import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
 
+def setup_encrypted_file():
+    file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
+    path = '../fixtures/' + file
+    with open(path, 'rb') as gpg_file:
+        encrypted_file = gpg_file.read()
+        return path, encrypted_file
+
+
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
+        self.path, self.encrypted_file = setup_encrypted_file()
         self.setUpPyfakefs()
-
-    def tearDown(self):
-        # It is no longer necessary to add self.tearDownPyfakefs()
-        pass
 
     @patch('app.visa_handback_file_processor.scandir')
     def test_read_handback_file(self, mock_scandir):
-        import sys
-        print(sys.version)
         mock_scandir.side_effect = self.fs.ScanDir
-        payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
+        mkdir_p('../fixtures')
+        if self.path and self.encrypted_file:
+            with open(self.path, 'wb') as test_gpg_file:
+                test_gpg_file.write(self.encrypted_file)
+        payment_files = get_dir_contents('../fixtures')
         self.assertTrue(len(payment_files))
         mkdir_p(settings.VISA_ARCHIVE_DIR)
         target_files = get_dir_contents(settings.VISA_ARCHIVE_DIR)
