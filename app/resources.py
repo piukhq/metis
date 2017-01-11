@@ -35,6 +35,7 @@ class CreateReceiver(Resource):
 
         return make_response(response_text, status_code)
 
+
 api.add_resource(CreateReceiver, '/payment_service/create_receiver')
 
 
@@ -78,5 +79,6 @@ class Notify(Resource):
         agent_instance.save(req_data)
 
         return make_response('OK', 200)
+
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')

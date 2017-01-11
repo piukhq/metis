@@ -29,6 +29,7 @@ def rabbitmq_handler(action_code, card_info):
                           properties=pika.BasicProperties(delivery_mode=2))
     connection.close()
 
+
 handlers = {
     'amex': celery_handler,
     'mastercard': celery_handler,
