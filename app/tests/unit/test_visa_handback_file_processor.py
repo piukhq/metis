@@ -9,7 +9,6 @@ from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHand
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
-        v = VisaHandback()
         file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
         self.path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
         with open(self.path,
