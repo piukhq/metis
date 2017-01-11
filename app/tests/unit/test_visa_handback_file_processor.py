@@ -10,10 +10,11 @@ from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHand
 def setup_encrypted_file():
     file = 'LOYANG_REG_PAN_1483460158.LOYANG_RESP.D170103.pgp'
     path = '../../' + settings.VISA_SOURCE_FILES_DIR + '/' + file
-    with open(self.path,
+    with open(path,
               'rb') as gpg_file:
         encrypted_file = gpg_file.read()
         return path, encrypted_file
+
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
