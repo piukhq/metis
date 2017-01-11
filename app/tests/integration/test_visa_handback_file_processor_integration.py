@@ -1,15 +1,11 @@
 import os
 import mock
+import patch
 from pyfakefs import fake_filesystem_unittest
 # The module under test is pyfakefs.visa_handback_file_processor
-from scandir import scandir
 
 import settings
 from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
-
-
-def scandir_function(path=''):
-    return ['./']
 
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
@@ -20,8 +16,9 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         # It is no longer necessary to add self.tearDownPyfakefs()
         pass
 
-    @mock.patch('app.visa_handback_file_processor.scandir', side_effect=scandir)
-    def test_import_transactions(self, scandir_function):
+    @patch('app.visa_handback_file_processor.scandir')
+    def test_read_handback_file(self, mock_scandir):
+        mock_scandir.side_effect = self.fs.ScanDir
         payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
         self.assertTrue(len(payment_files))
         mkdir_p(settings.VISA_ARCHIVE_DIR)
