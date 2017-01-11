@@ -16,5 +16,6 @@ class Celery(c.Celery):
         # hook into the Celery error handler
         register_signal(sentry)
 
+
 celery = Celery()
 celery.config_from_object(settings)
