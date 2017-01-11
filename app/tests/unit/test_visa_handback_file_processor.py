@@ -56,7 +56,7 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         mkdir_p(fixture_path)
         touched_file = fixture_path + filename
         with open(touched_file, 'a'):
-            os.utime(touched_file, None)test__decrypt_file
+            os.utime(touched_file, None)
         v = VisaHandback()
         v.archive_files(touched_file)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + filename)
