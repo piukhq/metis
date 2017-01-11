@@ -97,6 +97,3 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         payment_files = get_dir_contents('../fixtures')
         txt_files = v.file_list(payment_files)
         self.assertTrue(len(txt_files))
-
-if __name__ == '__main__':
-    path, encrypted_file = setup_encrypted_file()
