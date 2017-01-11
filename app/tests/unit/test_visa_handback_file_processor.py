@@ -53,6 +53,10 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     @patch('app.visa_handback_file_processor.scandir')
     def test__decrypt_file(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
+        mkdir_p('../../' + settings.VISA_SOURCE_FILES_DIR)
+        if self.path and self.file_to_write:
+            with open(self.path, 'wb') as test_gpg_file:
+                test_gpg_file.write(self.file_to_write)
         v = VisaHandback()
         payment_files = get_dir_contents('../../' + settings.VISA_SOURCE_FILES_DIR)
         self.assertTrue(len(payment_files))
