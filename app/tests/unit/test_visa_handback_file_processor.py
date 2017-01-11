@@ -82,4 +82,3 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         v = VisaHandback()
         txt_files = v.file_list(payment_files)
         self.assertTrue(len(txt_files))
-
