@@ -1,6 +1,5 @@
 import os
-import mock
-import patch
+from unittest.mock import patch
 from pyfakefs import fake_filesystem_unittest
 # The module under test is pyfakefs.visa_handback_file_processor
 

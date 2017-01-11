@@ -5,7 +5,7 @@ from pyfakefs import fake_filesystem_unittest
 
 # The module under test is pyfakefs.visa_handback_file_processor
 import settings
-from app.visa_handback_file_processor import get_dir_contents, mkdir_p
+from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
 
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
@@ -28,3 +28,10 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         self.assertIsInstance(payment_files, list)
         self.assertEqual(len(payment_files), 1)
         self.assertTrue(payment_files[0].endswith('/afile.txt'))
+
+    def test_bink_error_lookup(self):
+        code = '4'
+        v = VisaHandback()
+        state, err_string = v.bink_error_lookup(code)
+        self.assertTrue(type(state) is bool)
+        self.assertTrue(type(err_string) is str)
