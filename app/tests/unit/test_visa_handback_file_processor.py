@@ -20,7 +20,6 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
                     break
         self.setUpPyfakefs()
 
-
     @patch('app.visa_handback_file_processor.scandir')
     def test_get_dir_contents(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
