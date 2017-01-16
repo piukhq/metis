@@ -33,22 +33,22 @@ class VisaHandback(object):
             return False, 'None'
 
     def read_handback_file(self, payment_files):
-        rows = 0
         txt_files = self.file_list(payment_files)
         bink_rows = 0
-        first_row = True
+
+        token_field = (63, 88)
+        return_code_field = (741, 745)
+        return_description_field = (745, 1000)
 
         for txt_file in txt_files:
             with open(txt_file) as file:
                 for row in file:
-                    if first_row:
-                        first_row = False
+                    # This ensures the header and footer are ignored.
+                    if row[:2] == '00' or row[:2] == '99':
                         continue
-                    token_field = (63, 88)
+
                     token = row[token_field[0]:token_field[1]].strip()
-                    return_code_field = (741, 745)
                     return_code = row[return_code_field[0]:return_code_field[1]].strip()
-                    return_description_field = (745, 1000)
                     return_description = row[return_description_field[0]:return_description_field[1]].strip()
 
                     bink_row, bink_error_text = self.bink_error_lookup(return_code)
@@ -58,12 +58,10 @@ class VisaHandback(object):
                             settings.logger.info("{} {} {}".format(token, return_code, bink_error_text))
                         else:
                             settings.logger.info("{} {} {}".format(token, return_code, return_description))
-                    rows += 1
 
-                settings.logger.info("Filename: {}, Number of rows: {}, Number of rows requiring action by "
-                                     "Bink: {}".format(txt_file, rows-1, bink_rows))
+                settings.logger.info("Filename: {}, Number of rows requiring action by "
+                                     "Bink: {}".format(txt_file, bink_rows))
                 self.archive_files(txt_file)
-        return rows
 
     def file_list(self, payment_files):
         txt_files = [self._decrypt_file(encrypted_file) for encrypted_file in payment_files
@@ -72,11 +70,7 @@ class VisaHandback(object):
 
     @staticmethod
     def perform_file_archive(source_file, archive_dir):
-        try:
-            os.makedirs(archive_dir)
-        except FileExistsError:
-            # If the dir already exists we don't care.
-            pass
+        os.makedirs(archive_dir, exist_ok=True)
         archive_file_path = os.path.join(archive_dir, os.path.basename(source_file))
         if not os.path.exists(archive_file_path):
             shutil.move(source_file, archive_dir)
@@ -131,16 +125,6 @@ def get_dir_contents(src_dir):
             files.append(entry.path)
 
     return files
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 
 if __name__ == '__main__':

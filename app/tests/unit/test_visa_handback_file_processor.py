@@ -4,7 +4,7 @@ from unittest.mock import patch
 from pyfakefs import fake_filesystem_unittest
 
 import settings
-from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
+from app.visa_handback_file_processor import get_dir_contents, VisaHandback
 
 
 fixture_path = os.path.join(settings.APP_DIR, 'app/tests/fixtures/')
@@ -22,6 +22,12 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
     def setUp(self):
         self.path, self.encrypted_file = setup_encrypted_file()
         self.setUpPyfakefs()
+        self.code = '4'
+        os.makedirs(fixture_path, exist_ok=True)
+        self.filename = 'afile.txt'
+        self.touched_file = fixture_path + self.filename
+        with open(self.touched_file, 'a'):
+            os.utime(self.touched_file, None)
 
     @patch('app.visa_handback_file_processor.scandir')
     def test_get_dir_contents(self, mock_scandir):
@@ -29,7 +35,6 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         '''Test visa_handback_file_processor.dir_exists()'''
         # The os module has been replaced with the fake os module so all of the
         # following occurs in the fake filesystem.
-        mkdir_p(fixture_path)
         self.assertTrue(os.path.isdir(fixture_path))
         # This is the equivalent of `touch` on unix
         with open(self.path, 'wb') as pgp_file:
@@ -39,36 +44,20 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         self.assertEqual(len(payment_files), 1)
         self.assertTrue(payment_files[0].endswith('pgp'))
 
-    def test_mkdir_p(self):
-        dir = 'test_dir/test_subdir'
-        mkdir_p(dir)
-        self.assertTrue(os.path.isdir(dir))
-
     def test_bink_error_lookup(self):
-        code = '4'
         v = VisaHandback()
-        state, err_string = v.bink_error_lookup(code)
+        state, err_string = v.bink_error_lookup(self.code)
         self.assertTrue(type(state) is bool)
         self.assertTrue(type(err_string) is str)
 
     def test_archive_files(self):
-        filename = 'afile.txt'
-        mkdir_p(fixture_path)
-        touched_file = fixture_path + filename
-        with open(touched_file, 'a'):
-            os.utime(touched_file, None)
         v = VisaHandback()
-        v.archive_files(touched_file)
-        result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + filename)
+        v.archive_files(self.touched_file)
+        result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)
         self.assertTrue(result)
 
     def test_perform_file_archive(self):
-        filename = 'afile.txt'
-        mkdir_p(fixture_path)
-        touched_file = fixture_path + filename
-        with open(touched_file, 'a'):
-            os.utime(touched_file, None)
         v = VisaHandback()
-        v.perform_file_archive(touched_file, settings.VISA_ARCHIVE_DIR)
-        result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + filename)
+        v.perform_file_archive(self.touched_file, settings.VISA_ARCHIVE_DIR)
+        result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)
         self.assertTrue(result)

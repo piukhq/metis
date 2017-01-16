@@ -11,7 +11,7 @@ fixture_path = os.path.join(settings.APP_DIR, 'app/tests/fixtures/')
 class TestVisaHandback(unittest.TestCase):
     def test_read_handback_file(self):
         payment_files = get_dir_contents(fixture_path)
-        mkdir_p(settings.VISA_ARCHIVE_DIR)
+        os.makedirs(settings.VISA_ARCHIVE_DIR, exist_ok=True)
         target_files = get_dir_contents(settings.VISA_ARCHIVE_DIR)
         if len(target_files):
             for target_file in target_files:
