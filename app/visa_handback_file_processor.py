@@ -1,5 +1,4 @@
 import os
-import errno
 import shutil
 import subprocess
 

@@ -41,7 +41,7 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
             pgp_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
         self.assertIsInstance(payment_files, list)
-        print(len(payment_files))
+        print(len(payment_files), payment_files)
         self.assertEqual(len(payment_files), 1)
         self.assertTrue(payment_files[0].endswith('pgp'))
 
