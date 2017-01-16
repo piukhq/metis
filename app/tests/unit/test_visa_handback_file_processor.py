@@ -41,8 +41,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
             pgp_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
         self.assertIsInstance(payment_files, list)
-        print(len(payment_files), payment_files)
-        self.assertEqual(len(payment_files), 1)
+        # There should be the 'afile.txt' and the fixture file so two files in the directory.
+        self.assertEqual(len(payment_files), 2)
         self.assertTrue(payment_files[0].endswith('pgp'))
 
     def test_bink_error_lookup(self):
