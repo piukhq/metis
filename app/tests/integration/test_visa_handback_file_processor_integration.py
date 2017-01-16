@@ -2,7 +2,7 @@ import os
 import unittest
 
 import settings
-from app.visa_handback_file_processor import get_dir_contents, mkdir_p, VisaHandback
+from app.visa_handback_file_processor import get_dir_contents, VisaHandback
 
 
 fixture_path = os.path.join(settings.APP_DIR, 'app/tests/fixtures/')
