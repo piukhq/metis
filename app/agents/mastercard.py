@@ -40,7 +40,7 @@ class MasterCard:
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
         return header
 
-    def response_handler(self, response, action):
+    def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -85,6 +85,10 @@ class MasterCard:
             settings.logger.info(message)
             resp = {'message': message, 'status_code': response.status_code}
 
+        if mastercard_fault_code and mastercard_fault_code in status_mapping:
+            resp['bink_status'] = status_mapping[mastercard_fault_code]
+        else:
+            resp['bink_status'] = status_mapping['BINK_UNKNOWN']
         return resp
 
     def add_card_body(self, card_info):

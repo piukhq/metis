@@ -81,7 +81,7 @@ class Amex:
                                                    api_key, access_key, header_end)
         return header
 
-    def response_handler(self, response, action):
+    def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
             try:
                 resp_content = response.json()

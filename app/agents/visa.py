@@ -35,7 +35,7 @@ class Visa(AgentBase):
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def response_handler(self, response):
+    def response_handler(self, response, status_mapping):
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -103,7 +103,7 @@ class Visa(AgentBase):
         else:
             return ''
 
-    def create_cards(self, card_info):
+    def create_cards(self, card_info, status_mapping):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
         settings.logger.info('Start batch card process for Visa')
@@ -127,7 +127,7 @@ class Visa(AgentBase):
         settings.logger.info('POST URL {}, header: {}'.format(url, self.header))
 
         resp = self.post_request(url, self.header, request_data)
-        self.response_handler(resp)
+        self.response_handler(resp, status_mapping)
 
         return file_name
 

@@ -81,18 +81,23 @@ def add_card(card_info):
     logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp, 'Add')
+
+    # get the status mapping for this provider from hermes.
+    status_mapping = requests.get('{}/payment_cards/provider_status_mapping/{}'.format(
+        HERMES_URL,
+        card_info['partner_slug'])).json()
+
+    resp = agent_instance.response_handler(resp, 'Add', status_mapping)
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
         logger.info('Metis calling Hermes set Status.')
 
         update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info['id'])
-        token = 'Token {}'.format(SERVICE_API_KEY)
-        data = {"status": 1}
         resp = requests.put(update_status_url,
-                            headers={'content-type': 'application/json', 'Authorization': token},
-                            json=data)
+                            headers={'content-type': 'application/json',
+                                     'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
+                            json={"status": resp['bink_status']})
 
     return resp
 
