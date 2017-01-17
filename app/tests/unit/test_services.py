@@ -33,19 +33,22 @@ class TestServices(unittest.TestCase):
                                body=xml_response,
                                content_type='application/xml')
 
-    def hermes_status_route(self):
+    @staticmethod
+    def hermes_status_route():
         httpretty.register_uri(httpretty.PUT, '{}/payment_cards/accounts/status/{}'.format(settings.HERMES_URL, 1),
                                status=200,
                                headers={'Authorization': auth_key},
                                body=json.dumps({"status_code": 200, "message": "success"}),
                                content_type='application/json')
 
-    def hermes_provider_status_mappings_route(self):
+    @staticmethod
+    def hermes_provider_status_mappings_route():
         httpretty.register_uri(httpretty.GET,
                                re.compile('{}/payment_cards/provider_status_mapping/(.+)'.format(settings.HERMES_URL)),
                                status=200,
                                headers={'Authorization': auth_key},
-                               body=json.dumps({'BINK_UNKNOWN': 10}),
+                               body=json.dumps([{'provider_status': 'BINK_UNKNOWN',
+                                                 'bink_status': 10}]),
                                content_type='application/json')
 
     def test_route(self):
