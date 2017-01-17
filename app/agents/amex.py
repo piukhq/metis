@@ -121,6 +121,11 @@ class Amex:
 
             resp = {'message': message, 'status_code': 200}
 
+        if amex_data and amex_data['respCd'] in status_mapping:
+            resp['bink_status'] = status_mapping[amex_data['respCd']]
+        else:
+            resp['bink_status'] = status_mapping['BINK_UNKNOWN']
+
         return resp
 
     def add_card_request_body(self, card_id):

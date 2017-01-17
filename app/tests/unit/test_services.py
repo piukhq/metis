@@ -91,7 +91,7 @@ Server: Information Not Disclosed]]>
     def test_create_receiver(self):
         self.create_route()
         resp = create_receiver('http://testing_latestserver.com', 'test')
-        self.assertTrue(resp.status_code == 201)
+        self.assertEqual(resp.status_code, 201)
         self.assertIn('token', resp.text)
 
     @httpretty.activate
@@ -109,4 +109,4 @@ Server: Information Not Disclosed]]>
         self.hermes_status_route()
         self.hermes_provider_status_mappings_route()
         resp = add_card(card_info)
-        self.assertTrue(resp.status_code == 200)
+        self.assertEqual(resp['status_code'], 200)

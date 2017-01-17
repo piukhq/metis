@@ -4,13 +4,20 @@ import re
 
 import httpretty
 
-from app.hermes import provider_status_mapping
+from app.hermes import get_provider_status_mapping, put_account_status
 import settings
 
 
 class TestHermes(TestCase):
     auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
         'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
+
+    def hermes_account_status_route(self):
+        httpretty.register_uri(httpretty.PUT,
+                               re.compile('{}/payment_cards/accounts/status/(\d+)'.format(settings.HERMES_URL)),
+                               status=200,
+                               headers={'Authorization': self.auth_key},
+                               content_type='application/json')
 
     def hermes_provider_status_mappings_route(self):
         httpretty.register_uri(httpretty.GET,
@@ -22,7 +29,13 @@ class TestHermes(TestCase):
                                content_type='application/json')
 
     @httpretty.activate
-    def test_provider_status_mapping(self):
+    def test_get_provider_status_mapping(self):
         self.hermes_provider_status_mappings_route()
-        mapping = provider_status_mapping('visa')
+        mapping = get_provider_status_mapping('visa')
         self.assertEqual(mapping, {'BINK_UNKNOWN': 10})
+
+    @httpretty.activate
+    def test_put_account_status(self):
+        self.hermes_account_status_route()
+        put_account_status(10, 2)
+        self.assertTrue(httpretty.has_request())
