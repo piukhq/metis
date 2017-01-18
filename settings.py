@@ -79,4 +79,11 @@ PONTUS_PASSWORD = env_var('PONTUS_PASSWORD', '!^LoyaltyDev2015')
 PONTUS_HOST = env_var('PONTUS_HOST', '192.168.1.53')
 PONTUS_PORT = env_var('PONTUS_PORT', '5432')
 
+
+# Store VISA private key separately from other keys
+VISA_SOURCE_FILES_DIR = env_var('VISA_SOURCE_FILES_DIR', '../visa_handback_files')
+VISA_KEYRING_DIR = env_var('VISA_KEYRING_DIR', '~/.gnupg')
+VISA_ARCHIVE_DIR = env_var('VISA_ARCHIVE_DIR', '/tmp/archive/visa')
+VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
+
 SLACK_API_TOKEN = 'xoxb-119487439522-Lsefc6ykOx3RIXC89WN8wx3h'

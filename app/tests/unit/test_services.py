@@ -35,7 +35,7 @@ class TestServices(unittest.TestCase):
 
     @staticmethod
     def hermes_status_route():
-        httpretty.register_uri(httpretty.PUT, '{}/payment_cards/accounts/status/{}'.format(settings.HERMES_URL, 1),
+        httpretty.register_uri(httpretty.PUT, '{}/payment_cards/accounts/status'.format(settings.HERMES_URL),
                                status=200,
                                headers={'Authorization': auth_key},
                                body=json.dumps({"status_code": 200, "message": "success"}),

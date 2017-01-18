@@ -14,7 +14,7 @@ class TestHermes(TestCase):
 
     def hermes_account_status_route(self):
         httpretty.register_uri(httpretty.PUT,
-                               re.compile('{}/payment_cards/accounts/status/(\d+)'.format(settings.HERMES_URL)),
+                               '{}/payment_cards/accounts/status'.format(settings.HERMES_URL),
                                status=200,
                                headers={'Authorization': self.auth_key},
                                content_type='application/json')
@@ -35,7 +35,13 @@ class TestHermes(TestCase):
         self.assertEqual(mapping, {'BINK_UNKNOWN': 10})
 
     @httpretty.activate
-    def test_put_account_status(self):
+    def test_put_account_status_card_id(self):
         self.hermes_account_status_route()
-        put_account_status(10, 2)
+        put_account_status(2, card_id=2)
+        self.assertTrue(httpretty.has_request())
+
+    @httpretty.activate
+    def test_put_account_status_card_token(self):
+        self.hermes_account_status_route()
+        put_account_status(2, token='test')
         self.assertTrue(httpretty.has_request())

@@ -96,7 +96,7 @@ def add_card(card_info):
     else:
         logger.info('Card add unsuccessful, calling Hermes to set card status.')
         card_status_code = resp['bink_status']
-    put_account_status(card_info['id'], card_status_code)
+    put_account_status(card_status_code, card_id=card_info['id'])
 
     return resp
 
