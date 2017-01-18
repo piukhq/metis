@@ -14,7 +14,7 @@ class TestHermes(TestCase):
 
     def hermes_account_status_route(self):
         httpretty.register_uri(httpretty.PUT,
-                               re.compile('{}/payment_cards/accounts/status/(\d+)'.format(settings.HERMES_URL)),
+                               '{}/payment_cards/accounts/status'.format(settings.HERMES_URL),
                                status=200,
                                headers={'Authorization': self.auth_key},
                                content_type='application/json')

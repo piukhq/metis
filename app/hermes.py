@@ -18,7 +18,7 @@ def put_account_status(status_code, card_id=None, token=None):
     else:
         request_data['token'] = token
 
-    return requests.put("{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_id),
+    return requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
                         headers={'content-type': 'application/json',
                                  'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
                         json=request_data)

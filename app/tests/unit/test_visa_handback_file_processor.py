@@ -1,6 +1,9 @@
 import os
+import re
+import json
 from unittest.mock import patch
 
+import httpretty
 from pyfakefs import fake_filesystem_unittest
 
 import settings
@@ -19,6 +22,18 @@ def setup_encrypted_file():
 
 
 class TestVisaHandback(fake_filesystem_unittest.TestCase):
+    auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
+               'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
+
+    def hermes_provider_status_mappings_route(self):
+        httpretty.register_uri(httpretty.GET,
+                               re.compile('{}/payment_cards/provider_status_mapping/(.+)'.format(settings.HERMES_URL)),
+                               status=200,
+                               headers={'Authorization': self.auth_key},
+                               body=json.dumps([{'provider_status': 'BINK_UNKNOWN',
+                                                 'bink_status': 10}]),
+                               content_type='application/json')
+
     def setUp(self):
         self.path, self.encrypted_file = setup_encrypted_file()
         self.setUpPyfakefs()
@@ -40,24 +55,31 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         with open(self.path, 'wb') as pgp_file:
             pgp_file.write(self.encrypted_file)
         payment_files = get_dir_contents(fixture_path)
+        # make the list order predictable
+        payment_files.sort()
         self.assertIsInstance(payment_files, list)
         # There should be the 'afile.txt' and the fixture file so two files in the directory.
         self.assertEqual(len(payment_files), 2)
         self.assertTrue(payment_files[0].endswith('pgp'))
 
+    @httpretty.activate
     def test_bink_error_lookup(self):
+        self.hermes_provider_status_mappings_route()
         v = VisaHandback()
-        state, err_string = v.bink_error_lookup(self.code)
-        self.assertTrue(type(state) is bool)
-        self.assertTrue(type(err_string) is str)
+        err_code = v.bink_error_lookup(self.code)
+        self.assertIsInstance(err_code, int)
 
+    @httpretty.activate
     def test_archive_files(self):
+        self.hermes_provider_status_mappings_route()
         v = VisaHandback()
         v.archive_files(self.touched_file)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)
         self.assertTrue(result)
 
+    @httpretty.activate
     def test_perform_file_archive(self):
+        self.hermes_provider_status_mappings_route()
         v = VisaHandback()
         v.perform_file_archive(self.touched_file, settings.VISA_ARCHIVE_DIR)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)

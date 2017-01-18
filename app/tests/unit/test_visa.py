@@ -35,7 +35,7 @@ class TestVisa(TestCase):
 
     def hermes_status_route(self):
         httpretty.register_uri(httpretty.PUT,
-                               re.compile('{}/payment_cards/accounts/status/([0-9]+)'.format(settings.HERMES_URL)),
+                               '{}/payment_cards/accounts/status'.format(settings.HERMES_URL),
                                status=200,
                                headers={'Authorization': auth_key},
                                body=json.dumps({"status_code": 200, "message": "success"}),
