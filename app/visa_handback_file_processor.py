@@ -22,9 +22,6 @@ class VisaHandback(object):
         self.bink_code_lookup = get_provider_status_mapping('visa')
 
     def bink_error_lookup(self, return_code):
-        """It is anticipated that this function will call (possibly indirectly) hermes with a requests call to
-        obtain the dict of bink error messages based on code lookups for visa"""
-
         if return_code in self.bink_code_lookup.keys():
             return self.bink_code_lookup[return_code]
         else:
