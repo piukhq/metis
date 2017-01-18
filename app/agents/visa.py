@@ -10,6 +10,7 @@ from io import StringIO
 
 from app.card_router import ActionCode
 from app.agents.agent_base import AgentBase
+from app.hermes import put_account_status
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
@@ -35,7 +36,7 @@ class Visa(AgentBase):
         header = '![CDATA[Content-Type: application/json]]'
         return header
 
-    def response_handler(self, response, status_mapping):
+    def response_handler(self, response):
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -103,19 +104,14 @@ class Visa(AgentBase):
         else:
             return ''
 
-    def create_cards(self, card_info, status_mapping):
+    def create_cards(self, card_info):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
         settings.logger.info('Start batch card process for Visa')
         card_log = []
-        token = 'Token {}'.format(SERVICE_API_KEY)
-        data = {"status": 1}
 
         for card in card_info:
-            update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card['id'])
-            requests.put(update_status_url,
-                         headers={'content-type': 'application/json', 'Authorization': token},
-                         json=data)
+            put_account_status(card['id'], 1)
             card_log.append(card['payment_token'])
 
         if len(card_log) > 0:
@@ -127,7 +123,7 @@ class Visa(AgentBase):
         settings.logger.info('POST URL {}, header: {}'.format(url, self.header))
 
         resp = self.post_request(url, self.header, request_data)
-        self.response_handler(resp, status_mapping)
+        self.response_handler(resp)
 
         return file_name
 
