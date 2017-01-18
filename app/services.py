@@ -1,6 +1,8 @@
 import requests
+
 from app.utils import resolve_agent
-from settings import HERMES_URL, SERVICE_API_KEY, logger, SPREEDLY_RECEIVER_URL
+from app.hermes import get_provider_status_mapping, put_account_status
+from settings import logger, SPREEDLY_RECEIVER_URL
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
@@ -81,18 +83,20 @@ def add_card(card_info):
     logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp, 'Add')
+
+    # get the status mapping for this provider from hermes.
+    status_mapping = get_provider_status_mapping(card_info['partner_slug'])
+
+    resp = agent_instance.response_handler(resp, 'Add', status_mapping)
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
-        logger.info('Metis calling Hermes set Status.')
-
-        update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card_info['id'])
-        token = 'Token {}'.format(SERVICE_API_KEY)
-        data = {"status": 1}
-        resp = requests.put(update_status_url,
-                            headers={'content-type': 'application/json', 'Authorization': token},
-                            json=data)
+        logger.info('Card added successfully, calling Hermes to activate card.')
+        card_status_code = 1
+    else:
+        logger.info('Card add unsuccessful, calling Hermes to set card status.')
+        card_status_code = resp['bink_status']
+    put_account_status(card_info['id'], card_status_code)
 
     return resp
 
