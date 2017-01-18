@@ -81,7 +81,7 @@ class Amex:
                                                    api_key, access_key, header_end)
         return header
 
-    def response_handler(self, response, action):
+    def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
             try:
                 resp_content = response.json()
@@ -120,6 +120,11 @@ class Amex:
             settings.logger.info(message)
 
             resp = {'message': message, 'status_code': 200}
+
+        if amex_data and amex_data['respCd'] in status_mapping:
+            resp['bink_status'] = status_mapping[amex_data['respCd']]
+        else:
+            resp['bink_status'] = status_mapping['BINK_UNKNOWN']
 
         return resp
 

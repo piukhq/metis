@@ -3,13 +3,12 @@ import settings
 import json
 import time
 import psycopg2
-import requests
 
-from settings import HERMES_URL, SERVICE_API_KEY
 from io import StringIO
 
 from app.card_router import ActionCode
 from app.agents.agent_base import AgentBase
+from app.hermes import put_account_status
 
 production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 production_create_url = ''
@@ -108,14 +107,9 @@ class Visa(AgentBase):
         Receiver_tokens kept in settings.py."""
         settings.logger.info('Start batch card process for Visa')
         card_log = []
-        token = 'Token {}'.format(SERVICE_API_KEY)
-        data = {"status": 1}
 
         for card in card_info:
-            update_status_url = "{}/payment_cards/accounts/status/{}".format(HERMES_URL, card['id'])
-            requests.put(update_status_url,
-                         headers={'content-type': 'application/json', 'Authorization': token},
-                         json=data)
+            put_account_status(card['id'], 1)
             card_log.append(card['payment_token'])
 
         if len(card_log) > 0:

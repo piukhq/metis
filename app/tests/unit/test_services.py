@@ -3,6 +3,7 @@ import json
 import unittest
 import httpretty
 import settings
+import re
 from app.services import create_receiver, add_card
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
@@ -18,25 +19,36 @@ class TestServices(unittest.TestCase):
 
     def create_route(self):
         xml_response = '<receiver>' \
-                   '<receiver_type>test</receiver_type>' \
-                   '<token>aDwu4ykovZVe7Gpto3rHkYWI5wI</token>' \
-                   '<hostnames>http://testing_latestserver.com</hostnames>' \
-                   '<state>retained</state>' \
-                   '<created_at type="dateTime">2016-04-06T07:54:13Z</created_at>' \
-                   '<updated_at type="dateTime">2016-04-06T07:54:13Z</updated_at>' \
-                   '<credentials nil="true"/>' \
-                   '</receiver>'
+            '<receiver_type>test</receiver_type>' \
+            '<token>aDwu4ykovZVe7Gpto3rHkYWI5wI</token>' \
+            '<hostnames>http://testing_latestserver.com</hostnames>' \
+            '<state>retained</state>' \
+            '<created_at type="dateTime">2016-04-06T07:54:13Z</created_at>' \
+            '<updated_at type="dateTime">2016-04-06T07:54:13Z</updated_at>' \
+            '<credentials nil="true"/>' \
+            '</receiver>'
 
         httpretty.register_uri(httpretty.POST, self.create_url,
                                status=201,
                                body=xml_response,
                                content_type='application/xml')
 
-    def hermes_status_route(self):
+    @staticmethod
+    def hermes_status_route():
         httpretty.register_uri(httpretty.PUT, '{}/payment_cards/accounts/status/{}'.format(settings.HERMES_URL, 1),
                                status=200,
                                headers={'Authorization': auth_key},
                                body=json.dumps({"status_code": 200, "message": "success"}),
+                               content_type='application/json')
+
+    @staticmethod
+    def hermes_provider_status_mappings_route():
+        httpretty.register_uri(httpretty.GET,
+                               re.compile('{}/payment_cards/provider_status_mapping/(.+)'.format(settings.HERMES_URL)),
+                               status=200,
+                               headers={'Authorization': auth_key},
+                               body=json.dumps([{'provider_status': 'BINK_UNKNOWN',
+                                                 'bink_status': 10}]),
                                content_type='application/json')
 
     def test_route(self):
@@ -79,7 +91,7 @@ Server: Information Not Disclosed]]>
     def test_create_receiver(self):
         self.create_route()
         resp = create_receiver('http://testing_latestserver.com', 'test')
-        self.assertTrue(resp.status_code == 201)
+        self.assertEqual(resp.status_code, 201)
         self.assertIn('token', resp.text)
 
     @httpretty.activate
@@ -95,5 +107,6 @@ Server: Information Not Disclosed]]>
         mc.testing_receiver_token = self.receiver_token
         settings.TESTING = True
         self.hermes_status_route()
+        self.hermes_provider_status_mappings_route()
         resp = add_card(card_info)
-        self.assertTrue(resp.status_code == 200)
+        self.assertEqual(resp['status_code'], 200)
