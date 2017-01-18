@@ -3,7 +3,6 @@ import json
 import settings
 import app.agents.visa as agent
 import logging
-import re
 from unittest import TestCase
 from unittest import mock
 from app.tests.unit.fixture import card_info_reduce
