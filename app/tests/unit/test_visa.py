@@ -94,11 +94,9 @@ class TestVisa(TestCase):
             'date': 1475920002
         }]
 
-        status_mapping = {}
-
         self.spreedly_route()
         self.hermes_status_route()
-        self.visa.create_cards(card_info_add, status_mapping)
+        self.visa.create_cards(card_info_add)
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
