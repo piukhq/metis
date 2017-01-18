@@ -35,7 +35,13 @@ class TestHermes(TestCase):
         self.assertEqual(mapping, {'BINK_UNKNOWN': 10})
 
     @httpretty.activate
-    def test_put_account_status(self):
+    def test_put_account_status_card_id(self):
         self.hermes_account_status_route()
-        put_account_status(10, 2)
+        put_account_status(2, card_id=2)
+        self.assertTrue(httpretty.has_request())
+
+    @httpretty.activate
+    def test_put_account_status_card_token(self):
+        self.hermes_account_status_route()
+        put_account_status(2, token='test')
         self.assertTrue(httpretty.has_request())

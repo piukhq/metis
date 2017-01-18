@@ -109,7 +109,7 @@ class Visa(AgentBase):
         card_log = []
 
         for card in card_info:
-            put_account_status(card['id'], 1)
+            put_account_status(1, card_id=card['id'])
             card_log.append(card['payment_token'])
 
         if len(card_log) > 0:

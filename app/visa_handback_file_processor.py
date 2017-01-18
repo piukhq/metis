@@ -4,10 +4,12 @@ import subprocess
 
 from scandir import scandir
 
+from app.hermes import get_provider_status_mapping, put_account_status
 import settings
 
 
 class VisaHandback(object):
+
     def __init__(self,
                  keyring=settings.VISA_KEYRING_DIR,
                  archive_dir=settings.VISA_ARCHIVE_DIR,
@@ -17,19 +19,16 @@ class VisaHandback(object):
         self.archive_dir = archive_dir
         self.gpg_file_ext = gpg_file_ext
         self.text_file_suffix = '.unencrypted.txt'
+        self.bink_code_lookup = get_provider_status_mapping('visa')
 
     def bink_error_lookup(self, return_code):
         """It is anticipated that this function will call (possibly indirectly) hermes with a requests call to
         obtain the dict of bink error messages based on code lookups for visa"""
 
-        bink_code_lookup = {
-            '514': 'This is an example Bink lookup error message',
-        }
-
-        if return_code in bink_code_lookup.keys():
-            return True, bink_code_lookup[return_code]
+        if return_code in self.bink_code_lookup.keys():
+            return self.bink_code_lookup[return_code]
         else:
-            return False, 'None'
+            return self.bink_code_lookup['BINK_UNKNOWN']
 
     def read_handback_file(self, payment_files):
         txt_files = self.file_list(payment_files)
@@ -50,13 +49,11 @@ class VisaHandback(object):
                     return_code = row[return_code_field[0]:return_code_field[1]].strip()
                     return_description = row[return_description_field[0]:return_description_field[1]].strip()
 
-                    bink_row, bink_error_text = self.bink_error_lookup(return_code)
-                    if return_description:
-                        if bink_row:
-                            bink_rows += 1
-                            settings.logger.info("{} {} {}".format(token, return_code, bink_error_text))
-                        else:
-                            settings.logger.info("{} {} {}".format(token, return_code, return_description))
+                    bink_status = self.bink_error_lookup(return_code)
+
+                    bink_rows += 1
+                    put_account_status(bink_status, token=token)
+                    settings.logger.info("{} {} {}".format(token, return_code, return_description))
 
                 settings.logger.info("Filename: {}, Number of rows requiring action by "
                                      "Bink: {}".format(txt_file, bink_rows))
