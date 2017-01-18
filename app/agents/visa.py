@@ -3,9 +3,7 @@ import settings
 import json
 import time
 import psycopg2
-import requests
 
-from settings import HERMES_URL, SERVICE_API_KEY
 from io import StringIO
 
 from app.card_router import ActionCode
