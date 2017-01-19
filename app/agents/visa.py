@@ -10,25 +10,12 @@ from app.card_router import ActionCode
 from app.agents.agent_base import AgentBase
 from app.hermes import put_account_status
 
-production_receiver_token = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
-production_create_url = ''
-production_remove_url = ''
-
-testing_hostname = 'http://latestserver.com/post.php'
-testing_receiver_token = 'JKzJSKICIOZodDBMCyuRmttkRjO'
-testing_create_url = ''
-testing_remove_url = ''
-
 
 class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
 
     def receiver_token(self):
-        if not settings.TESTING:
-            receiver_token = production_receiver_token
-        else:
-            receiver_token = testing_receiver_token
-        return receiver_token + '/export.json'
+        return settings.VISA_RECEIVER_TOKEN + '/export.json'
 
     def request_header(self):
         header = '![CDATA[Content-Type: application/json]]'

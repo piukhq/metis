@@ -3,38 +3,18 @@ import jinja2
 import os
 from lxml import etree
 
-testing_url = 'http://latestserver.com/post.php'
-testing_receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
-testing_endpoint = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
-# MTF URL
-# production_url = 'https://ws.mastercard.com/mtf/MRS/CustomerService'
-production_url = 'https://ws.mastercard.com/MRS/CustomerService'
-production_receiver_token = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'
-
 
 class MasterCard:
     header = {'Content-Type': 'application/xml'}
 
     def add_url(self):
-        if not settings.TESTING:
-            service_url = production_url
-        else:
-            service_url = testing_url
-        return service_url
+        return settings.MASTERCARD_URL
 
     def remove_url(self):
-        if not settings.TESTING:
-            service_url = production_url
-        else:
-            service_url = testing_url
-        return service_url
+        return settings.MASTERCARD_URL
 
     def receiver_token(self):
-        if not settings.TESTING:
-            receiver_token = production_receiver_token
-        else:
-            receiver_token = testing_receiver_token
-        return receiver_token + '/deliver.xml'
+        return settings.MASTERCARD_RECEIVER_TOKEN + '/deliver.xml'
 
     def request_header(self):
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
@@ -163,8 +143,7 @@ class MasterCard:
 
     def do_echo_body(self, card_info):
         # DoEcho url MTF
-        # do_echo_url = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
-        do_echo_url = 'https://ws.mastercard.com/MRS/DiagnosticService'
+        do_echo_url = settings.MASTERCARD_DO_ECHO_URL
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + do_echo_url + '</url>' \

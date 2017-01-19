@@ -13,18 +13,6 @@ from lxml import etree
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
 
-host = "api.americanexpress.com"
-port = "443"
-res_path_sync = '/v3/smartoffers/sync'
-res_path_unsync = "/v3/smartoffers/unsync"
-production_receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
-production_create_url = 'https://{}{}'.format(host, res_path_sync)
-production_remove_url = 'https://{}{}'.format(host, res_path_unsync)
-
-testing_receiver_token = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
-testing_create_url = 'https://api.qa.americanexpress.com/v3/smartoffers/sync'
-testing_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
-
 # Amex OAuth details
 # Testing
 # client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
@@ -35,6 +23,10 @@ testing_remove_url = 'https://api.qa.americanexpress.com/v3/smartoffers/unsync'
 client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
 client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
 
+port = "443"
+res_path_sync = '/v3/smartoffers/sync'
+res_path_unsync = "/v3/smartoffers/unsync"
+
 
 class Amex:
     header = {'Content-Type': 'application/xml'}
@@ -42,25 +34,13 @@ class Amex:
     distrChan = '9999'  # 'Amex to provide'
 
     def add_url(self):
-        if not settings.TESTING:
-            service_url = production_create_url
-        else:
-            service_url = testing_create_url
-        return service_url
+        return '{}{}'.format(settings.AMEX_URL, res_path_sync)
 
     def remove_url(self):
-        if not settings.TESTING:
-            service_url = production_remove_url
-        else:
-            service_url = testing_remove_url
-        return service_url
+        return '{}{}'.format(settings.AMEX_URL, res_path_unsync)
 
     def receiver_token(self):
-        if not settings.TESTING:
-            receiver_token = production_receiver_token
-        else:
-            receiver_token = testing_receiver_token
-        return receiver_token + '/deliver.xml'
+        return settings.AMEX_RECEIVER_TOKEN + '/deliver.xml'
 
     def request_header(self, res_path):
         header_start = '<![CDATA['
@@ -178,7 +158,7 @@ class Amex:
         # Call the Amex OAuth endpoint to obtain an API request token.
         # base_url = "https://api.americanexpress.com"
         # base_url + "/apiplatform/v2/oauth/token/mac"
-        auth_url = 'https://{}{}'.format(host, "/apiplatform/v2/oauth/token/mac")
+        auth_url = '{}{}'.format(settings.AMEX_URL, "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",
@@ -244,7 +224,7 @@ def mac_api_header(access_token, mac_key, res_path_in):
     random.seed(millis)
     post_fix = 10000000 + random.randint(0, 90000000)
     nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-    base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path + "\n" + host + "\n" + port + "\n\n"
+    base_string = '{}\n{}\nPOST\n{}\n{}\n{}\n\n'.format(ts, nonce, res_path, settings.AMEX_URL, port)
     base_string_bytes = base_string.encode('utf-8')
     mac = generate_mac(base_string_bytes, mac_key)
 
