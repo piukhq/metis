@@ -1,15 +1,16 @@
+import os
+from importlib import reload
 from unittest import TestCase
 
-# We need the testing flag to be set before we import anything that uses it.
-# Unfortunately flake8 doesn't like module-level imports not being at the top of the file, so we `noqa` it.
-import os
+import app.agents.mastercard as mastercard
+
 os.environ['METIS_TESTING'] = 'True'
-from app.agents.mastercard import MasterCard
+reload(mastercard.settings)
 
 
 class TestMastercard(TestCase):
     def setUp(self):
-        self.mc = MasterCard()
+        self.mc = mastercard.MasterCard()
 
     def test_url_testing(self):
         result = self.mc.add_url()

@@ -1,15 +1,16 @@
+import os
+from importlib import reload
 from unittest import TestCase
 
-# We need the testing flag to be set before we import anything that uses it.
-# Unfortunately flake8 doesn't like module-level imports not being at the top of the file, so we `noqa` it.
-import os
+import app.agents.amex as amex
+
 os.environ['METIS_TESTING'] = 'True'
-from app.agents.amex import Amex, mac_auth_header  # noqa
+reload(amex.settings)
 
 
 class TestAmex(TestCase):
     def setUp(self):
-        self.amex = Amex()
+        self.amex = amex.Amex()
 
     def test_url_testing(self):
         result = self.amex.add_url()
@@ -28,5 +29,5 @@ class TestAmex(TestCase):
         self.assertIn('cmAlias1', result)
 
     def test_mac_auth_header(self):
-        result = mac_auth_header()
+        result = amex.mac_auth_header()
         self.assertIn('MAC id', result)

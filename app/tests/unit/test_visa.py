@@ -1,19 +1,20 @@
 import httpretty
 import json
 import logging
-from unittest import TestCase
-from unittest import mock
+import os
+from unittest import TestCase, mock
+from importlib import reload
 
 from testfixtures import log_capture
 
-# We need the testing flag to be set before we import anything that uses it.
-# Unfortunately flake8 doesn't like module-level imports not being at the top of the file, so we `noqa` it.
-import os
+from app.agents.visa import Visa
+from app.tests.unit.fixture import card_info_reduce
+from app.card_router import ActionCode
+import settings
+
 os.environ['METIS_TESTING'] = 'True'
-import settings  # noqa
-import app.agents.visa as agent  # noqa
-from app.tests.unit.fixture import card_info_reduce  # noqa
-from app.card_router import ActionCode  # noqa
+os.environ['VISA_RECEIVER_TOKEN'] = 'JKzJSKICIOZodDBMCyuRmttkRjO'
+reload(settings)
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -42,7 +43,7 @@ class TestVisa(TestCase):
                                content_type='application/json')
 
     def setUp(self):
-        self.visa = agent.Visa()
+        self.visa = Visa()
         self.logger = logging.getLogger()
         self.orig_handlers = self.logger.handlers
         self.logger.handlers = []
@@ -60,14 +61,14 @@ class TestVisa(TestCase):
         result = self.visa.request_header()
         self.assertIn('json', result)
 
-    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
+    @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_create_file_data(self):
         cards = [1234, 5678, 9876]
         result = self.visa.create_file_data(cards)
         self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)
 
-    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
+    @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     @httpretty.activate
     @log_capture(level=logging.INFO)
     def test_create_cards(self, l):
@@ -93,7 +94,7 @@ class TestVisa(TestCase):
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
-    @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
+    @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_request_body_json(self):
         result, file_name = self.visa.request_body(card_info_reduce)
         self.assertIn('111111111111112', result)
