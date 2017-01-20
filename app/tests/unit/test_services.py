@@ -2,15 +2,16 @@ import json
 import unittest
 import httpretty
 import re
-
-# We need the testing flag to be set before we import anything that uses it.
-# Unfortunately flake8 doesn't like module-level imports not being at the top of the file, so we `noqa` it.
 import os
+from importlib import reload
+
+from app.services import create_receiver, add_card
+import app.agents.mastercard
+import settings
+
 os.environ['METIS_TESTING'] = 'True'
 os.environ['MASTERCARD_RECEIVER_TOKEN'] = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
-import settings
-import app.agents.mastercard # noqa
-from app.services import create_receiver, add_card
+reload(settings)
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
