@@ -1,6 +1,7 @@
 import unittest
 import settings
 from app.services import add_card, remove_card
+from app.agents.amex import mac_auth_header
 
 
 class TestServices(unittest.TestCase):
@@ -26,3 +27,13 @@ class TestServices(unittest.TestCase):
 
         resp = remove_card(card_info)
         self.assertTrue(resp.status_code == 200)
+
+    def test_amex_oauth(self):
+        auth_header = mac_auth_header()
+        result = self.amex.amex_oauth(auth_header)
+        self.assertGreater(len(result), 0)
+
+    def test_request_header_both(self):
+        res_path = "/v3/smartoffers/sync"
+        result = self.amex.request_header(res_path)
+        self.assertIn('X-AMEX-ACCESS-KEY', result)

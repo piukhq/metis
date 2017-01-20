@@ -89,9 +89,9 @@ VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 SLACK_API_TOKEN = 'xoxb-119487439522-Lsefc6ykOx3RIXC89WN8wx3h'
 
 # Mastercard
-# testing_url = 'http://latestserver.com/post.php'
 if TESTING:
-    MASTERCARD_URL = env_var('MASTERCARD_URL', 'https://ws.mastercard.com/mtf/MRS/DiagnosticService')
+    # MASTERCARD_URL = env_var('MASTERCARD_URL', 'https://ws.mastercard.com/mtf/MRS/DiagnosticService')
+    MASTERCARD_URL = env_var('MASTERCARD_URL', 'http://latestserver.com/post.php')
     MASTERCARD_RECEIVER_TOKEN = env_var('MASTERCARD_RECEIVER_TOKEN', 'XsXRs91pxREDW7TAFbUc1TgosxU')
 else:
     MASTERCARD_URL = env_var('MASTERCARD_URL', 'https://ws.mastercard.com/MRS/CustomerService')

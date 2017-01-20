@@ -1,18 +1,19 @@
 import httpretty
 import json
-import settings
-import app.agents.visa as agent
 import logging
 from unittest import TestCase
 from unittest import mock
-from app.tests.unit.fixture import card_info_reduce
+
 from testfixtures import log_capture
-from app.card_router import ActionCode
 
-
-class Testing:
-    TESTING = True
-
+# We need the testing flag to be set before we import anything that uses it.
+# Unfortunately flake8 doesn't like module-level imports not being at the top of the file, so we `noqa` it.
+import os
+os.environ['METIS_TESTING'] = 'True'
+import settings  # noqa
+import app.agents.visa as agent  # noqa
+from app.tests.unit.fixture import card_info_reduce  # noqa
+from app.card_router import ActionCode  # noqa
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -52,14 +53,8 @@ class TestVisa(TestCase):
         self.logger.level = self.level
 
     def test_receiver_token_testing(self):
-        settings.TESTING = True
         result = self.visa.receiver_token()
         self.assertIn('JKzJSKICIOZodDBMCyuRmttkRjO', result)
-
-    def test_receiver_token_production(self):
-        settings.TESTING = False
-        result = self.visa.receiver_token()
-        self.assertIn('HwA3Nr2SGNEwBWISKzmNZfkHl6D', result)
 
     def test_request_header_both(self):
         result = self.visa.request_header()
@@ -76,7 +71,6 @@ class TestVisa(TestCase):
     @httpretty.activate
     @log_capture(level=logging.INFO)
     def test_create_cards(self, l):
-        settings.TESTING = True
         card_info_add = [{
             'id': 1,
             'payment_token': '1111111111111111111112',
@@ -101,7 +95,6 @@ class TestVisa(TestCase):
 
     @mock.patch.object(agent.Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_request_body_json(self):
-        settings.TESTING = True
         result, file_name = self.visa.request_body(card_info_reduce)
         self.assertIn('111111111111112', result)
         self.assertIn('{{#gpg}}', result)

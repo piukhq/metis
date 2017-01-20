@@ -102,7 +102,7 @@ class Visa(AgentBase):
         if len(card_log) > 0:
             settings.logger.info(str(card_log))
 
-        url = '{}{}{}'.format(settings.SPREEDLY_RECEIVER_URL, '/', self.receiver_token())
+        url = '{}{}{}'.format(settings.SPREEDLY_BASE_URL, '/receivers/', self.receiver_token())
         settings.logger.info('Create request data {}'.format(card_info))
         request_data, file_name = self.request_body(card_info)
         settings.logger.info('POST URL {}, header: {}'.format(url, self.header))
