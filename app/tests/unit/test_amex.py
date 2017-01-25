@@ -1,8 +1,5 @@
-import os
 from unittest import TestCase
-
-os.environ['METIS_TESTING'] = 'True'
-import app.agents.amex as amex  # noqa
+import app.agents.amex as amex
 
 
 class TestAmex(TestCase):
