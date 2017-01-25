@@ -10,7 +10,7 @@ read_env()
 
 SPREEDLY_SIGNING_SECRET = env_var('SPREEDLY_SIGNING_SECRET',
                                   '4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa')
-SPREEDLY_RECEIVER_URL = 'https://core.spreedly.com/v1/receivers'
+SPREEDLY_BASE_URL = env_var('SPREEDLY_BASE_URL', 'https://core.spreedly.com/v1')
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
@@ -19,7 +19,7 @@ DEBUG = env_var("METIS_DEBUG", False)
 DEV_HOST = env_var("DEV_HOST", "0.0.0.0")
 DEV_PORT = env_var("DEV_PORT", "5050")
 
-TESTING = env_var("METIS_TESTING", False)
+TESTING = env_var("METIS_TESTING", True)
 
 HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
 SERVICE_API_KEY = 'F616CE5C88744DD52DB628FAD8B3D'

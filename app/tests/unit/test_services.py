@@ -1,10 +1,11 @@
-import app.agents.mastercard as mc
 import json
 import unittest
 import httpretty
-import settings
 import re
+
 from app.services import create_receiver, add_card
+import app.agents.mastercard
+import settings
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -14,7 +15,7 @@ class TestServices(unittest.TestCase):
 
     create_url = 'https://core.spreedly.com/v1/receivers.xml'
     payment_method_token = '3rkN9aJFfNEjvr2LqYZE4606hgG'
-    receiver_token = 'aDwu4ykovZVe7Gpto3rHkYWI5wI'
+    receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
     payment_url = 'https://core.spreedly.com/v1/receivers/' + receiver_token + '/deliver.xml'
 
     def create_route(self):
@@ -104,9 +105,8 @@ Server: Information Not Disclosed]]>
         }
 
         self.test_route()
-        mc.testing_receiver_token = self.receiver_token
-        settings.TESTING = True
+        app.agents.mastercard.testing_receiver_token = self.receiver_token
         self.hermes_status_route()
         self.hermes_provider_status_mappings_route()
         resp = add_card(card_info)
-        self.assertEqual(resp['status_code'], 200)
+        self.assertEqual(200, resp['status_code'])
