@@ -3,18 +3,15 @@ import json
 import logging
 import os
 from unittest import TestCase, mock
-from importlib import reload
 
 from testfixtures import log_capture
 
-from app.agents.visa import Visa
-from app.tests.unit.fixture import card_info_reduce
-from app.card_router import ActionCode
-import settings
-
 os.environ['METIS_TESTING'] = 'True'
 os.environ['VISA_RECEIVER_TOKEN'] = 'JKzJSKICIOZodDBMCyuRmttkRjO'
-reload(settings)
+from app.tests.unit.fixture import card_info_reduce  # noqa
+from app.card_router import ActionCode  # noqa
+from app.agents.visa import Visa  # noqa
+import settings  # noqa
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'

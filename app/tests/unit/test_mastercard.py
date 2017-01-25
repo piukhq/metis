@@ -1,11 +1,8 @@
 import os
-from importlib import reload
 from unittest import TestCase
 
-import app.agents.mastercard as mastercard
-
 os.environ['METIS_TESTING'] = 'True'
-reload(mastercard.settings)
+import app.agents.mastercard as mastercard  # noqa
 
 
 class TestMastercard(TestCase):
