@@ -19,6 +19,14 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 # client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
 # Testing end
 
+
+if settings.TESTING:
+    AMEX_URL = 'https://api.qa.americanexpress.com'
+    AMEX_RECEIVER_TOKEN = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
+else:
+    AMEX_URL = 'https://api.americanexpress.com'
+    AMEX_RECEIVER_TOKEN = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
+
 # Production
 client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
 client_secret = "27230718-dce2-4627-a505-c6229f984dd0"

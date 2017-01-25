@@ -4,17 +4,27 @@ import os
 from lxml import etree
 
 
+if settings.TESTING:
+    # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+    MASTERCARD_URL = 'http://latestserver.com/post.php'
+    MASTERCARD_RECEIVER_TOKEN = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+else:
+    MASTERCARD_URL = 'https://ws.mastercard.com/MRS/CustomerService'
+    MASTERCARD_RECEIVER_TOKEN = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'
+MASTERCARD_DO_ECHO_URL = 'https://ws.mastercard.com/MRS/DiagnosticService'
+
+
 class MasterCard:
     header = {'Content-Type': 'application/xml'}
 
     def add_url(self):
-        return settings.MASTERCARD_URL
+        return MASTERCARD_URL
 
     def remove_url(self):
-        return settings.MASTERCARD_URL
+        return MASTERCARD_URL
 
     def receiver_token(self):
-        return settings.MASTERCARD_RECEIVER_TOKEN + '/deliver.xml'
+        return MASTERCARD_RECEIVER_TOKEN + '/deliver.xml'
 
     def request_header(self):
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
@@ -143,7 +153,7 @@ class MasterCard:
 
     def do_echo_body(self, card_info):
         # DoEcho url MTF
-        do_echo_url = settings.MASTERCARD_DO_ECHO_URL
+        do_echo_url = MASTERCARD_DO_ECHO_URL
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + do_echo_url + '</url>' \

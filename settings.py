@@ -87,28 +87,3 @@ VISA_ARCHIVE_DIR = env_var('VISA_ARCHIVE_DIR', '/tmp/archive/visa')
 VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 
 SLACK_API_TOKEN = 'xoxb-119487439522-Lsefc6ykOx3RIXC89WN8wx3h'
-
-# Mastercard
-if TESTING:
-    # MASTERCARD_URL = env_var('MASTERCARD_URL', 'https://ws.mastercard.com/mtf/MRS/DiagnosticService')
-    MASTERCARD_URL = env_var('MASTERCARD_URL', 'http://latestserver.com/post.php')
-    MASTERCARD_RECEIVER_TOKEN = env_var('MASTERCARD_RECEIVER_TOKEN', 'XsXRs91pxREDW7TAFbUc1TgosxU')
-else:
-    MASTERCARD_URL = env_var('MASTERCARD_URL', 'https://ws.mastercard.com/MRS/CustomerService')
-    MASTERCARD_RECEIVER_TOKEN = env_var('MASTERCARD_RECEIVER_TOKEN', 'SiXfsuR5TQJ87wjH2O5Mo1I5WR')
-MASTERCARD_DO_ECHO_URL = env_var('MASTERCARD_DO_ECHO_URL', 'https://ws.mastercard.com/MRS/DiagnosticService')
-
-# Amex
-if TESTING:
-    AMEX_URL = env_var('AMEX_URL', 'https://api.qa.americanexpress.com')
-    AMEX_RECEIVER_TOKEN = env_var('AMEX_RECEIVER_TOKEN', 'BqfFb1WnOwpbzH7WVTqmvYtffPV')
-else:
-    AMEX_URL = env_var('AMEX_URL', 'https://api.americanexpress.com')
-    AMEX_RECEIVER_TOKEN = env_var('AMEX_RECEIVER_TOKEN', 'ZQLPEvBP4jaaYhxHDl7SWobMXDt')
-
-# Visa
-# testing_hostname = 'http://latestserver.com/post.php'
-if TESTING:
-    VISA_RECEIVER_TOKEN = env_var('VISA_RECEIVER_TOKEN', 'JKzJSKICIOZodDBMCyuRmttkRjO')
-else:
-    VISA_RECEIVER_TOKEN = env_var('VISA_RECEIVER_TOKEN', 'HwA3Nr2SGNEwBWISKzmNZfkHl6D')

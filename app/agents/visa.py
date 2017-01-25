@@ -11,6 +11,13 @@ from app.agents.agent_base import AgentBase
 from app.hermes import put_account_status
 
 
+# testing_hostname = 'http://latestserver.com/post.php'
+if settings.TESTING:
+    VISA_RECEIVER_TOKEN = 'JKzJSKICIOZodDBMCyuRmttkRjO'
+else:
+    VISA_RECEIVER_TOKEN = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
+
+
 class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
 
