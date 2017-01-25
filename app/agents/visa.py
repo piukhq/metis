@@ -22,7 +22,7 @@ class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
 
     def receiver_token(self):
-        return settings.VISA_RECEIVER_TOKEN + '/export.json'
+        return VISA_RECEIVER_TOKEN + '/export.json'
 
     def request_header(self):
         header = '![CDATA[Content-Type: application/json]]'

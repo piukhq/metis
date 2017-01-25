@@ -42,13 +42,13 @@ class Amex:
     distrChan = '9999'  # 'Amex to provide'
 
     def add_url(self):
-        return '{}{}'.format(settings.AMEX_URL, res_path_sync)
+        return '{}{}'.format(AMEX_URL, res_path_sync)
 
     def remove_url(self):
-        return '{}{}'.format(settings.AMEX_URL, res_path_unsync)
+        return '{}{}'.format(AMEX_URL, res_path_unsync)
 
     def receiver_token(self):
-        return settings.AMEX_RECEIVER_TOKEN + '/deliver.xml'
+        return AMEX_RECEIVER_TOKEN + '/deliver.xml'
 
     def request_header(self, res_path):
         header_start = '<![CDATA['
@@ -166,7 +166,7 @@ class Amex:
         # Call the Amex OAuth endpoint to obtain an API request token.
         # base_url = "https://api.americanexpress.com"
         # base_url + "/apiplatform/v2/oauth/token/mac"
-        auth_url = '{}{}'.format(settings.AMEX_URL, "/apiplatform/v2/oauth/token/mac")
+        auth_url = '{}{}'.format(AMEX_URL, "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",
