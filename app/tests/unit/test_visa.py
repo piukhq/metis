@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from unittest import TestCase, mock
-
+import arrow
 from testfixtures import log_capture
 
 os.environ['METIS_TESTING'] = 'True'
@@ -98,3 +98,38 @@ class TestVisa(TestCase):
         self.assertIn('{{#gpg}}', result)
         self.assertIn('{{credit_card_number}}', result)
         self.assertTrue(len(file_name))
+
+    def test_set_termination_date(self):
+        D = 'D'
+        result = self.visa.set_termination_date(D)
+        self.assertTrue(type(result) is str)
+        result = self.visa.set_termination_date('blah')
+        self.assertEqual(result, '')
+
+    @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
+    def test_create_file_data(self):
+        card_info = [{
+            'id': 1,
+            'payment_token': '1111111111111111111112',
+            'card_token': '111111111111112',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }, {
+            'id': 2,
+            'payment_token': '1111111111111111111113',
+            'card_token': '111111111111113',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }]
+
+        result = self.visa.create_file_data(card_info)
+        self.assertTrue(len(result) > 0)
+
+    def test_format_datetime(self):
+        date = '2016-10-06T09:50:59.980309Z'
+        arrow_date = arrow.get(date)
+        result = self.visa.format_datetime(arrow_date)
+
+        self.assertEqual(result, '20161006')
