@@ -10,7 +10,7 @@ os.environ['METIS_TESTING'] = 'True'
 os.environ['VISA_RECEIVER_TOKEN'] = 'JKzJSKICIOZodDBMCyuRmttkRjO'
 from app.tests.unit.fixture import card_info_reduce  # noqa
 from app.card_router import ActionCode  # noqa
-from app.agents.visa import Visa  # noqa
+from app.agents.visa import Visa, VisaCardFile, Header, Footer  # noqa
 import settings  # noqa
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
@@ -20,25 +20,6 @@ auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
 class TestVisa(TestCase):
     mock_get_next_seq_number = mock.Mock()
     mock_get_next_seq_number.return_value = 1
-
-    def __init__(self):
-        self.card_info_add = [{
-            'id': 1,
-            'payment_token': '1111111111111111111112',
-            'card_token': '111111111111112',
-            'partner_slug': 'test_slug',
-            'action_code': ActionCode.ADD,
-            'date': 1475920002
-        }, {
-            'id': 2,
-            'payment_token': '1111111111111111111113',
-            'card_token': '111111111111113',
-            'partner_slug': 'test_slug',
-            'action_code': ActionCode.ADD,
-            'date': 1475920002
-        }]
-
-        self.cards = [1234, 5678, 9876]
 
     def spreedly_route(self):
         url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
@@ -64,6 +45,47 @@ class TestVisa(TestCase):
         self.orig_handlers = self.logger.handlers
         self.logger.handlers = []
         self.level = self.logger.level
+
+        self.card_info_add = [{
+            'id': 1,
+            'payment_token': '1111111111111111111112',
+            'card_token': '111111111111112',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }, {
+            'id': 2,
+            'payment_token': '1111111111111111111113',
+            'card_token': '111111111111113',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }]
+
+        self.cards = [1234, 5678, 9876]
+
+        self.header = Header(
+            source_id='LOYANG',
+            destination_id='VISA',
+            file_description='Bink user card registration information',
+            file_create_date=self.visa.format_datetime(arrow.now()),
+            file_control_number=str(1).rjust(2, '0'),
+            file_format_version='2.0',
+            not_used1='',
+            not_used2='',
+            filler1='',
+            filler2='',
+            file_type_indicator='I',
+            file_unique_text='Bink user card data',
+            filler3=''
+        )
+
+        self.footer = Footer(
+            record_count=str(len(self.cards)).rjust(10, '0'),
+            filler=''
+        )
+
+        self.vcf = VisaCardFile()
 
     def tearDown(self):
         self.logger.handlers = self.orig_handlers
@@ -112,5 +134,19 @@ class TestVisa(TestCase):
         date = '2016-10-06T09:50:59.980309Z'
         arrow_date = arrow.get(date)
         result = self.visa.format_datetime(arrow_date)
-
         self.assertEqual(result, '20161006')
+
+    def test_set_header(self):
+        self.vcf.set_header(self.header)
+        start_str = '{{#format_text}}%-1000.1000s,'
+        end_str = '{{/format_text}}'
+        self.assertEqual(start_str, self.vcf.header_string[:29])
+        self.assertEqual(end_str, self.vcf.header_string[-16:])
+
+    def test_set_footer(self):
+        self.vcf.set_footer(self.footer)
+        start_str = '{{#format_text}}%-1000.1000s,'
+        end_str = '{{/format_text}}\\n'
+        self.assertEqual(start_str, self.vcf.footer_string[:29])
+        self.assertEqual(end_str, self.vcf.footer_string[-18:])
+
