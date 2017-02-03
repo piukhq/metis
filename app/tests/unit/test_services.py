@@ -113,6 +113,7 @@ Server: Information Not Disclosed]]>
 
     @httpretty.activate
     def test_remove_card(self):
+        self.test_add_card()
         card_info = {
             'id': 1,
             'payment_token': '1111111111111111111111',

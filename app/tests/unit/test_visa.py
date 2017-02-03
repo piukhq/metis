@@ -21,6 +21,25 @@ class TestVisa(TestCase):
     mock_get_next_seq_number = mock.Mock()
     mock_get_next_seq_number.return_value = 1
 
+    def __init__(self):
+        self.card_info_add = [{
+            'id': 1,
+            'payment_token': '1111111111111111111112',
+            'card_token': '111111111111112',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }, {
+            'id': 2,
+            'payment_token': '1111111111111111111113',
+            'card_token': '111111111111113',
+            'partner_slug': 'test_slug',
+            'action_code': ActionCode.ADD,
+            'date': 1475920002
+        }]
+
+        self.cards = [1234, 5678, 9876]
+
     def spreedly_route(self):
         url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
         httpretty.register_uri(httpretty.POST, url,
@@ -60,8 +79,7 @@ class TestVisa(TestCase):
 
     @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_create_file_data(self):
-        cards = [1234, 5678, 9876]
-        result = self.visa.create_file_data(cards)
+        result = self.visa.create_file_data(self.cards)
         self.assertIn('{{external_cardholder_id}}', result)
         self.assertIn('{{credit_card_number}}', result)
 
@@ -69,25 +87,9 @@ class TestVisa(TestCase):
     @httpretty.activate
     @log_capture(level=logging.INFO)
     def test_create_cards(self, l):
-        card_info_add = [{
-            'id': 1,
-            'payment_token': '1111111111111111111112',
-            'card_token': '111111111111112',
-            'partner_slug': 'test_slug',
-            'action_code': ActionCode.ADD,
-            'date': 1475920002
-        }, {
-            'id': 2,
-            'payment_token': '1111111111111111111113',
-            'card_token': '111111111111113',
-            'partner_slug': 'test_slug',
-            'action_code': ActionCode.ADD,
-            'date': 1475920002
-        }]
-
         self.spreedly_route()
         self.hermes_status_route()
-        self.visa.create_cards(card_info_add)
+        self.visa.create_cards(self.card_info_add)
         message = 'Visa batch successful'
         self.assertTrue(any(message in r.msg for r in l.records))
 
