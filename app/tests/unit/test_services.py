@@ -3,7 +3,7 @@ import unittest
 import httpretty
 import re
 
-from app.services import create_receiver, add_card, remove_card, get_agent
+from app.services import create_receiver, add_card, get_agent # , remove_card
 import app.agents.mastercard
 import settings
 
