@@ -1,5 +1,6 @@
 import os
 from unittest import TestCase
+import jinja2
 
 os.environ['METIS_TESTING'] = 'True'
 import app.agents.mastercard as mastercard  # noqa
@@ -68,3 +69,7 @@ class TestMastercard(TestCase):
         }
         result = self.mc.add_card_soap_template(card_info)
         self.assertIn('loyaltyangels', result)
+
+    def test_jinja_environment(self):
+        result = self.mc.jinja_environment()
+        self.assertTrue(type(result) is jinja2.environment.Environment)
