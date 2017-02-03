@@ -13,6 +13,14 @@ class TestMastercard(TestCase):
         result = self.mc.add_url()
         self.assertEqual('http://latestserver.com/post.php', result)
 
+        result = self.mc.remove_url()
+        self.assertEqual('http://latestserver.com/post.php', result)
+
+    def test_receiver_token(self):
+        token = 'XsXRs91pxREDW7TAFbUc1TgosxU/deliver.xml'
+        result = self.mc.receiver_token()
+        self.assertEqual(token, result)
+
     def test_request_header_testing(self):
         result = self.mc.request_header()
         self.assertIn('xml', result)
