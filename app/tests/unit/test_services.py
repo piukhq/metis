@@ -130,3 +130,12 @@ Server: Information Not Disclosed]]>
         agent_type = 'MasterCard'
         result = get_agent("mastercard")
         self.assertEqual(type(result).__name__, agent_type)
+
+    def test_get_invalid_agent(self):
+        try:
+            result = get_agent("monkey")
+        except KeyError:
+            # No such agent
+            self.assertTrue(True)
+        else:
+            self.assertFalse(True)
