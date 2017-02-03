@@ -133,7 +133,7 @@ Server: Information Not Disclosed]]>
 
     def test_get_invalid_agent(self):
         try:
-            result = get_agent("monkey")
+            get_agent("monkey")
         except KeyError:
             # No such agent
             self.assertTrue(True)
