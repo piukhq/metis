@@ -150,3 +150,21 @@ class TestVisa(TestCase):
         self.assertEqual(start_str, self.vcf.footer_string[:29])
         self.assertEqual(end_str, self.vcf.footer_string[-18:])
 
+    def test_add_detail_start(self):
+        self.vcf.details = []
+        start_str = '{{#payment_methods}}'
+        self.vcf.add_detail_start()
+        self.assertEqual(start_str, self.vcf.details[0]['detail'])
+
+    def test_add_detail_end(self):
+        self.vcf.details = []
+        end_str = '{{/payment_methods}}'
+        self.vcf.add_detail_end()
+        self.assertEqual(end_str, self.vcf.details[0]['detail'])
+
+    def test_freeze(self):
+        self.vcf.details = []
+        self.vcf.add_detail_start()
+        self.vcf.add_detail_end()
+        self.vcf.freeze()
+        self.assertTrue(len(self.vcf.details) > 0)
