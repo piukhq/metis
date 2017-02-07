@@ -67,3 +67,27 @@ class TestAmex(TestCase):
     def test_mac_auth_header(self):
         result = amex.mac_auth_header()
         self.assertIn('MAC id', result)
+
+    @mock.patch('json.loads')
+    @httpretty.activate
+    def test_add_card_body(self, mock_loads):
+        mock_loads.return_value = {"access_token": "1234567890", "mac_key": "99", }
+        self.amex_route()
+        result = self.amex.add_card_body(self.card_info)
+        self.assertIn('<delivery>', result)
+        self.assertIn('<payment_method_token>', result)
+        self.assertIn('<url>', result)
+        self.assertIn('<headers>', result)
+        self.assertIn('<body>', result)
+
+    @mock.patch('json.loads')
+    @httpretty.activate
+    def test_remove_card_body(self, mock_loads):
+        mock_loads.return_value = {"access_token": "1234567890", "mac_key": "99", }
+        self.amex_route()
+        result = self.amex.remove_card_body(self.card_info)
+        self.assertIn('<delivery>', result)
+        self.assertIn('<payment_method_token>', result)
+        self.assertIn('<url>', result)
+        self.assertIn('<headers>', result)
+        self.assertIn('<body>', result)
