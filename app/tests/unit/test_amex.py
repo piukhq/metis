@@ -1,6 +1,5 @@
 from unittest import TestCase, mock
 import httpretty
-import json
 
 import app.agents.amex as amex
 
@@ -38,7 +37,7 @@ class TestAmex(TestCase):
     @mock.patch('json.loads')
     @httpretty.activate
     def test_request_header(self, mock_loads):
-        mock_loads.return_value = {"access_token": "1234567890", "mac_key": "99",}
+        mock_loads.return_value = {"access_token": "1234567890", "mac_key": "99", }
         self.amex_route()
         result = self.amex.request_header(amex.res_path_sync)
         self.assertIn(result[:6], '<![CDATA[')

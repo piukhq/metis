@@ -3,7 +3,7 @@ import unittest
 import httpretty
 import re
 
-from app.services import create_receiver, add_card, get_agent # , remove_card
+from app.services import create_receiver, add_card, get_agent
 import app.agents.mastercard
 import settings
 
@@ -110,21 +110,6 @@ Server: Information Not Disclosed]]>
         self.hermes_provider_status_mappings_route()
         resp = add_card(card_info)
         self.assertEqual(200, resp['status_code'])
-
-    # @httpretty.activate
-    # def test_remove_card(self):
-    #    self.test_add_card()
-    #    card_info = {
-    #        'id': 1,
-    #        'payment_token': '1111111111111111111111',
-    #        'card_token': '111111111111112',
-    #        'partner_slug': 'mastercard'
-    #    }
-
-    #    self.test_route()
-    #    app.agents.mastercard.testing_receiver_token = self.receiver_token
-    #    resp = remove_card(card_info)
-    #    self.assertEqual(200, resp['status_code'])
 
     def test_get_agent(self):
         agent_type = 'MasterCard'
