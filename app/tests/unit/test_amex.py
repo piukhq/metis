@@ -59,7 +59,6 @@ class TestAmex(TestCase):
         self.assertTrue('cmAlias1' in j.keys())
         self.assertTrue('distrChan' in j.keys())
 
-
     def test_request_body_correct_text(self):
         result = self.amex.add_card_request_body(self.card_info)
         self.assertIn('{{credit_card_number}}', result)
