@@ -1,5 +1,6 @@
 from unittest import TestCase, mock
 import httpretty
+import json
 
 import app.agents.amex as amex
 
@@ -7,6 +8,10 @@ import app.agents.amex as amex
 class TestAmex(TestCase):
     def setUp(self):
         self.amex = amex.Amex()
+
+        self.card_info = {'partner_slug': 'amex',
+                          'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+                          'card_token': ''}
 
     def test_url_testing(self):
         result = self.amex.add_url()
@@ -45,11 +50,18 @@ class TestAmex(TestCase):
         self.assertIn(result[40:55], 'Authorization: ')
         self.assertIn(result[169:219], 'X-AMEX-API-KEY: 91d207ec-267f-469f-97b2-883d4cfce44d')
 
+    def test_remove_card_request_body(self):
+        result = self.amex.remove_card_request_body(self.card_info)
+        j = json.loads(result[9:-3])
+        self.assertTrue('msgId' in j.keys())
+        self.assertTrue('partnerId' in j.keys())
+        self.assertTrue('cardNbr' in j.keys())
+        self.assertTrue('cmAlias1' in j.keys())
+        self.assertTrue('distrChan' in j.keys())
+
+
     def test_request_body_correct_text(self):
-        card_info = {'partner_slug': 'amex',
-                     'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
-                     'card_token': ''}
-        result = self.amex.add_card_request_body(card_info)
+        result = self.amex.add_card_request_body(self.card_info)
         self.assertIn('{{credit_card_number}}', result)
         self.assertIn('cmAlias1', result)
 
