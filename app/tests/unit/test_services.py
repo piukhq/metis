@@ -112,15 +112,9 @@ Server: Information Not Disclosed]]>
         self.assertEqual(200, resp['status_code'])
 
     def test_get_agent(self):
-        agent_type = 'MasterCard'
         result = get_agent("mastercard")
-        self.assertEqual(type(result).__name__, agent_type)
+        self.assertIsInstance(result, app.agents.mastercard.MasterCard)
 
     def test_get_invalid_agent(self):
-        try:
+        with self.assertRaises(KeyError):
             get_agent("monkey")
-        except KeyError:
-            # No such agent
-            self.assertTrue(True)
-        else:
-            self.assertFalse(True)

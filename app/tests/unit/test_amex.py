@@ -53,11 +53,11 @@ class TestAmex(TestCase):
     def test_remove_card_request_body(self):
         result = self.amex.remove_card_request_body(self.card_info)
         j = json.loads(result[9:-3])
-        self.assertTrue('msgId' in j.keys())
-        self.assertTrue('partnerId' in j.keys())
-        self.assertTrue('cardNbr' in j.keys())
-        self.assertTrue('cmAlias1' in j.keys())
-        self.assertTrue('distrChan' in j.keys())
+        self.assertIn('msgId', j.keys())
+        self.assertIn('partnerId', j.keys())
+        self.assertIn('cardNbr', j.keys())
+        self.assertIn('cmAlias1', j.keys())
+        self.assertIn('distrChan', j.keys())
 
     def test_request_body_correct_text(self):
         result = self.amex.add_card_request_body(self.card_info)

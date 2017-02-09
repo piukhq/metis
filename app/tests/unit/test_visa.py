@@ -121,12 +121,12 @@ class TestVisa(TestCase):
         self.assertIn('111111111111112', result)
         self.assertIn('{{#gpg}}', result)
         self.assertIn('{{credit_card_number}}', result)
-        self.assertTrue(len(file_name))
+        self.assertGreater(len(file_name), 0)
 
     def test_set_termination_date(self):
         D = 'D'
         result = self.visa.set_termination_date(D)
-        self.assertTrue(type(result) is str)
+        self.assertIsInstance(result, str)
         result = self.visa.set_termination_date('blah')
         self.assertEqual(result, '')
 
@@ -167,4 +167,4 @@ class TestVisa(TestCase):
         self.vcf.add_detail_start()
         self.vcf.add_detail_end()
         self.vcf.freeze()
-        self.assertTrue(len(self.vcf.details) > 0)
+        self.assertGreater(len(self.vcf.details), 0)

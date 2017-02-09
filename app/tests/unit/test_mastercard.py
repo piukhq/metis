@@ -72,4 +72,4 @@ class TestMastercard(TestCase):
 
     def test_jinja_environment(self):
         result = self.mc.jinja_environment()
-        self.assertTrue(type(result) is jinja2.environment.Environment)
+        self.assertIsInstance(result, jinja2.environment.Environment)
