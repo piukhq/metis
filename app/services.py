@@ -116,10 +116,5 @@ def remove_card(card_info):
 
 
 def get_agent(partner_slug):
-    try:
-        agent_class = resolve_agent(partner_slug)
-        return agent_class()
-    except KeyError:
-        raise(404, 'No such agent')
-    except Exception as ex:
-        raise(404, ex)
+    agent_class = resolve_agent(partner_slug)
+    return agent_class()

@@ -3,7 +3,7 @@ import unittest
 import httpretty
 import re
 
-from app.services import create_receiver, add_card
+from app.services import create_receiver, add_card, get_agent
 import app.agents.mastercard
 import settings
 
@@ -110,3 +110,11 @@ Server: Information Not Disclosed]]>
         self.hermes_provider_status_mappings_route()
         resp = add_card(card_info)
         self.assertEqual(200, resp['status_code'])
+
+    def test_get_agent(self):
+        result = get_agent("mastercard")
+        self.assertIsInstance(result, app.agents.mastercard.MasterCard)
+
+    def test_get_invalid_agent(self):
+        with self.assertRaises(KeyError):
+            get_agent("monkey")
