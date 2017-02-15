@@ -117,7 +117,14 @@ def remove_card(card_info):
     header = agent_instance.header
     # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
     url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
-    request_data = agent_instance.remove_card_body(card_info)
+
+    try:
+        request_data = agent_instance.remove_card_body(card_info)
+    except OAuthError:
+        # 5 = PROVIDER_SERVER_DOWN
+        # TODO: get this from gaia
+        put_account_status(5, card_id=card_info['id'])
+        return None
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Delete')
