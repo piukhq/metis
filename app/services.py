@@ -2,6 +2,7 @@ import requests
 
 from app.utils import resolve_agent
 from app.hermes import get_provider_status_mapping, put_account_status
+from app.agents.exceptions import OAuthError
 import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
@@ -78,7 +79,13 @@ def add_card(card_info):
     url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
 
     settings.logger.info('Create request data {}'.format(card_info))
-    request_data = agent_instance.add_card_body(card_info)
+    try:
+        request_data = agent_instance.add_card_body(card_info)
+    except OAuthError:
+        # 5 = PROVIDER_SERVER_DOWN
+        # TODO: get this from gaia
+        put_account_status(5, card_id=card_info['id'])
+        return None
     settings.logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
     resp = post_request(url, header, request_data)
@@ -91,6 +98,8 @@ def add_card(card_info):
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
         settings.logger.info('Card added successfully, calling Hermes to activate card.')
+        # 1 = ACTIVE
+        # TODO: get this from gaia
         card_status_code = 1
     else:
         settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')

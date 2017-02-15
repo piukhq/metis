@@ -9,6 +9,8 @@ import requests
 from urllib import parse
 from lxml import etree
 
+from app.agents.exceptions import OAuthError
+
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 '''Amex use sync to add cards and unsync to remove cards from transactions output'''
@@ -55,6 +57,10 @@ class Amex:
         content_type = 'Content-Type: application/json'
         auth_header = mac_auth_header()
         oauth_resp = self.amex_oauth(auth_header)
+
+        if 'errorCode' in oauth_resp:
+            settings.logger.error('Received failure response from Amex OAuth. Response: {}'.format(oauth_resp))
+            raise OAuthError()
 
         access_token = oauth_resp['access_token']
         mac_key = oauth_resp['mac_key']
@@ -175,10 +181,8 @@ class Amex:
 
         resp = requests.post(auth_url, data=payload, headers=header)
         resp_json = json.loads(resp.content.decode())
-        if resp.status_code == 200:
-            return resp_json
-        else:
-            return None
+
+        return resp_json
 
 
 def mac_auth_header():
