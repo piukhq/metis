@@ -30,8 +30,8 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
                                re.compile('{}/payment_cards/provider_status_mappings/(.+)'.format(settings.HERMES_URL)),
                                status=200,
                                headers={'Authorization': self.auth_key},
-                               body=json.dumps([{'provider_status': 'BINK_UNKNOWN',
-                                                 'bink_status': 10}]),
+                               body=json.dumps([{'provider_status_code': 'BINK_UNKNOWN',
+                                                 'bink_status_code': 10}]),
                                content_type='application/json')
 
     def setUp(self):
