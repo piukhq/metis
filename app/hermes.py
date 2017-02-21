@@ -7,7 +7,7 @@ def get_provider_status_mappings(slug):
     status_mapping = requests.get('{}/payment_cards/provider_status_mappings/{}'.format(HERMES_URL, slug),
                                   headers={'Content-Type': 'application/json',
                                            'Authorization': 'Token {}'.format(SERVICE_API_KEY)}).json()
-    return {x['provider_status']: x['bink_status'] for x in status_mapping}
+    return {x['provider_status_code']: x['bink_status_code'] for x in status_mapping}
 
 
 def put_account_status(status_code, card_id=None, token=None):
