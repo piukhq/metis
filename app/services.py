@@ -1,7 +1,7 @@
 import requests
 
 from app.utils import resolve_agent
-from app.hermes import get_provider_status_mapping, put_account_status
+from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
@@ -84,7 +84,7 @@ def add_card(card_info):
     resp = post_request(url, header, request_data)
 
     # get the status mapping for this provider from hermes.
-    status_mapping = get_provider_status_mapping(card_info['partner_slug'])
+    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
 
     resp = agent_instance.response_handler(resp, 'Add', status_mapping)
 

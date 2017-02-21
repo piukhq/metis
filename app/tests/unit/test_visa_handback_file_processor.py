@@ -27,7 +27,7 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
 
     def hermes_provider_status_mappings_route(self):
         httpretty.register_uri(httpretty.GET,
-                               re.compile('{}/payment_cards/provider_status_mapping/(.+)'.format(settings.HERMES_URL)),
+                               re.compile('{}/payment_cards/provider_status_mappings/(.+)'.format(settings.HERMES_URL)),
                                status=200,
                                headers={'Authorization': self.auth_key},
                                body=json.dumps([{'provider_status': 'BINK_UNKNOWN',

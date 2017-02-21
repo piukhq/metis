@@ -3,7 +3,7 @@ import requests
 from settings import HERMES_URL, SERVICE_API_KEY
 
 
-def get_provider_status_mapping(slug):
+def get_provider_status_mappings(slug):
     status_mapping = requests.get('{}/payment_cards/provider_status_mappings/{}'.format(HERMES_URL, slug),
                                   headers={'Content-Type': 'application/json',
                                            'Authorization': 'Token {}'.format(SERVICE_API_KEY)}).json()
