@@ -9,20 +9,28 @@ tests:
     - py.test app/tests/unit --cov=app
   services:
     - postgres:9.4.4
+  tags:
+    - docker
 
 complexity:
   script:
     - xenon --max-average A --max-modules B --max-absolute B .
+  tags:
+    - docker
 
 flake8:
   script:
     - flake8 *
+  tags:
+    - docker
 
 deploy:
   image: hellobink/ansible
   stage: deploy
   environment: dev
   script:
-  - cd /ansible && ansible-playbook playbooks/deploy/flask.yml -e project=metis -e hosts=dev_web
+    - cd /ansible && ansible-playbook playbooks/deploy/flask.yml -e project=metis -e hosts=dev_web
   only:
-  - master
+    - master
+  tags:
+    - docker
