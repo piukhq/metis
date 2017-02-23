@@ -14,6 +14,8 @@ RUN addgroup --gid 1550 apps && \
  tar xzf /tmp/s6-overlay-amd64.tar.gz -C / && \
  sed -i -e 's/user www-data;/user apps;/g' /etc/nginx/nginx.conf && \
  rsync -a --remove-source-files /usr/local/src/metis/docker_root/ / && \
+ echo "Host gitlab.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
+ chmod -R 600 /root/.ssh && \
  pip3 install --upgrade pip && \
  pip3 install uwsgi && \
  pip3 install -r /usr/local/src/metis/requirements.txt && \
