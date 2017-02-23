@@ -13,7 +13,7 @@ RUN addgroup --gid 1550 apps && \
  curl -L 'https://github.com/just-containers/s6-overlay/releases/download/v1.18.1.5/s6-overlay-amd64.tar.gz' -o /tmp/s6-overlay-amd64.tar.gz && \
  tar xzf /tmp/s6-overlay-amd64.tar.gz -C / && \
  sed -i -e 's/user www-data;/user apps;/g' /etc/nginx/nginx.conf && \
- rsync -a --remove-source-files /usr/local/src/hermes/docker_root/ / && \
+ rsync -a --remove-source-files /usr/local/src/metis/docker_root/ / && \
  pip3 install --upgrade pip && \
  pip3 install uwsgi && \
  pip3 install -r /usr/local/src/metis/requirements.txt && \
