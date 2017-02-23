@@ -24,13 +24,38 @@ flake8:
   tags:
     - docker
 
-deploy:
-  image: hellobink/ansible
+deploy_dev:
   stage: deploy
   environment: dev
   script:
-    - cd /ansible && ansible-playbook playbooks/deploy/flask.yml -e project=metis -e hosts=dev_web
+    - docker build -t hellobink/metis:dev .
+    - docker login -u binkautomation -p epitome-generic-basilisk
+    - docker push hellobink/metis:dev
   only:
     - master
   tags:
-    - docker
+    - shell
+
+deploy_staging:
+  stage: deploy
+  environment: staging
+  script:
+    - docker build -t hellobink/metis:staging .
+    - docker login -u binkautomation -p epitome-generic-basilisk
+    - docker push hellobink/metis:staging
+  only:
+    - staging
+  tags:
+    - shell
+
+deploy_production:
+  stage: deploy
+  environment: production
+  script:
+    - docker build -t hellobink/metis:production .
+    - docker login -u binkautomation -p epitome-generic-basilisk
+    - docker push hellobink/metis:production
+  only:
+    - production
+  tags:
+    - shell
