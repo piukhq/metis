@@ -45,11 +45,11 @@ class TestServices(unittest.TestCase):
     @staticmethod
     def hermes_provider_status_mappings_route():
         httpretty.register_uri(httpretty.GET,
-                               re.compile('{}/payment_cards/provider_status_mapping/(.+)'.format(settings.HERMES_URL)),
+                               re.compile('{}/payment_cards/provider_status_mappings/(.+)'.format(settings.HERMES_URL)),
                                status=200,
                                headers={'Authorization': auth_key},
-                               body=json.dumps([{'provider_status': 'BINK_UNKNOWN',
-                                                 'bink_status': 10}]),
+                               body=json.dumps([{'provider_status_code': 'BINK_UNKNOWN',
+                                                 'bink_status_code': 10}]),
                                content_type='application/json')
 
     def test_route(self):

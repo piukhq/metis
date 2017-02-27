@@ -4,7 +4,7 @@ import subprocess
 
 from scandir import scandir
 
-from app.hermes import get_provider_status_mapping, put_account_status
+from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
 
@@ -19,7 +19,7 @@ class VisaHandback(object):
         self.archive_dir = archive_dir
         self.gpg_file_ext = gpg_file_ext
         self.text_file_suffix = '.unencrypted.txt'
-        self.bink_code_lookup = get_provider_status_mapping('visa')
+        self.bink_code_lookup = get_provider_status_mappings('visa')
 
     def bink_error_lookup(self, return_code):
         if return_code in self.bink_code_lookup.keys():

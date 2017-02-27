@@ -1,8 +1,8 @@
 import requests
 
 from app.utils import resolve_agent
-from app.hermes import get_provider_status_mapping, put_account_status
 from app.agents.exceptions import OAuthError
+from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
@@ -91,7 +91,7 @@ def add_card(card_info):
     resp = post_request(url, header, request_data)
 
     # get the status mapping for this provider from hermes.
-    status_mapping = get_provider_status_mapping(card_info['partner_slug'])
+    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
 
     resp = agent_instance.response_handler(resp, 'Add', status_mapping)
 
@@ -128,6 +128,20 @@ def remove_card(card_info):
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Delete')
+    return resp
+
+
+def reactivate_card(card_info):
+    settings.logger.info('Start reactivate card for {}'.format(card_info['partner_slug']))
+
+    agent_instance = get_agent(card_info['partner_slug'])
+
+    header = agent_instance.header
+    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    request_data = agent_instance.reactivate_card_body(card_info)
+
+    resp = post_request(url, header, request_data)
+    resp = agent_instance.response_handler(resp, 'Reactivate')
     return resp
 
 
