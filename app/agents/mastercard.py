@@ -13,6 +13,10 @@ else:
     MASTERCARD_RECEIVER_TOKEN = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'
 MASTERCARD_DO_ECHO_URL = 'https://ws.mastercard.com/MRS/DiagnosticService'
 
+# remove/update constants used in mastercard requests
+UPDATE = '1'
+REMOVE = '3'
+
 
 class MasterCard:
     header = {'Content-Type': 'application/xml'}
@@ -139,16 +143,16 @@ class MasterCard:
         return xml_data
 
     def remove_card_request_body(self):
-        soap_xml = self.remove_card_soap_template()
+        soap_xml = self.soap_template(REMOVE)
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
     def reactivate_card_request_body(self):
-        soap_xml = self.reactivate_card_soap_template()
+        soap_xml = self.soap_template(UPDATE)
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
-    def remove_card_soap_template(self):
+    def soap_template(self, action):
         template_env = self.jinja_environment()
         template_file = 'mc_update_template.xml'
         template = template_env.get_template(template_file)
@@ -158,25 +162,7 @@ class MasterCard:
                          "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
                          "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
                          "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
-                         "update_code": "3",
-                         }
-        output_text = template.render(template_vars)
-
-        # Wrap the xml in {{#xmldsig}} tags for Spreedly to sign
-        output_text = '{{#xml_dsig}}' + output_text + '{{/xml_dsig}}'
-        return output_text
-
-    def reactivate_card_soap_template(self):
-        template_env = self.jinja_environment()
-        template_file = 'mc_update_template.xml'
-        template = template_env.get_template(template_file)
-
-        template_vars = {"app_id": "{{credit_card_number}}",
-                         "institution_name": "loyaltyangels",
-                         "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
-                         "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
-                         "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
-                         "update_code": "1",
+                         "update_code": action,
                          }
         output_text = template.render(template_vars)
 
