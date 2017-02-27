@@ -20,7 +20,7 @@ class TestMastercard(TestCase):
         result = self.mc.add_url()
         self.assertEqual('http://latestserver.com/post.php', result)
 
-        result = self.mc.remove_url()
+        result = self.mc.update_url()
         self.assertEqual('http://latestserver.com/post.php', result)
 
     def test_receiver_token(self):
@@ -45,8 +45,8 @@ class TestMastercard(TestCase):
         # self.assertIn('{{credit_card_number}}', result)
         # self.assertIn('<cus:MEMBER_ICA>17597</cus:MEMBER_ICA>', result)
 
-    def test_update_card_body(self):
-        result = self.mc.update_card_body(self.card_info)
+    def test_remove_card_body(self):
+        result = self.mc.remove_card_body(self.card_info)
         self.assertIn('<payment_method_token>1111111111111111111111</payment_method_token>', result)
 
     def test_do_echo_body(self):
