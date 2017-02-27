@@ -7,6 +7,7 @@ import app.agents.mastercard as mastercard  # noqa
 
 
 class TestMastercard(TestCase):
+
     def setUp(self):
         self.card_info = {
             'payment_token': '1111111111111111111111',
@@ -19,7 +20,7 @@ class TestMastercard(TestCase):
         result = self.mc.add_url()
         self.assertEqual('http://latestserver.com/post.php', result)
 
-        result = self.mc.remove_url()
+        result = self.mc.update_url()
         self.assertEqual('http://latestserver.com/post.php', result)
 
     def test_receiver_token(self):

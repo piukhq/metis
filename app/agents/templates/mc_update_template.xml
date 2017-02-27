@@ -1,0 +1,4 @@
+{% extends "mc_template.xml" %}
+{% block body %}<cus:updateCustomerAccount>
+            <cus:ACCOUNT_STATUS_ID>{{update_code}}</cus:ACCOUNT_STATUS_ID>
+        </cus:updateCustomerAccount>{% endblock %}
