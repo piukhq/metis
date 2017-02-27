@@ -115,6 +115,20 @@ def remove_card(card_info):
     return resp
 
 
+def reactivate_card(card_info):
+    settings.logger.info('Start reactivate card for {}'.format(card_info['partner_slug']))
+
+    agent_instance = get_agent(card_info['partner_slug'])
+
+    header = agent_instance.header
+    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    request_data = agent_instance.reactivate_card_body(card_info)
+
+    resp = post_request(url, header, request_data)
+    resp = agent_instance.response_handler(resp, 'Reactivate')
+    return resp
+
+
 def get_agent(partner_slug):
     agent_class = resolve_agent(partner_slug)
     return agent_class()

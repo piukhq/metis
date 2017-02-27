@@ -7,6 +7,7 @@ import app.agents.mastercard as mastercard  # noqa
 
 
 class TestMastercard(TestCase):
+
     def setUp(self):
         self.card_info = {
             'payment_token': '1111111111111111111111',

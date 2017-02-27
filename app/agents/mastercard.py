@@ -20,7 +20,7 @@ class MasterCard:
     def add_url(self):
         return MASTERCARD_URL
 
-    def remove_url(self):
+    def update_url(self):
         return MASTERCARD_URL
 
     def receiver_token(self):
@@ -123,9 +123,18 @@ class MasterCard:
     def remove_card_body(self, card_id):
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_id['payment_token'] + '</payment_method_token>' \
-                   '  <url>' + self.remove_url() + '</url>' \
+                   '  <url>' + self.update_url() + '</url>' \
                    '  <headers>' + self.request_header() + '</headers>' \
                    '  <body>' + self.remove_card_request_body() + '</body>' \
+                   '</delivery>'
+        return xml_data
+
+    def reactivate_card_body(self, card_id):
+        xml_data = '<delivery>' \
+                   '  <payment_method_token>' + card_id['payment_token'] + '</payment_method_token>' \
+                   '  <url>' + self.update_url() + '</url>' \
+                   '  <headers>' + self.request_header() + '</headers>' \
+                   '  <body>' + self.reactivate_card_request_body() + '</body>' \
                    '</delivery>'
         return xml_data
 
@@ -134,16 +143,40 @@ class MasterCard:
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
+    def reactivate_card_request_body(self):
+        soap_xml = self.reactivate_card_soap_template()
+        body_data = '<![CDATA[' + soap_xml + ']]>'
+        return body_data
+
     def remove_card_soap_template(self):
         template_env = self.jinja_environment()
-        template_file = 'mc_remove_template.xml'
+        template_file = 'mc_update_template.xml'
         template = template_env.get_template(template_file)
 
         template_vars = {"app_id": "{{credit_card_number}}",
                          "institution_name": "loyaltyangels",
                          "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
                          "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
-                         "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}"
+                         "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
+                         "update_code": "3",
+                         }
+        output_text = template.render(template_vars)
+
+        # Wrap the xml in {{#xmldsig}} tags for Spreedly to sign
+        output_text = '{{#xml_dsig}}' + output_text + '{{/xml_dsig}}'
+        return output_text
+
+    def reactivate_card_soap_template(self):
+        template_env = self.jinja_environment()
+        template_file = 'mc_update_template.xml'
+        template = template_env.get_template(template_file)
+
+        template_vars = {"app_id": "{{credit_card_number}}",
+                         "institution_name": "loyaltyangels",
+                         "binary_security_token": "{{#binary_security_token}}{{/binary_security_token}}",
+                         "utc_timestamp1": "{{#utc_timestamp}}{{/utc_timestamp}}",
+                         "utc_timestamp2": "{{#utc_timestamp}}{{/utc_timestamp}}",
+                         "update_code": "1",
                          }
         output_text = template.render(template_vars)
 
