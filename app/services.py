@@ -127,7 +127,11 @@ def remove_card(card_info):
         return None
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp, 'Delete')
+
+    # get the status mapping for this provider from hermes.
+    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+
+    resp = agent_instance.response_handler(resp, 'Delete', status_mapping)
     return resp
 
 
@@ -141,7 +145,11 @@ def reactivate_card(card_info):
     request_data = agent_instance.reactivate_card_body(card_info)
 
     resp = post_request(url, header, request_data)
-    resp = agent_instance.response_handler(resp, 'Reactivate')
+
+    # get the status mapping for this provider from hermes.
+    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+
+    resp = agent_instance.response_handler(resp, 'Reactivate', status_mapping)
     return resp
 
 
