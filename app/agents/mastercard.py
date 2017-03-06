@@ -72,9 +72,9 @@ class MasterCard:
                                                                                  payment_method_token[0].text,
                                                                                  fault[0].text,
                                                                                  "Code:",
-                                                                                 fault_code[0].text)
+                                                                                 fault_code)
             settings.logger.info(message)
-            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + fault_code[0].text,
+            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + fault_code,
                     'status_code': 422}
         else:
             # could be a good response
