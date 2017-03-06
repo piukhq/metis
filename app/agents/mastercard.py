@@ -70,7 +70,7 @@ class MasterCard:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
             message = "MasterCard {} unsuccessful - Token: {}, {}, {} {}".format(action,
                                                                                  payment_method_token[0].text,
-                                                                                 fault[0].text,
+                                                                                 fault,
                                                                                  "Code:",
                                                                                  fault_code)
             settings.logger.info(message)
