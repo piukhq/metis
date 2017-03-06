@@ -53,23 +53,28 @@ class MasterCard:
             soap_xml = string_elem[xml_start_point:]
             xml_soap_doc = etree.fromstring(soap_xml.encode('utf-8'))
             payment_method_token = xml_doc.xpath("//payment_method/token")
-            mastercard_fault = xml_soap_doc.xpath("//faultstring")
-            mastercard_fault_code = xml_soap_doc.xpath("//ns2:code",
-                                                       namespaces={'ns2': 'http://common.ws.mcrewards.mastercard.com/'})
+            fault = xml_soap_doc.xpath("//faultstring")
+            fault_code_el = xml_soap_doc.xpath("//ns2:code",
+                                               namespaces={'ns2': 'http://common.ws.mcrewards.mastercard.com/'})
+
+            if fault_code_el:
+                fault_code = fault_code_el[0].text
+            else:
+                fault_code = None
         except Exception as e:
             message = str('MasterCard {} problem processing response.'.format(action))
             resp = {'message': message, 'status_code': 422}
             settings.logger.error(message, exc_info=1)
 
-        if mastercard_fault:
+        if fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
             message = "MasterCard {} unsuccessful - Token: {}, {}, {} {}".format(action,
                                                                                  payment_method_token[0].text,
-                                                                                 mastercard_fault[0].text,
+                                                                                 fault[0].text,
                                                                                  "Code:",
-                                                                                 mastercard_fault_code[0].text)
+                                                                                 fault_code)
             settings.logger.info(message)
-            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + mastercard_fault_code[0].text,
+            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + fault_code,
                     'status_code': 422}
         else:
             # could be a good response
@@ -79,8 +84,8 @@ class MasterCard:
             settings.logger.info(message)
             resp = {'message': message, 'status_code': response.status_code}
 
-        if mastercard_fault_code and mastercard_fault_code in status_mapping:
-            resp['bink_status'] = status_mapping[mastercard_fault_code]
+        if fault_code and fault_code in status_mapping:
+            resp['bink_status'] = status_mapping[fault_code]
         else:
             resp['bink_status'] = status_mapping['BINK_UNKNOWN']
         return resp
