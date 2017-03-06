@@ -1,6 +1,7 @@
 import requests
 
 from app.utils import resolve_agent
+from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
@@ -78,7 +79,13 @@ def add_card(card_info):
     url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
 
     settings.logger.info('Create request data {}'.format(card_info))
-    request_data = agent_instance.add_card_body(card_info)
+    try:
+        request_data = agent_instance.add_card_body(card_info)
+    except OAuthError:
+        # 5 = PROVIDER_SERVER_DOWN
+        # TODO: get this from gaia
+        put_account_status(5, card_id=card_info['id'])
+        return None
     settings.logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
     resp = post_request(url, header, request_data)
@@ -91,6 +98,8 @@ def add_card(card_info):
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
         settings.logger.info('Card added successfully, calling Hermes to activate card.')
+        # 1 = ACTIVE
+        # TODO: get this from gaia
         card_status_code = 1
     else:
         settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')
@@ -108,7 +117,14 @@ def remove_card(card_info):
     header = agent_instance.header
     # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
     url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
-    request_data = agent_instance.remove_card_body(card_info)
+
+    try:
+        request_data = agent_instance.remove_card_body(card_info)
+    except OAuthError:
+        # 5 = PROVIDER_SERVER_DOWN
+        # TODO: get this from gaia
+        put_account_status(5, card_id=card_info['id'])
+        return None
 
     resp = post_request(url, header, request_data)
     resp = agent_instance.response_handler(resp, 'Delete')
