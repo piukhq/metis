@@ -13,7 +13,7 @@ from app.hermes import put_account_status
 
 # testing_hostname = 'http://latestserver.com/post.php'
 if settings.TESTING:
-    VISA_RECEIVER_TOKEN = 'JKzJSKICIOZodDBMCyuRmttkRjO'
+    VISA_RECEIVER_TOKEN = 'visa'
 else:
     VISA_RECEIVER_TOKEN = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
 

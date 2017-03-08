@@ -7,7 +7,7 @@ from lxml import etree
 if settings.TESTING:
     # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
     MASTERCARD_URL = 'http://latestserver.com/post.php'
-    MASTERCARD_RECEIVER_TOKEN = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+    MASTERCARD_RECEIVER_TOKEN = 'mastercard'
 else:
     MASTERCARD_URL = 'https://ws.mastercard.com/MRS/CustomerService'
     MASTERCARD_RECEIVER_TOKEN = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'

@@ -24,7 +24,7 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 
 if settings.TESTING:
     AMEX_URL = 'https://api.qa.americanexpress.com'
-    AMEX_RECEIVER_TOKEN = 'BqfFb1WnOwpbzH7WVTqmvYtffPV'
+    AMEX_RECEIVER_TOKEN = 'amex'
 else:
     AMEX_URL = 'https://api.americanexpress.com'
     AMEX_RECEIVER_TOKEN = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
