@@ -5,6 +5,7 @@ import httpretty
 import re
 
 os.environ['METIS_TESTING'] = 'True'
+os.environ['MASTERCARD_RECEIVER_TOKEN'] = 'mastercard'
 from app.services import create_receiver, add_card, get_agent  # noqa
 import app.agents.mastercard  # noqa
 import settings  # noqa
