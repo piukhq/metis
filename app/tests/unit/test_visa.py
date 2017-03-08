@@ -22,7 +22,7 @@ class TestVisa(TestCase):
     mock_get_next_seq_number.return_value = 1
 
     def spreedly_route(self):
-        url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
+        url = 'https://core.spreedly.com/v1/receivers/visa/export.json'
         httpretty.register_uri(httpretty.POST, url,
                                status=200,
                                body=json.dumps({"transaction": {
@@ -90,10 +90,6 @@ class TestVisa(TestCase):
     def tearDown(self):
         self.logger.handlers = self.orig_handlers
         self.logger.level = self.level
-
-    def test_receiver_token_testing(self):
-        result = self.visa.receiver_token()
-        self.assertIn('JKzJSKICIOZodDBMCyuRmttkRjO', result)
 
     def test_request_header_both(self):
         result = self.visa.request_header()

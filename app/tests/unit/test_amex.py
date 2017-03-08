@@ -13,17 +13,6 @@ class TestAmex(TestCase):
                           'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
                           'card_token': ''}
 
-    def test_url_testing(self):
-        result = self.amex.add_url()
-        self.assertEqual('https://api.qa.americanexpress.com/v3/smartoffers/sync', result)
-
-        result = self.amex.remove_url()
-        self.assertEqual('https://api.qa.americanexpress.com/v3/smartoffers/unsync', result)
-
-    def test_receiver_token_testing(self):
-        result = self.amex.receiver_token()
-        self.assertIn('BqfFb1WnOwpbzH7WVTqmvYtffPV', result)
-
     def amex_route(self):
         auth_url = '{}{}'.format(amex.AMEX_URL, "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="

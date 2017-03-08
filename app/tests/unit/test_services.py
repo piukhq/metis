@@ -1,11 +1,13 @@
+import os
 import json
 import unittest
 import httpretty
 import re
 
-from app.services import create_receiver, add_card, get_agent
-import app.agents.mastercard
-import settings
+os.environ['METIS_TESTING'] = 'True'
+from app.services import create_receiver, add_card, get_agent  # noqa
+import app.agents.mastercard  # noqa
+import settings  # noqa
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -15,7 +17,7 @@ class TestServices(unittest.TestCase):
 
     create_url = 'https://core.spreedly.com/v1/receivers.xml'
     payment_method_token = '3rkN9aJFfNEjvr2LqYZE4606hgG'
-    receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+    receiver_token = 'mastercard'
     payment_url = 'https://core.spreedly.com/v1/receivers/' + receiver_token + '/deliver.xml'
 
     def create_route(self):
