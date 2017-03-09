@@ -21,14 +21,6 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 # client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
 # Testing end
 
-
-if settings.TESTING:
-    AMEX_URL = 'https://api.qa.americanexpress.com'
-    AMEX_RECEIVER_TOKEN = 'amex'
-else:
-    AMEX_URL = 'https://api.americanexpress.com'
-    AMEX_RECEIVER_TOKEN = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt'
-
 # Production
 client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
 client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
@@ -43,14 +35,23 @@ class Amex:
     partnerId = 'AADP0050'
     distrChan = '9999'  # 'Amex to provide'
 
+    def amex_url(self):
+        if settings.TESTING:
+            return 'https://api.qa.americanexpress.com'
+        else:
+            return 'https://api.americanexpress.com'
+
     def add_url(self):
-        return '{}{}'.format(AMEX_URL, res_path_sync)
+        return '{}{}'.format(self.amex_url(), res_path_sync)
 
     def remove_url(self):
-        return '{}{}'.format(AMEX_URL, res_path_unsync)
+        return '{}{}'.format(self.amex_url(), res_path_unsync)
 
     def receiver_token(self):
-        return AMEX_RECEIVER_TOKEN + '/deliver.xml'
+        if settings.TESTING:
+            return 'amex' + '/deliver.xml'
+        else:
+            return 'ZQLPEvBP4jaaYhxHDl7SWobMXDt' + '/deliver.xml'
 
     def request_header(self, res_path):
         header_start = '<![CDATA['
@@ -172,7 +173,7 @@ class Amex:
         # Call the Amex OAuth endpoint to obtain an API request token.
         # base_url = "https://api.americanexpress.com"
         # base_url + "/apiplatform/v2/oauth/token/mac"
-        auth_url = '{}{}'.format(AMEX_URL, "/apiplatform/v2/oauth/token/mac")
+        auth_url = '{}{}'.format(self.amex_url(), "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",

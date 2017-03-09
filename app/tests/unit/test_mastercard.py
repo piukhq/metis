@@ -1,8 +1,7 @@
-import os
 from unittest import TestCase
 import jinja2
 
-os.environ['METIS_TESTING'] = 'True'
+import settings
 import app.agents.mastercard as mastercard  # noqa
 
 
@@ -15,6 +14,10 @@ class TestMastercard(TestCase):
             'partner_slug': 'mastercard'
         }
         self.mc = mastercard.MasterCard()
+        settings.TESTING = True
+
+    def tearDown(self):
+        settings.TESTING = False
 
     def test_request_header_testing(self):
         result = self.mc.request_header()

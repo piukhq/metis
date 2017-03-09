@@ -2,7 +2,8 @@ from unittest import TestCase, mock
 import httpretty
 import json
 
-import app.agents.amex as amex
+import settings
+import app.agents.amex as amex  # noqa
 
 
 class TestAmex(TestCase):
@@ -12,9 +13,13 @@ class TestAmex(TestCase):
         self.card_info = {'partner_slug': 'amex',
                           'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
                           'card_token': ''}
+        settings.TESTING = True
+
+    def tearDown(self):
+        settings.TESTING = False
 
     def amex_route(self):
-        auth_url = '{}{}'.format(amex.AMEX_URL, "/apiplatform/v2/oauth/token/mac")
+        auth_url = '{}{}'.format(self.amex.amex_url(), "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",

@@ -11,18 +11,14 @@ from app.agents.agent_base import AgentBase
 from app.hermes import put_account_status
 
 
-# testing_hostname = 'http://latestserver.com/post.php'
-if settings.TESTING:
-    VISA_RECEIVER_TOKEN = 'visa'
-else:
-    VISA_RECEIVER_TOKEN = 'HwA3Nr2SGNEwBWISKzmNZfkHl6D'
-
-
 class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
 
     def receiver_token(self):
-        return VISA_RECEIVER_TOKEN + '/export.json'
+        if settings.TESTING:
+            return 'visa' + '/export.json'
+        else:
+            return 'HwA3Nr2SGNEwBWISKzmNZfkHl6D' + '/export.json'
 
     def request_header(self):
         header = '![CDATA[Content-Type: application/json]]'

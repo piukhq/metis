@@ -1,13 +1,10 @@
 import httpretty
 import json
 import logging
-import os
 from unittest import TestCase, mock
 import arrow
-from testfixtures import log_capture
 
-os.environ['METIS_TESTING'] = 'True'
-os.environ['VISA_RECEIVER_TOKEN'] = 'JKzJSKICIOZodDBMCyuRmttkRjO'
+from testfixtures import log_capture  # noqa
 from app.tests.unit.fixture import card_info_reduce  # noqa
 from app.card_router import ActionCode  # noqa
 from app.agents.visa import Visa, VisaCardFile, Header, Footer  # noqa
@@ -45,6 +42,7 @@ class TestVisa(TestCase):
         self.orig_handlers = self.logger.handlers
         self.logger.handlers = []
         self.level = self.logger.level
+        settings.TESTING = True
 
         self.card_info_add = [{
             'id': 1,
@@ -90,6 +88,7 @@ class TestVisa(TestCase):
     def tearDown(self):
         self.logger.handlers = self.orig_handlers
         self.logger.level = self.level
+        settings.TESTING = False
 
     def test_request_header_both(self):
         result = self.visa.request_header()
