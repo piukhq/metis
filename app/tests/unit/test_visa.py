@@ -1,17 +1,14 @@
 import httpretty
 import json
 import logging
-import os
 from unittest import TestCase, mock
 import arrow
-from testfixtures import log_capture
 
-os.environ['METIS_TESTING'] = 'True'
-os.environ['VISA_RECEIVER_TOKEN'] = 'JKzJSKICIOZodDBMCyuRmttkRjO'
-from app.tests.unit.fixture import card_info_reduce  # noqa
-from app.card_router import ActionCode  # noqa
-from app.agents.visa import Visa, VisaCardFile, Header, Footer  # noqa
-import settings  # noqa
+from testfixtures import log_capture
+from app.tests.unit.fixture import card_info_reduce
+from app.card_router import ActionCode
+from app.agents.visa import Visa, VisaCardFile, Header, Footer
+import settings
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -22,7 +19,7 @@ class TestVisa(TestCase):
     mock_get_next_seq_number.return_value = 1
 
     def spreedly_route(self):
-        url = 'https://core.spreedly.com/v1/receivers/JKzJSKICIOZodDBMCyuRmttkRjO/export.json'
+        url = 'https://core.spreedly.com/v1/receivers/visa/export.json'
         httpretty.register_uri(httpretty.POST, url,
                                status=200,
                                body=json.dumps({"transaction": {
@@ -45,6 +42,7 @@ class TestVisa(TestCase):
         self.orig_handlers = self.logger.handlers
         self.logger.handlers = []
         self.level = self.logger.level
+        settings.TESTING = True
 
         self.card_info_add = [{
             'id': 1,
@@ -90,10 +88,7 @@ class TestVisa(TestCase):
     def tearDown(self):
         self.logger.handlers = self.orig_handlers
         self.logger.level = self.level
-
-    def test_receiver_token_testing(self):
-        result = self.visa.receiver_token()
-        self.assertIn('JKzJSKICIOZodDBMCyuRmttkRjO', result)
+        settings.TESTING = False
 
     def test_request_header_both(self):
         result = self.visa.request_header()

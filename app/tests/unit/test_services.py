@@ -15,8 +15,14 @@ class TestServices(unittest.TestCase):
 
     create_url = 'https://core.spreedly.com/v1/receivers.xml'
     payment_method_token = '3rkN9aJFfNEjvr2LqYZE4606hgG'
-    receiver_token = 'XsXRs91pxREDW7TAFbUc1TgosxU'
+    receiver_token = 'mastercard'
     payment_url = 'https://core.spreedly.com/v1/receivers/' + receiver_token + '/deliver.xml'
+
+    def setUp(self):
+        settings.TESTING = True
+
+    def tearDown(self):
+        settings.TESTING = False
 
     def create_route(self):
         xml_response = '<receiver>' \

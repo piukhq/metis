@@ -3,14 +3,6 @@ import jinja2
 import os
 from lxml import etree
 
-
-if settings.TESTING:
-    # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
-    MASTERCARD_URL = 'http://latestserver.com/post.php'
-    MASTERCARD_RECEIVER_TOKEN = 'XsXRs91pxREDW7TAFbUc1TgosxU'
-else:
-    MASTERCARD_URL = 'https://ws.mastercard.com/MRS/CustomerService'
-    MASTERCARD_RECEIVER_TOKEN = 'SiXfsuR5TQJ87wjH2O5Mo1I5WR'
 MASTERCARD_DO_ECHO_URL = 'https://ws.mastercard.com/MRS/DiagnosticService'
 
 # remove/update constants used in mastercard requests
@@ -22,13 +14,24 @@ class MasterCard:
     header = {'Content-Type': 'application/xml'}
 
     def add_url(self):
-        return MASTERCARD_URL
+        if settings.TESTING:
+            # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+            return 'http://latestserver.com/post.php'
+        else:
+            return 'https://ws.mastercard.com/MRS/CustomerService'
 
     def update_url(self):
-        return MASTERCARD_URL
+        if settings.TESTING:
+            # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+            return 'http://latestserver.com/post.php'
+        else:
+            return 'https://ws.mastercard.com/MRS/CustomerService'
 
     def receiver_token(self):
-        return MASTERCARD_RECEIVER_TOKEN + '/deliver.xml'
+        if settings.TESTING:
+            return 'mastercard' + '/deliver.xml'
+        else:
+            return 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
 
     def request_header(self):
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
