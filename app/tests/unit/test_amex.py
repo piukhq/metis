@@ -3,7 +3,7 @@ import httpretty
 import json
 
 import settings
-import app.agents.amex as amex  # noqa
+import app.agents.amex as amex
 
 
 class TestAmex(TestCase):
