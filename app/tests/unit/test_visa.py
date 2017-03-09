@@ -4,11 +4,11 @@ import logging
 from unittest import TestCase, mock
 import arrow
 
-from testfixtures import log_capture  # noqa
-from app.tests.unit.fixture import card_info_reduce  # noqa
-from app.card_router import ActionCode  # noqa
-from app.agents.visa import Visa, VisaCardFile, Header, Footer  # noqa
-import settings  # noqa
+from testfixtures import log_capture
+from app.tests.unit.fixture import card_info_reduce
+from app.card_router import ActionCode
+from app.agents.visa import Visa, VisaCardFile, Header, Footer
+import settings
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
