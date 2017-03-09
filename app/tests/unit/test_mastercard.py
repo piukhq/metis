@@ -2,7 +2,7 @@ from unittest import TestCase
 import jinja2
 
 import settings
-import app.agents.mastercard as mastercard  # noqa
+import app.agents.mastercard as mastercard
 
 
 class TestMastercard(TestCase):
