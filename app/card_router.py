@@ -1,4 +1,4 @@
-from app.tasks import add_card, remove_card, update_card
+from app.tasks import add_card, remove_card, reactivate_card
 from enum import Enum
 import settings
 import pickle
@@ -8,13 +8,13 @@ import pika
 class ActionCode(Enum):
     ADD = 'A'
     DELETE = 'D'
-    UPDATE = 'U'
+    REACTIVATE = 'R'
 
 
 def celery_handler(action_code, card_info):
     {ActionCode.ADD: lambda: add_card.delay(card_info),
      ActionCode.DELETE: lambda: remove_card.delay(card_info),
-     ActionCode.UPDATE: lambda: update_card.delay(card_info)}[action_code]()
+     ActionCode.REACTIVATE: lambda: reactivate_card.delay(card_info)}[action_code]()
 
 
 def rabbitmq_handler(action_code, card_info):
