@@ -13,5 +13,5 @@ def remove_card(card_info):
 
 
 @celery.task
-def update_card(card_info):
-    services.update_card(card_info)
+def reactivate_card(card_info):
+    services.reactivate_card(card_info)

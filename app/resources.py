@@ -74,14 +74,14 @@ class PaymentCardUpdate(Resource):
     def post(self):
         req_data = json.loads(request.data.decode())
 
-        logger.info('{} Received update payment card request: {}'.format(arrow.now(), req_data))
+        logger.info('{} Received reactivate payment card request: {}'.format(arrow.now(), req_data))
 
         try:
             card_info_schema(req_data)
         except MultipleInvalid as e:
             return make_response('Request parameters not complete', 400)
 
-        process_card(ActionCode.UPDATE, req_data)
+        process_card(ActionCode.REACTIVATE, req_data)
 
         return make_response('Success', 200)
 

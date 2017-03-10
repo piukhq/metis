@@ -5,8 +5,8 @@ from lxml import etree
 
 MASTERCARD_DO_ECHO_URL = 'https://ws.mastercard.com/MRS/DiagnosticService'
 
-# remove/update constants used in mastercard requests
-UPDATE = '1'
+# remove/reactivate constants used in mastercard requests
+REACTIVATE = '1'
 REMOVE = '3'
 
 
@@ -156,7 +156,7 @@ class MasterCard:
         return body_data
 
     def reactivate_card_request_body(self):
-        soap_xml = self.soap_template(UPDATE)
+        soap_xml = self.soap_template(REACTIVATE)
         body_data = '<![CDATA[' + soap_xml + ']]>'
         return body_data
 
