@@ -40,6 +40,12 @@ class TestMetisResources(TestCase):
                                body=self.xml_response,
                                content_type='application/xml')
 
+    def retain_route(self):
+        url = 'https://core.spreedly.com/v1/payment_methods/1111111111111111111111/retain.json'
+        httpretty.register_uri(httpretty.PUT, url,
+                               status=200,
+                               content_type='application/json')
+
     @patch('app.auth.parse_token')
     @httpretty.activate
     def test_create_receiver(self, mock_parse_token):
@@ -74,6 +80,7 @@ class TestMetisResources(TestCase):
         settings.TESTING = True
         mock_parse_token.return_value = "{'sub':''45'}"
         mc.testing_receiver_token = self.receiver_token
+        self.retain_route()
         self.end_site_receiver_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
@@ -86,6 +93,7 @@ class TestMetisResources(TestCase):
     def test_end_site_receiver_invalid_param(self, mock_parse_token):
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
+        self.retain_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({}))
@@ -96,6 +104,7 @@ class TestMetisResources(TestCase):
     def test_end_site_receiver_param_missing(self, mock_parse_token):
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
+        self.retain_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps({"partner_slug": "mastercard"}))
@@ -113,6 +122,7 @@ class TestMetisResources(TestCase):
         }
         mock_parse_token.return_value = "{'sub':''45'}"
         self.end_site_receiver_route()
+        self.retain_route()
         resp = self.client.post('/payment_service/payment_card',
                                 headers={'content-type': 'application/json', 'Authorization': auth_key},
                                 data=json.dumps(test_card))
