@@ -49,7 +49,6 @@ do_echo_url = 'https://ws.mastercard.com/MRS/DiagnosticService'
 ```
 This is mastercard production URL.
 
-``
 Username and password will be different for production and can be obtained from the Bink Environments page on
 the Spreedly website.
 
