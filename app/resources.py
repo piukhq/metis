@@ -1,6 +1,6 @@
 import arrow
 import json
-from app.services import create_prod_receiver
+from app.services import create_prod_receiver, retain_payment_method_token
 from flask_restful import Resource, Api
 from flask import request, make_response
 from app.agents.agent_manager import AgentManager
@@ -51,6 +51,12 @@ class PaymentCard(Resource):
             card_info_schema(req_data)
         except MultipleInvalid as e:
             return make_response('Request parameters not complete', 400)
+
+        if action_code == ActionCode.ADD:
+            resp = retain_payment_method_token(req_data['payment_token'])
+            if resp.status_code != 200:
+                logger.info('Retain unsuccessful : {}'.format(req_data['payment_token']))
+                return make_response('Retain unsuccessful', 400)
 
         process_card(action_code, req_data)
 

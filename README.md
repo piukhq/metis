@@ -49,10 +49,6 @@ do_echo_url = 'https://ws.mastercard.com/MRS/DiagnosticService'
 ```
 This is mastercard production URL.
 
-Username and password used in MTF doEcho testing are:
-```
-Yc7xn3gDP73PPOQLEB2BYpv31EV:94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51
-```
 Username and password will be different for production and can be obtained from the Bink Environments page on
 the Spreedly website.
 

@@ -6,7 +6,7 @@ from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
-password = '94iV3Iyvky86avhdjLgIh0z9IFeB0pw4cZvu64ufRgaur46mTM4xepsPDOdxVH51'
+password = '4m8tVKWHvakjhfBXnRVDbfkOArB9NvAyo9U6lWtVulb2thuI6T439blRbQWGwQcH'
 # Production
 # This username is used for Amex testing, Visa and MasterCard use one above
 username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
@@ -156,3 +156,9 @@ def reactivate_card(card_info):
 def get_agent(partner_slug):
     agent_class = resolve_agent(partner_slug)
     return agent_class()
+
+
+def retain_payment_method_token(payment_method_token):
+    url = '{}/payment_methods/{}/retain.json'.format(settings.SPREEDLY_BASE_URL, payment_method_token)
+    resp = requests.put(url, auth=(username, password), headers={'Content-Type': 'application/json'})
+    return resp
