@@ -77,7 +77,7 @@ class MasterCard:
                                                                                  "Code:",
                                                                                  fault_code)
             settings.logger.info(message)
-            resp = {'message': action + 'MasterCard Fault recorded. Code: ' + fault_code,
+            resp = {'message': '{} MasterCard Fault recorded. Code: {}'.format(action, fault_code),
                     'status_code': 422}
         else:
             # could be a good response
