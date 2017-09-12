@@ -150,6 +150,17 @@ def reactivate_card(card_info):
     status_mapping = get_provider_status_mappings(card_info['partner_slug'])
 
     resp = agent_instance.response_handler(resp, 'Reactivate', status_mapping)
+    # Set card_payment status in hermes using 'id' HERMES_URL
+    if resp["status_code"] == 200:
+        settings.logger.info('Card added successfully, calling Hermes to activate card.')
+        # 1 = ACTIVE
+        # TODO: get this from gaia
+        card_status_code = 1
+    else:
+        settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')
+        card_status_code = resp['bink_status']
+    put_account_status(card_status_code, card_id=card_info['id'])
+
     return resp
 
 
