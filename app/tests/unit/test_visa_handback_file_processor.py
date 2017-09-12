@@ -76,11 +76,3 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         v.archive_files(self.touched_file)
         result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)
         self.assertTrue(result)
-
-    @httpretty.activate
-    def test_perform_file_archive(self):
-        self.hermes_provider_status_mappings_route()
-        v = VisaHandback()
-        v.perform_file_archive(self.touched_file, settings.VISA_ARCHIVE_DIR)
-        result = os.path.isfile(settings.VISA_ARCHIVE_DIR + '/' + self.filename)
-        self.assertTrue(result)

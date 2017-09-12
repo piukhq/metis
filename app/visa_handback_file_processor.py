@@ -10,14 +10,11 @@ import settings
 
 class VisaHandback(object):
 
-    def __init__(self,
-                 keyring=settings.VISA_KEYRING_DIR,
-                 archive_dir=settings.VISA_ARCHIVE_DIR,
-                 gpg_file_ext=settings.VISA_ENCRYPTED_FILE_EXTENSION):
+    def __init__(self):
 
-        self.keyring = keyring
-        self.archive_dir = archive_dir
-        self.gpg_file_ext = gpg_file_ext
+        self.keyring = settings.VISA_KEYRING_DIR
+        self.archive_dir = settings.VISA_ARCHIVE_DIR
+        self.gpg_file_ext = settings.VISA_ENCRYPTED_FILE_EXTENSION
         self.text_file_suffix = '.unencrypted.txt'
         self.bink_code_lookup = get_provider_status_mappings('visa')
 
@@ -35,16 +32,30 @@ class VisaHandback(object):
         return_code_field = (741, 745)
         return_description_field = (745, 1000)
 
+        record_count_mismatch = False
+
         for txt_file in txt_files:
             with open(txt_file) as file:
+                # Check the Visa file for a record count mismatch. This means that all
+                # enrolments in the file are rejected.
+                if 'Record count mismatch' in file.read():
+                    record_count_mismatch = True
+
+                # Return the file iterator to the start of the file for following read.
+                file.seek(0)
+
                 for row in file:
-                    # This ensures the header and footer are ignored.
+                    # This ensures the header and tail are ignored.
                     if row[:2] == '00' or row[:2] == '99':
                         continue
 
                     token = row[token_field[0]:token_field[1]].strip()
-                    return_code = row[return_code_field[0]:return_code_field[1]].strip()
-                    return_description = row[return_description_field[0]:return_description_field[1]].strip()
+                    if record_count_mismatch:
+                        return_code = 'record_count_mismatch'
+                        return_description = 'Record count mismatch'
+                    else:
+                        return_code = row[return_code_field[0]:return_code_field[1]].strip()
+                        return_description = row[return_description_field[0]:return_description_field[1]].strip()
 
                     bink_status = self.bink_error_lookup(return_code)
 
@@ -113,7 +124,8 @@ class VisaHandback(object):
 
 def get_dir_contents(src_dir):
     files = []
-    for entry in scandir(src_dir):
+    file_dir = os.path.join(settings.APP_DIR, src_dir)
+    for entry in scandir(file_dir):
         if entry.is_file(follow_symlinks=False):
             files.append(entry.path)
 
