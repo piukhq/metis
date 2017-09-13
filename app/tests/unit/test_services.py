@@ -3,7 +3,7 @@ import unittest
 import httpretty
 import re
 
-from app.services import create_receiver, add_card, get_agent
+from app.services import create_receiver, add_card, get_agent, reactivate_card
 import app.agents.mastercard
 import settings
 
@@ -124,3 +124,19 @@ Server: Information Not Disclosed]]>
     def test_get_invalid_agent(self):
         with self.assertRaises(KeyError):
             get_agent("monkey")
+
+    @httpretty.activate
+    def test_reactivate_card(self):
+        card_info = {
+            'id': 1,
+            'payment_token': '1111111111111111111111',
+            'card_token': '111111111111112',
+            'partner_slug': 'mastercard'
+        }
+
+        self.test_route()
+        app.agents.mastercard.testing_receiver_token = self.receiver_token
+        self.hermes_status_route()
+        self.hermes_provider_status_mappings_route()
+        resp = reactivate_card(card_info)
+        self.assertEqual(200, resp['status_code'])
