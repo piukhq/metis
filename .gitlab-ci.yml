@@ -1,4 +1,9 @@
+stages:
+  - tests
+  - build
+
 tests:
+  stage: tests
   script:
     - pip3 install -r requirements.txt
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
@@ -13,55 +18,30 @@ tests:
     - docker
 
 complexity:
+  stage: tests
   script:
     - xenon --max-average A --max-modules B --max-absolute B .
   tags:
     - docker
 
 flake8:
+  stage: tests
   script:
     - flake8 *
   tags:
     - docker
 
-deploy-dev:
-  stage: deploy
+build-master:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
-    - docker build -t olympus.azurecr.io/metis:latest .
-    - docker login olympus.azurecr.io -u $AZURE_LOGIN -p $AZURE_PASS
-    - docker push olympus.azurecr.io/metis:latest
-    - docker rmi olympus.azurecr.io/metis:latest
-    - docker logout olympus.azurecr.io
-  environment: dev
+    - docker build --pull -t "$CI_REGISTRY/metis:latest" .
+    - docker push "$CI_REGISTRY/metis:latest"
   only:
     - master
   tags:
-    - shell
-
-deploy-staging:
-  stage: deploy
-  script:
-    - docker build -t olympus.azurecr.io/metis:staging .
-    - docker login olympus.azurecr.io -u $AZURE_LOGIN -p $AZURE_PASS
-    - docker push olympus.azurecr.io/metis:staging
-    - docker rmi olympus.azurecr.io/metis:staging
-    - docker logout olympus.azurecr.io
-  environment: staging
-  only:
-    - staging
-  tags:
-    - shell
-
-deploy-production:
-  stage: deploy
-  script:
-    - docker build -t olympus.azurecr.io/metis:production .
-    - docker login olympus.azurecr.io -u $AZURE_LOGIN -p $AZURE_PASS
-    - docker push olympus.azurecr.io/metis:production
-    - docker rmi olympus.azurecr.io/metis:production
-    - docker logout olympus.azurecr.io
-  environment: production
-  only:
-    - production
-  tags:
-    - shell
+    - docker
