@@ -20,6 +20,14 @@ card_info_schema = Schema({
 })
 
 
+class Healthz(Resource):
+    def get(self):
+        return ''
+
+
+api.add_resource(Healthz, '/healthz')
+
+
 class CreateReceiver(Resource):
 
     @authorized
