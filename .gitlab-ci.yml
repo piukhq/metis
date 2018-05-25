@@ -26,7 +26,7 @@ flake8:
   script:
     - flake8 *
 
-      build-develop:
+build-develop:
   stage: build
   image: docker:latest
   services:
