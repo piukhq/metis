@@ -1,8 +1,10 @@
 from setuptools import setup
 
+from app.version import __version__
+
 setup(
     name='metis',
-    version='1.0',
+    version=__version__,
     description=(
         'Card enrolment bridge API. '
         'Handles enrolment and unenrolment of payment cards with Visa, Amex, and Mastercard.'),

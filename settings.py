@@ -71,7 +71,7 @@ elif tmp_logger:
     handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
     logger.addHandler(handler_loc)
 
-SENTRY_DSN = env_var("METIS_SENTRY_DSN")
+SENTRY_DSN = env_var("SENTRY_DSN")
 
 PONTUS_DATABASE = env_var('PONTUS_DATABASE', 'pontus')
 PONTUS_USER = env_var('PONTUS_USER', 'laadmin')
