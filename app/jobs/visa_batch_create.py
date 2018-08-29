@@ -24,18 +24,20 @@ def chunks(l, n):
 
 def reduce_card_data(card_info):
     totals = defaultdict(int)
-    for ci in card_info:
+    for (ci, delivery_tag) in card_info:
         payment_token = ci['payment_token']
         action = ci['action_code']
         delta = 1 if action is ActionCode.ADD else -1
         totals[payment_token] += delta
 
     def find_card(token):
-        return next(c for c in card_info if c['payment_token'] == token)
+        return next(c for c in card_info if c[0]['payment_token'] == token)
 
     new_card_info = []
+    dropped = []
     for payment_token, total in totals.items():
         if total == 0:
+            dropped.append(find_card(payment_token))
             continue
 
         if total < 0:
@@ -44,9 +46,9 @@ def reduce_card_data(card_info):
             action = ActionCode.ADD
 
         card = find_card(payment_token)
-        card['action_code'] = action
+        card[0]['action_code'] = action
         new_card_info.append(card)
-    return new_card_info
+    return new_card_info, dropped
 
 
 if __name__ == '__main__':
@@ -58,23 +60,35 @@ if __name__ == '__main__':
     queue_name = 'visa'
 
     card_infos = []
+
     for i in range(0, settings.FILES_PER_DAY * settings.CARDS_PER_FILE):
         state = channel.queue_declare(queue_name, durable=True, passive=True)
 
         if state.method.message_count == 0:
             break
 
-        method, properties, body = channel.basic_get(queue_name, no_ack=True)
-        card_infos.append(pickle.loads(body))
+        method, properties, body = channel.basic_get(queue_name)
+        card_infos.append((pickle.loads(body), method.delivery_tag))
 
-    card_infos = reduce_card_data(card_infos)
+    card_infos, dropped = reduce_card_data(card_infos)
+
+    print('acking dropped cards')
+    for _, delivery_tag in dropped:
+        channel.basic_ack(delivery_tag)
 
     processed_files = []
     for chunk_index, chunk in enumerate(chunks(card_infos, settings.CARDS_PER_FILE)):
+        delivery_tags = [c[1] for c in chunk]
+        chunk = [c[0] for c in chunk]
         print('processing card group #{}'.format(chunk_index + 1))
         agent = Visa()
         print('sending cards to spreedly...')
         file_name = agent.create_cards(chunk)
+
+        print('acking messages in card group...')
+        for delivery_tag in delivery_tags:
+            channel.basic_ack(delivery_tag)
+
         file_path = os.path.join('/home/spreedlyftp/', file_name)
 
         processed_files.append(file_name)
