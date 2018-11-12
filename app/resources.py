@@ -57,7 +57,7 @@ class PaymentCard(Resource):
 
         try:
             card_info_schema(req_data)
-        except MultipleInvalid as e:
+        except MultipleInvalid:
             return make_response('Request parameters not complete', 400)
 
         if action_code == ActionCode.ADD:
@@ -92,7 +92,7 @@ class PaymentCardUpdate(Resource):
 
         try:
             card_info_schema(req_data)
-        except MultipleInvalid as e:
+        except MultipleInvalid:
             return make_response('Request parameters not complete', 400)
 
         process_card(ActionCode.REACTIVATE, req_data)
