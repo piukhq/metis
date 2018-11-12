@@ -64,7 +64,7 @@ class MasterCard:
                 fault_code = fault_code_el[0].text
             else:
                 fault_code = None
-        except Exception as e:
+        except Exception:
             message = str('MasterCard {} problem processing response.'.format(action))
             resp = {'message': message, 'status_code': 422}
             settings.logger.error(message, exc_info=1)
