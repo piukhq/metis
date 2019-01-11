@@ -18,10 +18,11 @@ def create_app(config_name="settings"):
     app = Flask('core')
     app.config.from_object(config_name)
 
-    TraceMiddleware(
-        app,
-        tracer,
-        service="metis",
+    if settings.DATADOG_ENV:
+        TraceMiddleware(
+            app,
+            tracer,
+            service="metis",
         distributed_tracing=True)
 
     if SENTRY_DSN:
