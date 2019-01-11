@@ -6,7 +6,7 @@ from ddtrace.contrib.flask import TraceMiddleware
 from flask import Flask
 from raven.contrib.flask import Sentry
 
-from settings
+import settings
 from app.version import __version__
 
 sentry = Sentry()
