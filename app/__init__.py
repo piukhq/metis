@@ -23,12 +23,12 @@ def create_app(config_name="settings"):
             app,
             tracer,
             service="metis",
-        distributed_tracing=True)
+            distributed_tracing=True)
 
     if settings.SENTRY_DSN:
         sentry.init_app(
             app,
-            dsn=SENTRY_DSN,
+            dsn=settings.SENTRY_DSN,
             logging=True,
             level=logging.ERROR)
         sentry.client.release = __version__
