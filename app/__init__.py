@@ -6,7 +6,7 @@ from ddtrace.contrib.flask import TraceMiddleware
 from flask import Flask
 from raven.contrib.flask import Sentry
 
-from settings import SENTRY_DSN
+from settings
 from app.version import __version__
 
 sentry = Sentry()
@@ -25,7 +25,7 @@ def create_app(config_name="settings"):
             service="metis",
         distributed_tracing=True)
 
-    if SENTRY_DSN:
+    if settings.SENTRY_DSN:
         sentry.init_app(
             app,
             dsn=SENTRY_DSN,
