@@ -5,6 +5,7 @@ stages:
 
 tests:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - pip3 install -r requirements.txt
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
@@ -18,11 +19,13 @@ tests:
 
 complexity:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - xenon --max-average A --max-modules B --max-absolute B .
 
 flake8:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - flake8 *
 
