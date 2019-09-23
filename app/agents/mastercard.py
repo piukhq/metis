@@ -39,6 +39,7 @@ class MasterCard:
 
     def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
+            settings.logger.warning("Mastercard {} response: {}, body: {}".format(action, response, response.text))
             try:
                 resp_content = response.json()
                 psp_message = resp_content['errors'][0]['message']
