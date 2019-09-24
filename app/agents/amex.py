@@ -93,7 +93,7 @@ class Amex:
             payment_method_token = xml_doc.xpath("//payment_method/token")
             string_elem = xml_doc.xpath("//body")[0].text
             amex_data = json.loads(string_elem)
-        except Exception as e:
+        except Exception:
             message = str({'Amex {} problem processing response.'.format(action)})
             resp = {'message': message, 'status_code': 422}
             settings.logger.error(message, exc_info=1)

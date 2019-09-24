@@ -1,6 +1,7 @@
 arrow==0.7.0
 blinker==1.4
 celery==3.1.23
+ddtrace==0.15.0
 Flask==0.10.1
 Flask-RESTful==0.3.5
 Flask-Script==2.0.5
@@ -10,7 +11,7 @@ graypy==0.2.14
 httpretty==0.8.14
 lxml==3.6.1
 pika==0.10.0
-psycopg2==2.6.2
+psycopg2==2.7.5
 pyfakefs==3.3
 PyJWT==1.4.1
 raven==5.27.1

@@ -1,10 +1,11 @@
 stages:
   - tests
   - build
-  - deploy
+  - tagging
 
 tests:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - pip3 install -r requirements.txt
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
@@ -18,11 +19,13 @@ tests:
 
 complexity:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - xenon --max-average A --max-modules B --max-absolute B .
 
 flake8:
   stage: tests
+  image: olympus.azurecr.io/python:3.6
   script:
     - flake8 *
 
@@ -39,6 +42,15 @@ build-develop:
   only:
     - develop
 
+tag-develop:
+  stage: tagging
+  image: binkops.azurecr.io/tagbot:latest
+  environment: dev
+  script:
+    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/hades:latest" --tag "develop-$CI_COMMIT_SHORT_SHA"
+  only:
+    - develop
+
 build-master:
   stage: build
   image: docker:latest
@@ -52,34 +64,21 @@ build-master:
   only:
     - tags
 
-deploy-dev:
-  stage: deploy
-  image: binkops.azurecr.io/kubedeployer:latest
-  environment: dev
-  script:
-    - kubectl config use-context dev
-    - kubectl delete po $(kubectl get po --no-headers=true -l run=metis -o custom-columns=:metadata.name)
-  only:
-    - develop
-
-deploy-staging:
-  stage: deploy
-  image: binkops.azurecr.io/kubedeployer:latest
+tag-staging:
+  stage: tagging
+  image: binkops.azurecr.io/tagbot:latest
   environment: staging
   script:
-    - kubectl config use-context staging
-    - kubectl set image deployment/metis metis=olympus.azurecr.io/metis:$CI_COMMIT_TAG
+    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:$CI_COMMIT_TAG" --tag "staging-$CI_COMMIT_TAG"
   only:
     - tags
 
-deploy-prod:
-  stage: deploy
-  image: binkops.azurecr.io/kubedeployer:latest
+tag-prod:
+  stage: tagging
+  image: binkops.azurecr.io/tagbot:latest
   environment: prod
   script:
-    - kubectl config use-context prod
-    - kubectl set image deployment/metis metis=olympus.azurecr.io/metis:$CI_COMMIT_TAG
-    - kubectl set image statefulset/metis-celery metis-celery=olympus.azurecr.io/metis:$CI_COMMIT_TAG
+    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:$CI_COMMIT_TAG" --tag "prod-$CI_COMMIT_TAG"
   when: manual
   only:
     - tags

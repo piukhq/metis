@@ -39,6 +39,7 @@ class MasterCard:
 
     def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
+            settings.logger.warning("Mastercard {} response: {}, body: {}".format(action, response, response.text))
             try:
                 resp_content = response.json()
                 psp_message = resp_content['errors'][0]['message']
@@ -64,7 +65,7 @@ class MasterCard:
                 fault_code = fault_code_el[0].text
             else:
                 fault_code = None
-        except Exception as e:
+        except Exception:
             message = str('MasterCard {} problem processing response.'.format(action))
             resp = {'message': message, 'status_code': 422}
             settings.logger.error(message, exc_info=1)

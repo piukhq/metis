@@ -1,9 +1,12 @@
 import logging
 
+from ddtrace import tracer
+from ddtrace.contrib.flask import TraceMiddleware
+
 from flask import Flask
 from raven.contrib.flask import Sentry
 
-from settings import SENTRY_DSN
+import settings
 from app.version import __version__
 
 sentry = Sentry()
@@ -14,10 +17,18 @@ def create_app(config_name="settings"):
 
     app = Flask('core')
     app.config.from_object(config_name)
-    if SENTRY_DSN:
+
+    if settings.DATADOG_ENV:
+        TraceMiddleware(
+            app,
+            tracer,
+            service="metis",
+            distributed_tracing=True)
+
+    if settings.SENTRY_DSN:
         sentry.init_app(
             app,
-            dsn=SENTRY_DSN,
+            dsn=settings.SENTRY_DSN,
             logging=True,
             level=logging.ERROR)
         sentry.client.release = __version__

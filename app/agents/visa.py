@@ -39,7 +39,7 @@ class Visa(AgentBase):
         try:
             psp_json = response.json()
             visa_data = psp_json['transaction']
-        except Exception as e:
+        except Exception:
             message = 'Visa batch problem processing response.'
             settings.logger.error(message, exc_info=1)
             return
