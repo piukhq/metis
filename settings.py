@@ -29,8 +29,6 @@ BROKER_URL = env_var('CELERY_BROKER_URL', 'redis://localhost:6379')
 # if you need to read task results, uncomment and set this
 # CELERY_RESULT_BACKEND = env_var('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
 
-DATADOG_ENV = env_var('DATADOG_ENV')
-
 RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
