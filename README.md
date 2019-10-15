@@ -40,12 +40,12 @@ Navigate to `host-address:15672` in your browser to see the management dashboard
 
 Set the URL for doEcho testing:
 
-* MTF: https://ws.mastercard.com/mtf/MRS/DiagnosticService
-* Prod: https://ws.mastercard.com/MRS/DiagnosticService
+* MTF: https://services.mastercard.com/mtf/MRS/DiagnosticService
+* Prod: https://services.mastercard.com/MRS/DiagnosticService
 
 In the `do_echo_body` method in `mastercard.py` set the url as follows:
 ```python
-do_echo_url = 'https://ws.mastercard.com/MRS/DiagnosticService'
+do_echo_url = 'https://services.mastercard.com/MRS/DiagnosticService'
 ```
 This is mastercard production URL.
 
