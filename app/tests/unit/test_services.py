@@ -67,7 +67,7 @@ class TestServices(unittest.TestCase):
   <updated_at type="dateTime">2016-09-15T14:59:20Z</updated_at>
   <succeeded type="boolean">true</succeeded>
   <message>Succeeded!</message>
-  <url>https://ws.mastercard.com/mtf/MRS/CustomerService</url>
+  <url>https://services.mastercard.com/mtf/MRS/CustomerService</url>
   <response>
     <status type="integer">200</status>
     <headers>
