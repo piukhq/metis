@@ -3,7 +3,7 @@ import jinja2
 import os
 from lxml import etree
 
-MASTERCARD_DO_ECHO_URL = 'https://ws.mastercard.com/MRS/DiagnosticService'
+MASTERCARD_DO_ECHO_URL = 'https://services.mastercard.com/MRS/DiagnosticService'
 
 # remove/reactivate constants used in mastercard requests
 REACTIVATE = '1'
@@ -15,17 +15,17 @@ class MasterCard:
 
     def add_url(self):
         if settings.TESTING:
-            # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+            # MASTERCARD_URL = 'https://services.mastercard.com/mtf/MRS/DiagnosticService'
             return 'http://latestserver.com/post.php'
         else:
-            return 'https://ws.mastercard.com/MRS/CustomerService'
+            return 'https://services.mastercard.com/MRS/CustomerService'
 
     def update_url(self):
         if settings.TESTING:
-            # MASTERCARD_URL = 'https://ws.mastercard.com/mtf/MRS/DiagnosticService'
+            # MASTERCARD_URL = 'https://services.mastercard.com/mtf/MRS/DiagnosticService'
             return 'http://latestserver.com/post.php'
         else:
-            return 'https://ws.mastercard.com/MRS/CustomerService'
+            return 'https://services.mastercard.com/MRS/CustomerService'
 
     def receiver_token(self):
         if settings.TESTING:
