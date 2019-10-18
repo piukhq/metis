@@ -1,9 +1,4 @@
-import logging
-
 from flask import Flask
-
-import settings
-from app.version import __version__
 
 
 def create_app(config_name="settings"):
