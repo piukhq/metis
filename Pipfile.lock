@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "92aeecb402064421b7281a0cb4189109a6fda1bab8fbcacf8a5df9f91923729b"
+            "sha256": "d55e803fd27fa10770188a93cccddf28babb4e362ac39d80bae4f3ca6a857a4e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -32,8 +32,7 @@
         },
         "anyjson": {
             "hashes": [
-                "sha256:37812d863c9ad3e35c0734c42e0bf0320ce8c3bed82cd20ad54cb34d158157ba",
-                "sha256:5274d7b372e9e63398ad13b4ce2da085a5be100417561661773b3c2a993f1057"
+                "sha256:37812d863c9ad3e35c0734c42e0bf0320ce8c3bed82cd20ad54cb34d158157ba"
             ],
             "version": "==0.3.3"
         },
@@ -71,6 +70,13 @@
             ],
             "index": "pypi",
             "version": "==3.1.23"
+        },
+        "certifi": {
+            "hashes": [
+                "sha256:e4f3620cfea4f83eedc95b24abd9cd56f3c4b146dd0177e83a21b4eb49e21e50",
+                "sha256:fd7c7c74727ddcf00e9acd26bba8da604ffec95bf1c2144e67aff7a8b50e6cef"
+            ],
+            "version": "==2019.9.11"
         },
         "contextlib2": {
             "hashes": [
@@ -308,6 +314,14 @@
             "index": "pypi",
             "version": "==1.3"
         },
+        "sentry-sdk": {
+            "hashes": [
+                "sha256:7d8668f082cb1eb9bf1e0d3f8f9bd5796d05d927c1197af226d044ed32b9815f",
+                "sha256:ff14935cc3053de0650128f124c36f34a4be120b8cc522c149f5cba342c1fd05"
+            ],
+            "index": "pypi",
+            "version": "==0.13.0"
+        },
         "six": {
             "hashes": [
                 "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
@@ -329,6 +343,13 @@
             ],
             "index": "pypi",
             "version": "==4.12.0"
+        },
+        "urllib3": {
+            "hashes": [
+                "sha256:3de946ffbed6e6746608990594d08faac602528ac7015ac28d33cee6a45b7398",
+                "sha256:9a107b99a5393caf59c7aa3c1249c16e6879447533d0887f4336dde834c7be86"
+            ],
+            "version": "==1.25.6"
         },
         "voluptuous": {
             "hashes": [
