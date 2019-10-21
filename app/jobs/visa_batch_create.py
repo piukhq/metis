@@ -3,17 +3,12 @@ from collections import defaultdict
 import pickle
 import time
 import os
-
-from raven import Client
 import pika
 
 from app.agents.visa import Visa
 from app.card_router import ActionCode
 from app.slack import payment_card_notify
 import settings
-
-if settings.SENTRY_DSN:
-    sentry = Client(settings.SENTRY_DSN)
 
 
 def chunks(l, n):
