@@ -76,7 +76,7 @@ Set the the payment_method_token with a valid token obtained by registering a ca
   - String Value, Secret for Spreedly
 - `SPREEDLY_BASE_URL`
   - String Value, URL for Spreedly, either `https://core.spreedly.com/v1` or Pelops endpoint
-- `METIS_SENTRY_DSN`
+- `SENTRY_DSN`
   - String Value, DSN to Sentry
 - `REDIS_PASSWORD`
   -  String Value, Password for Redis
