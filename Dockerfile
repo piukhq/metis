@@ -17,4 +17,4 @@ RUN apk add --no-cache --virtual build \
     chmod 0600 /root/.ssh/id_rsa && \
     ssh-keyscan gitlab.com > /root/.ssh/known_hosts && \
     pip install gunicorn pipenv && pipenv install --system --deploy --ignore-pipfile && \
-    apk del --no-cache build && \
+    apk del --no-cache build
