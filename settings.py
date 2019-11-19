@@ -73,9 +73,16 @@ elif tmp_logger:
     handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
     logger.addHandler(handler_loc)
 
-SENTRY_DSN = env_var("SENTRY_DSN")
+SENTRY_DSN = env_var("SENTRY_DSN", None)
+SENTRY_ENV = env_var("SENTRY_ENV", None)
 if SENTRY_DSN:
-    sentry_sdk.init(SENTRY_DSN, integrations=[CeleryIntegration()])
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENV,
+        integrations=[
+            CeleryIntegration()
+        ]
+    )
 
 PONTUS_DATABASE = env_var('PONTUS_DATABASE', 'pontus')
 PONTUS_USER = env_var('PONTUS_USER', 'laadmin')
