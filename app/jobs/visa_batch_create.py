@@ -7,7 +7,7 @@ import pika
 
 from app.agents.visa import Visa
 from app.card_router import ActionCode
-from app.slack import payment_card_notify
+from app.teams import payment_card_notify
 import settings
 
 
