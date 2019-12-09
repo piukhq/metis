@@ -7,7 +7,7 @@ tests:
   stage: tests
   image: olympus.azurecr.io/python:3.6
   script:
-    - pipenv install --system --deploy --ignore-pipfile
+    - pipenv install --system --deploy --dev --ignore-pipfile
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
     - export PONTUS_USER="postgres"
     - export PONTUS_PASSWORD=""

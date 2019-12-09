@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import settings
 from handylib.factory import create_factory
-from app.slack import payment_card_notify
+from app.teams import payment_card_notify
 
 
 class Spreedly(object):
