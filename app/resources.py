@@ -63,7 +63,14 @@ class PaymentCard(Resource):
         if action_code == ActionCode.ADD:
             resp = retain_payment_method_token(req_data['payment_token'])
             if resp.status_code != 200:
-                logger.info('Retain unsuccessful : {}'.format(req_data['payment_token']))
+                logger.info(
+                    'Retain unsuccessful: HTTP {} {} {} // Payment token: {}'.format(
+                        resp.status_code,
+                        resp.reason,
+                        resp.text,
+                        req_data['payment_token'],
+                    )
+                )
                 return make_response('Retain unsuccessful', 400)
 
         process_card(action_code, req_data)
