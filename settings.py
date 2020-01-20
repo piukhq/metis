@@ -26,10 +26,20 @@ TESTING = env_var("METIS_TESTING", False)
 HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
 SERVICE_API_KEY = 'F616CE5C88744DD52DB628FAD8B3D'
 
-# celery config
-BROKER_URL = env_var('CELERY_BROKER_URL', 'redis://localhost:6379')
-# if you need to read task results, uncomment and set this
-# CELERY_RESULT_BACKEND = env_var('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
+REDIS_HOST = env_var('REDIS_HOST', 'localhost')
+REDIS_PORT = env_var('REDIS_PORT', 6379)
+REDIS_PASS = env_var('REDIS_PASS', '')
+REDIS_TLS = env_var('REDIS_TLS', False)
+REDIS_DB = env_var('REDIS_DB', 0)
+
+
+if env_var('CELERY_BROKER_URL'):
+    BROKER_URL = env_var('CELERY_BROKER_URL')
+else:
+    if REDIS_TLS:
+        BROKER_URL = f'rediss://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=optional'
+    else:
+        BROKER_URL = f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
 
 RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
