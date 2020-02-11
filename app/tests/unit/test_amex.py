@@ -19,7 +19,7 @@ class TestAmex(TestCase):
         settings.TESTING = False
 
     def amex_route(self):
-        auth_url = '{}{}'.format(self.amex.amex_url(), "/apiplatform/v2/oauth/token/mac")
+        auth_url = '{}{}'.format(self.amex.url, "/apiplatform/v2/oauth/token/mac")
         payload = "grant_type=client_credentials&scope="
 
         header = {"Content-Type": "application/x-www-form-urlencoded",
