@@ -1,7 +1,7 @@
 import unittest
 import settings
 from app.services import add_card, remove_card
-from app.agents.amex import mac_auth_header
+from app.agents.amex import Amex
 
 
 class TestServices(unittest.TestCase):
@@ -13,6 +13,7 @@ class TestServices(unittest.TestCase):
             'partner_slug': 'amex'
         }
         settings.TESTING = False
+        self.amex = Amex()
 
         resp = add_card(card_info)
         self.assertTrue(resp.status_code == 200)
@@ -29,7 +30,10 @@ class TestServices(unittest.TestCase):
         self.assertTrue(resp.status_code == 200)
 
     def test_amex_oauth(self):
-        auth_header = mac_auth_header()
+        settings.TESTING = False
+        self.amex = Amex()
+
+        auth_header = self.amex.mac_auth_header()
         result = self.amex.amex_oauth(auth_header)
         self.assertGreater(len(result), 0)
 
