@@ -32,13 +32,13 @@ class Amex:
             self.client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
             self.client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
             self.url = 'https://api.qa.americanexpress.com'
-            self.receiver_token = 'amex' + '/deliver.xml'
+            self.rec_token = 'amex' + '/deliver.xml'
         else:
             # Production
             self.client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
             self.client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
             self.url = 'https://api.americanexpress.com'
-            self.receiver_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt' + '/deliver.xml'
+            self.rec_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt' + '/deliver.xml'
 
     def add_url(self):
         return '{}{}'.format(self.url, res_path_sync)
@@ -47,7 +47,7 @@ class Amex:
         return '{}{}'.format(self.url, res_path_unsync)
 
     def receiver_token(self):
-        return self.receiver_token
+        return self.rec_token
 
     def request_header(self, res_path):
         header_start = '<![CDATA['
