@@ -1,11 +1,6 @@
-import httpretty
 import json
 import logging
 from unittest import TestCase, mock
-import arrow
-
-from testfixtures import log_capture
-from app.tests.unit.fixture import card_info_reduce
 from app.card_router import ActionCode
 from app.agents.visa_offers import Visa
 from uuid import uuid4
@@ -69,16 +64,14 @@ class TestVisaOffers(TestCase):
                     "languageId": "en-US",
                     "timeZoneId": "Pacific Standard Time",
                     "timeZoneShortCode": "PST",
-                    "cards": [
-                        {
+                    "cards": [{
                         "cardId": "bfc33c1d-d4ef-e111-8d48-001a4bcdeef4",
                         "cardLast4": "1111",
                         "productId": "A",
                         "productIdDescription": "Visa Traditional",
                         "productTypeCategory": "Credit",
                         "cardStatus": "New"
-                        }
-                     ],
+                    }],
                     "userStatus": 1,
                     "enrollDateTime": "2020-01-29T15:02:55.067"
                 },
@@ -97,35 +90,35 @@ class TestVisaOffers(TestCase):
         self.visa_fail_response = json.dumps(
             {
                 "userDetails":
-                {
-                    "externalUserId": "a74hd93d9812wir0174mk093dkie1",
-                    "communityCode": "BINKCTE01",
-                    "userId": "809902ef-3c0b-40b8-93bf-63e2621df06f",
-                    "userKey": "a74hd93d9812wir0174mk093dkie1",
-                    "languageId": "en-US",
-                    "timeZoneId": "Pacific Standard Time",
-                    "timeZoneShortCode": "PST",
-                    "cards": [
-                        {
-                        "cardId": "bfc33c1d-d4ef-e111-8d48-001a4bcdeef4",
-                        "cardLast4": "1111",
-                        "productId": "A",
-                        "productIdDescription": "Visa Traditional",
-                        "productTypeCategory": "Credit",
-                        "cardStatus": "New"
-                        }
-                     ],
-                    "userStatus": 1,
-                    "enrollDateTime": "2020-01-29T15:02:55.067"
-                },
+                    {
+                        "externalUserId": "a74hd93d9812wir0174mk093dkie1",
+                        "communityCode": "BINKCTE01",
+                        "userId": "809902ef-3c0b-40b8-93bf-63e2621df06f",
+                        "userKey": "a74hd93d9812wir0174mk093dkie1",
+                        "languageId": "en-US",
+                        "timeZoneId": "Pacific Standard Time",
+                        "timeZoneShortCode": "PST",
+                        "cards": [
+                            {
+                                "cardId": "bfc33c1d-d4ef-e111-8d48-001a4bcdeef4",
+                                "cardLast4": "1111",
+                                "productId": "A",
+                                "productIdDescription": "Visa Traditional",
+                                "productTypeCategory": "Credit",
+                                "cardStatus": "New"
+                            }
+                        ],
+                        "userStatus": 1,
+                        "enrollDateTime": "2020-01-29T15:02:55.067"
+                    },
                 "correlationId": "ce708e6a-fd5f-48cc-b9ff-ce518a6fda1a",
                 "responseDateTime": "2020-01-29T15:02:55.1860039Z",
                 "responseStatus":
-                {
-                    "code": "FAILED",
-                    "message": "Request failed with error.",
-                    "responseStatusDetails": []
-                }
+                    {
+                        "code": "FAILED",
+                        "message": "Request failed with error.",
+                        "responseStatusDetails": []
+                    }
             })
 
     def get_expected_add_response(self, uid, index=0):
@@ -207,4 +200,3 @@ class TestVisaOffers(TestCase):
         self.logger.handlers = self.orig_handlers
         self.logger.level = self.level
         settings.TESTING = False
-
