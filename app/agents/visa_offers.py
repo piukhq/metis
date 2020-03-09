@@ -1,5 +1,6 @@
 import settings
 import json
+import requests
 from app.agents.agent_base import AgentBase
 from uuid import uuid4
 
@@ -9,17 +10,20 @@ class Visa(AgentBase):
 
     def __init__(self):
         self.vop_enrol = "/v1/users/enroll"
+        self.vop_activation = "/vop/v1/activations/merchant"
 
         if settings.TESTING:
             # Test
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://cert.api.visa.com"
             self.spreedly_receive_token = "Visa"
+            self.offerid = "48016"
         else:
             # Production
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://api.visa.com"
             self.spreedly_receive_token = "TBD"
+            self.offerid = "48016"
 
     def receiver_token(self):
         return f"{self.spreedly_receive_token}/deliver.json"
@@ -85,3 +89,13 @@ class Visa(AgentBase):
         }
 
         return json.dumps(data)
+
+    def activate_card(self, payment_token, activation_list):
+        data = {
+            "communityCode": self.vop_community_code,
+            "userKey": payment_token,
+            "offerId": self.offerid,
+            "recurrenceLimit": "-1",
+            "activations": activation_list
+        }
+        resp = requests.post(url, auth=(username, password), headers=header, data=request_data)

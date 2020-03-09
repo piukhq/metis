@@ -124,3 +124,12 @@ class Notify(Resource):
 
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
+
+
+class VisaActivate(Resource):
+
+    def post(self):
+        pass
+
+
+api.add_resource(VisaActivate, '/visa/activate/')
