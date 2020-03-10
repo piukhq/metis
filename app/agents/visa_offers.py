@@ -18,12 +18,21 @@ class Visa(AgentBase):
             self.vop_url = "https://cert.api.visa.com"
             self.spreedly_receive_token = "Visa"
             self.offerid = "48016"
+            self.auth_type = 'Basic'
+            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+
         else:
             # Production
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://api.visa.com"
             self.spreedly_receive_token = "TBD"
             self.offerid = "48016"
+            self.auth_type = 'Basic'
+            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+
+        # Override  settings if stubbed
+        if settings.STUBBED_VOP_URL:
+            self.vop_url = settings.STUBBED_VOP_URL
 
     def receiver_token(self):
         return f"{self.spreedly_receive_token}/deliver.json"
@@ -91,6 +100,9 @@ class Visa(AgentBase):
         return json.dumps(data)
 
     def activate_card(self, payment_token, activation_list):
+        reply = False;
+        if not activation_list or not payment_token:
+            return reply
         data = {
             "communityCode": self.vop_community_code,
             "userKey": payment_token,
@@ -98,4 +110,16 @@ class Visa(AgentBase):
             "recurrenceLimit": "-1",
             "activations": activation_list
         }
-        resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
+        url = f"{self.vop_url}{self.vop_activation}"
+        resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
+        if resp.status_code < 300:
+            success = None
+            content = resp.json()
+            state = content.get('responseStatus')
+            if state:
+                success = state.get('code')
+            if success == "SUCCESS":
+                reply = True
+
+        return reply
+
