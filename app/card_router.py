@@ -1,3 +1,4 @@
+from app.hermes import put_account_status
 from app.tasks import add_card, remove_card, reactivate_card
 from enum import Enum
 import settings
@@ -18,6 +19,13 @@ def celery_handler(action_code, card_info):
 
 
 def rabbitmq_handler(action_code, card_info):
+    if settings.TESTING:
+        # 1 = ACTIVE
+        # TODO: get this from gaia
+        card_status_code = 1
+        put_account_status(card_status_code, card_id=card_info['id'])
+        return
+
     credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
     params = pika.ConnectionParameters(host=settings.RABBITMQ_HOST, port=5672, credentials=credentials)
     connection = pika.BlockingConnection(params)
