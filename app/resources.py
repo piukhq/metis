@@ -131,7 +131,10 @@ class VisaActivate(Resource):
 
     def post(self):
         visa = Visa()
-        return visa.activate_card(request.json)
+        if visa.activate_card(request.json):
+            make_response('Success', 201)
+        else:
+            make_response('Failed', 200)
 
 
 api.add_resource(VisaActivate, '/visa/activate/')

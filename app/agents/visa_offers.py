@@ -102,7 +102,7 @@ class Visa(AgentBase):
         return json.dumps(data)
 
     def activate_card(self, request_data):
-        reply = {"status": "failed"}
+        reply = False
 
         data = {
             "communityCode": self.vop_community_code,
@@ -129,7 +129,7 @@ class Visa(AgentBase):
             if state:
                 success = state.get('code')
             if success == "SUCCESS":
-                reply['status'] = "activated"
+                reply = True
 
         return reply
 
