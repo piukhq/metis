@@ -20,6 +20,7 @@ class Visa(AgentBase):
             self.offerid = "48016"
             self.auth_type = 'Basic'
             self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.merchant_group = "BIN_CAID_MRCH_GRP"
 
         else:
             # Production
@@ -29,6 +30,7 @@ class Visa(AgentBase):
             self.offerid = "48016"
             self.auth_type = 'Basic'
             self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.merchant_group = "BIN_CAID_MRCH_GRP"
 
         # Override  settings if stubbed
         if settings.STUBBED_VOP_URL:
@@ -99,16 +101,24 @@ class Visa(AgentBase):
 
         return json.dumps(data)
 
-    def activate_card(self, payment_token, activation_list):
-        reply = False;
-        if not activation_list or not payment_token:
-            return reply
+    def activate_card(self, request_data):
+        reply = {"status": "failed"}
+
         data = {
             "communityCode": self.vop_community_code,
-            "userKey": payment_token,
+            "userKey": request_data['payment_token'],
             "offerId": self.offerid,
             "recurrenceLimit": "-1",
-            "activations": activation_list
+            "activations": [
+                {
+                    "name": "MerchantGroupName",
+                    "value": self.merchant_group
+                },
+                {
+                    "name": "ExternalId",
+                    "value": request_data['merchant_slug']
+                }
+            ]
         }
         url = f"{self.vop_url}{self.vop_activation}"
         resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
@@ -119,7 +129,7 @@ class Visa(AgentBase):
             if state:
                 success = state.get('code')
             if success == "SUCCESS":
-                reply = True
+                reply['status'] = "activated"
 
         return reply
 

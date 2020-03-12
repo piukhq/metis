@@ -130,9 +130,8 @@ api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
 class VisaActivate(Resource):
 
     def post(self):
-        req_data = request.json
         visa = Visa()
-        visa.activate_card(req_data.get("payment_token"), req_data.get("activation_list"))
+        return visa.activate_card(request.json)
 
 
 api.add_resource(VisaActivate, '/visa/activate/')
