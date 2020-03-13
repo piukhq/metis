@@ -132,4 +132,3 @@ class Visa(AgentBase):
                 reply = True
 
         return reply
-
