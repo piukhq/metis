@@ -16,7 +16,7 @@ class Visa(AgentBase):
             # Test
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://cert.api.visa.com"
-            self.spreedly_receive_token = "Visa"
+            self.spreedly_receive_token = "visa"
             self.offerid = "48016"
             self.auth_type = 'Basic'
             self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
@@ -26,7 +26,7 @@ class Visa(AgentBase):
             # Production
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://api.visa.com"
-            self.spreedly_receive_token = "TBD"
+            self.spreedly_receive_token = "HwA3Nr2SGNEwBWISKzmNZfkHl6D"
             self.offerid = "48016"
             self.auth_type = 'Basic'
             self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
