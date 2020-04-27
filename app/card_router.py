@@ -43,7 +43,8 @@ def rabbitmq_handler(action_code, card_info):
 handlers = {
     'amex': celery_handler,
     'mastercard': celery_handler,
-    'visa': rabbitmq_handler,
+    # the current handler is 'visa': rabbitmq_handler, will become obsolete when this code is released
+    'visa': celery_handler,
 }
 
 
