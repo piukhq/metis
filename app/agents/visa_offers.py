@@ -1,5 +1,6 @@
 import settings
 import json
+import requests
 from app.agents.agent_base import AgentBase
 from uuid import uuid4
 
@@ -9,17 +10,31 @@ class Visa(AgentBase):
 
     def __init__(self):
         self.vop_enrol = "/v1/users/enroll"
+        self.vop_activation = "/vop/v1/activations/merchant"
 
         if settings.TESTING:
             # Test
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://cert.api.visa.com"
-            self.spreedly_receive_token = "Visa"
+            self.spreedly_receive_token = "visa"
+            self.offerid = "48016"
+            self.auth_type = 'Basic'
+            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.merchant_group = "BIN_CAID_MRCH_GRP"
+
         else:
             # Production
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://api.visa.com"
-            self.spreedly_receive_token = "TBD"
+            self.spreedly_receive_token = "HwA3Nr2SGNEwBWISKzmNZfkHl6D"
+            self.offerid = "48016"
+            self.auth_type = 'Basic'
+            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.merchant_group = "BIN_CAID_MRCH_GRP"
+
+        # Override  settings if stubbed
+        if settings.STUBBED_VOP_URL:
+            self.vop_url = settings.STUBBED_VOP_URL
 
     def receiver_token(self):
         return f"{self.spreedly_receive_token}/deliver.json"
@@ -85,3 +100,35 @@ class Visa(AgentBase):
         }
 
         return json.dumps(data)
+
+    def activate_card(self, request_data):
+        reply = False
+
+        data = {
+            "communityCode": self.vop_community_code,
+            "userKey": request_data['payment_token'],
+            "offerId": self.offerid,
+            "recurrenceLimit": "-1",
+            "activations": [
+                {
+                    "name": "MerchantGroupName",
+                    "value": self.merchant_group
+                },
+                {
+                    "name": "ExternalId",
+                    "value": request_data['merchant_slug']
+                }
+            ]
+        }
+        url = f"{self.vop_url}{self.vop_activation}"
+        resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
+        if resp.status_code < 300:
+            success = None
+            content = resp.json()
+            state = content.get('responseStatus')
+            if state:
+                success = state.get('code')
+            if success == "SUCCESS":
+                reply = True
+
+        return reply

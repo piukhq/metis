@@ -8,6 +8,7 @@ from app.auth import authorized
 from app.card_router import process_card, ActionCode
 from settings import logger
 from voluptuous import Schema, Required, MultipleInvalid, All, Length
+from app.agents.visa_offers import Visa
 
 api = Api()
 
@@ -124,3 +125,16 @@ class Notify(Resource):
 
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
+
+
+class VisaActivate(Resource):
+
+    def post(self):
+        visa = Visa()
+        if visa.activate_card(request.json):
+            make_response('Success', 201)
+        else:
+            make_response('Failed', 200)
+
+
+api.add_resource(VisaActivate, '/visa/activate/')
