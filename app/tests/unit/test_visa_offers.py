@@ -130,7 +130,7 @@ class TestVisaOffers(TestCase):
         result = {
             "delivery": {
                 "payment_method_token": f"{payment_token}",
-                "url": "https://api.visa.com",
+                "url": "https://api.visa.com/vop/v1/users/enroll",
                 "headers": "Content-Type: application/json",
                 "body": '{'
                         f'"correlationId": "{uid}",'

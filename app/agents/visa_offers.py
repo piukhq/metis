@@ -9,8 +9,9 @@ class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
 
     def __init__(self):
-        self.vop_enrol = "/v1/users/enroll"
+        self.vop_enrol = "/vop/v1/users/enroll"
         self.vop_activation = "/vop/v1/activations/merchant"
+        self.vop_unenroll = "/vop/v1/users/unenroll"
 
         if settings.TESTING:
             # Test
@@ -93,7 +94,7 @@ class Visa(AgentBase):
         data = {
             "delivery": {
                 "payment_method_token": card_info['payment_token'],
-                "url": self.vop_url,
+                "url": f"{self.vop_url}{self.vop_enrol}",
                 "headers": "Content-Type: application/json",
                 "body": self.add_card_request_body(card_info),
             }
@@ -101,9 +102,21 @@ class Visa(AgentBase):
 
         return json.dumps(data)
 
-    def activate_card(self, request_data):
-        reply = False
+    def _basic_vop_request(self, api_endpoint, data):
+        ok = False
+        url = f"{self.vop_url}{api_endpoint}"
+        resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
+        if resp.status_code < 300:
+            success = None
+            content = resp.json()
+            state = content.get('responseStatus')
+            if state:
+                success = state.get('code')
+            if success == "SUCCESS":
+                ok = True
+        return ok, resp
 
+    def activate_card(self, request_data):
         data = {
             "communityCode": self.vop_community_code,
             "userKey": request_data['payment_token'],
@@ -120,15 +133,14 @@ class Visa(AgentBase):
                 }
             ]
         }
-        url = f"{self.vop_url}{self.vop_activation}"
-        resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
-        if resp.status_code < 300:
-            success = None
-            content = resp.json()
-            state = content.get('responseStatus')
-            if state:
-                success = state.get('code')
-            if success == "SUCCESS":
-                reply = True
+        success, _ = self._basic_vop_request(self.vop_activation, data)
+        return success
 
-        return reply
+    def un_enroll(self, card_info):
+
+        data = {
+            "correlationId": str(uuid4()),
+            "communityCode": self.vop_community_code,
+            "userKey": card_info['payment_token'],
+        }
+        return self._basic_vop_request(self.vop_unenroll, data)
