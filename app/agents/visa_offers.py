@@ -102,7 +102,7 @@ class Visa(AgentBase):
 
         return json.dumps(data)
 
-    def _basic_vop_request(self, api_endpoint):
+    def _basic_vop_request(self, api_endpoint, data):
         ok = False
         url = f"{self.vop_url}{api_endpoint}"
         resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
@@ -133,7 +133,7 @@ class Visa(AgentBase):
                 }
             ]
         }
-        success, _ = self._basic_vop_request(self.vop_activation)
+        success, _ = self._basic_vop_request(self.vop_activation, data)
         return success
 
     def un_enroll(self, card_info):
@@ -143,4 +143,4 @@ class Visa(AgentBase):
             "communityCode": self.vop_community_code,
             "userKey": card_info['payment_token'],
         }
-        return self._basic_vop_request(self.vop_unenroll)
+        return self._basic_vop_request(self.vop_unenroll, data)
