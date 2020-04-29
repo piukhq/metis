@@ -40,10 +40,8 @@ class Visa(AgentBase):
     def receiver_token(self):
         return f"{self.spreedly_receive_token}/deliver.json"
 
-    def response_handler(self, response, action, status_mapping):
-        # When the response is not clear the services code seems to set the error 'Could not access the PSP receiver'
-        # However there is no failure exception around calling spreedly so this is not a true response. Kept here
-        # for compatibility and will raise issue to investigate across all services in backlog.
+    @staticmethod
+    def process_vop_response(response, action):
         resp_content = response.json()
         if not resp_content:
             resp_content = {}
@@ -57,23 +55,28 @@ class Visa(AgentBase):
                 resp_visa_status.get('message', 'Could not access the PSP receiver'),
                 f"with code: {resp_visa_status_code} Details: ",
                 status_errors
-                ]
+            ]
             psp_message = "".join(psp_message_list)
             message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
             settings.logger.error(message)
-            return {'message': message, 'status_code': response.status_code}
-
-        resp_user_details = resp_content.get('userDetails', {})
-        resp_token = resp_user_details.get("externalUserId", 'unknown')
-        message = "Visa VOP {} successful - Token: {}, {}".format(action, resp_token, "Visa successfully processed")
-        settings.logger.info(message)
-        resp = {'message': message, 'status_code': response.status_code}
-
-        if resp_visa_status_code and resp_visa_status_code in status_mapping:
-            resp['bink_status'] = status_mapping[resp_visa_status_code]
+            success = False
         else:
-            resp['bink_status'] = status_mapping.get('BINK_UNKNOWN', "")
-        return resp
+            success = True
+            resp_user_details = resp_content.get('userDetails', {})
+            resp_token = resp_user_details.get("externalUserId", 'unknown')
+            message = "Visa VOP {} successful - Token: {}, {}".format(action, resp_token, "Visa successfully processed")
+            settings.logger.info(message)
+        resp_message = {'message': message, 'status_code': response.status_code}
+        return success, resp_message, resp_visa_status_code
+
+    def response_handler(self, response, action, status_mapping):
+        success, resp_message, resp_visa_status_code = self.process_vop_response(response, action)
+        if success:
+            if resp_visa_status_code and resp_visa_status_code in status_mapping:
+                resp_message['bink_status'] = status_mapping[resp_visa_status_code]
+            else:
+                resp_message['bink_status'] = status_mapping.get('BINK_UNKNOWN', "")
+        return resp_message
 
     def add_card_request_body(self, card_info):
         data = {
@@ -103,18 +106,12 @@ class Visa(AgentBase):
         return json.dumps(data)
 
     def _basic_vop_request(self, api_endpoint, data):
-        ok = False
         url = f"{self.vop_url}{api_endpoint}"
-        resp = requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
-        if resp.status_code < 300:
-            success = None
-            content = resp.json()
-            state = content.get('responseStatus')
-            if state:
-                success = state.get('code')
-            if success == "SUCCESS":
-                ok = True
-        return ok, resp
+        return requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
+
+    def is_success(self, response, action):
+        success, _, _ = self.process_vop_response(response, action)
+        return success
 
     def activate_card(self, request_data):
         data = {
@@ -133,11 +130,9 @@ class Visa(AgentBase):
                 }
             ]
         }
-        success, _ = self._basic_vop_request(self.vop_activation, data)
-        return success
+        return self.is_success(self._basic_vop_request(self.vop_activation, data), 'activate')
 
     def un_enroll(self, card_info):
-
         data = {
             "correlationId": str(uuid4()),
             "communityCode": self.vop_community_code,
