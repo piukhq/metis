@@ -11,6 +11,7 @@ class Visa(AgentBase):
     def __init__(self):
         self.vop_enrol = "/vop/v1/users/enroll"
         self.vop_activation = "/vop/v1/activations/merchant"
+        self.vop_deactivation = "/vop/v1/deactivations/merchant"
         self.vop_unenroll = "/vop/v1/users/unenroll"
 
         if settings.TESTING:
@@ -131,6 +132,25 @@ class Visa(AgentBase):
             ]
         }
         return self.is_success(self._basic_vop_request(self.vop_activation, data), 'activate')
+
+    def deactivate_card(self, request_data):
+        data = {
+            "communityCode": self.vop_community_code,
+            "userKey": request_data['payment_token'],
+            "offerId": self.offerid,
+            "recurrenceLimit": "-1",
+            "activations": [
+                {
+                    "name": "MerchantGroupName",
+                    "value": self.merchant_group
+                },
+                {
+                    "name": "ExternalId",
+                    "value": request_data['merchant_slug']
+                }
+            ]
+        }
+        return self.is_success(self._basic_vop_request(self.vop_deactivation, data), 'deactivate')
 
     def un_enroll(self, card_info):
         data = {
