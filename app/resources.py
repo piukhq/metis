@@ -129,6 +129,7 @@ api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
 
 class VisaActivate(Resource):
 
+    @staticmethod
     def post(self):
         visa = Visa()
         if visa.activate_card(request.json):
@@ -138,3 +139,17 @@ class VisaActivate(Resource):
 
 
 api.add_resource(VisaActivate, '/visa/activate/')
+
+
+class VisaDeActivate(Resource):
+
+    @staticmethod
+    def post():
+        visa = Visa()
+        if visa.deactivate_card(request.json):
+            make_response('Success', 201)
+        else:
+            make_response('Failed', 200)
+
+
+api.add_resource(VisaDeActivate, '/visa/deactivate/')
