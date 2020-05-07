@@ -1,15 +1,18 @@
+import pickle
+from enum import Enum
+
+import pika
+
+import settings
 from app.hermes import put_account_status
 from app.tasks import add_card, remove_card, reactivate_card
-from enum import Enum
-import settings
-import pickle
-import pika
 
 
 class ActionCode(Enum):
     ADD = 'A'
     DELETE = 'D'
     REACTIVATE = 'R'
+    ACTIVATE_MERCHANT = 'M'
 
 
 def celery_handler(action_code, card_info):
