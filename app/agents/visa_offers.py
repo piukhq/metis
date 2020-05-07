@@ -159,11 +159,12 @@ class Visa(AgentBase):
         retry_count = 0
 
         while resp_status == VOPResultStatus.RETRY:
-            retry_count += 1
-            response = self._basic_vop_request(self.vop_activation, data)
-            resp_status, _, _ = self.process_vop_response(response, action)
             if retry_count >= self.MAX_RETRIES:
                 resp_status = VOPResultStatus.FAILED
+            else:
+                retry_count += 1
+                response = self._basic_vop_request(self.vop_activation, data)
+                resp_status, _, _ = self.process_vop_response(response, action)
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         return resp_status.value, status_code
