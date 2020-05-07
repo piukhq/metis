@@ -33,6 +33,19 @@ class Visa(AgentBase):
             "RTMOACTVE03": VOPResultStatus.FAILED,
             "RTMOACTVE04": VOPResultStatus.FAILED,
             "RTMOACTVE05": VOPResultStatus.RETRY
+        },
+        ActionCode.DELETE: {
+            "1000": VOPResultStatus.FAILED,
+            "1010": VOPResultStatus.FAILED,
+            "2000": VOPResultStatus.FAILED,
+            "3000": VOPResultStatus.RETRY,
+            "4000": VOPResultStatus.RETRY,
+            "5000": VOPResultStatus.RETRY,
+            "6000": VOPResultStatus.RETRY,
+            "7000": VOPResultStatus.FAILED,
+            "RTMENRE0026": VOPResultStatus.SUCCESS,
+            "RTMENRE0049": VOPResultStatus.FAILED,
+            "RTMENRE0050": VOPResultStatus.FAILED,
         }
     }
 
@@ -169,6 +182,21 @@ class Visa(AgentBase):
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         return resp_status.value, status_code
 
+    def try_vop_and_get_status(self, data, action, api_endpoint):
+        resp_status = VOPResultStatus.RETRY
+        retry_count = 0
+
+        while resp_status == VOPResultStatus.RETRY:
+            if retry_count >= self.MAX_RETRIES:
+                resp_status = VOPResultStatus.FAILED
+            else:
+                retry_count += 1
+                response = self._basic_vop_request(api_endpoint, data)
+                resp_status, _, _ = self.process_vop_response(response, action)
+
+        status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
+        return resp_status.value, status_code
+
     def is_success(self, response, action):
         resp_status, _, _ = self.process_vop_response(response, action)
         if resp_status == VOPResultStatus.SUCCESS:
@@ -220,4 +248,5 @@ class Visa(AgentBase):
             "communityCode": self.vop_community_code,
             "userKey": card_info['payment_token'],
         }
+        return self.try_vop_and_get_status(data, card_info['action_code'], self.vop_unenroll)
         return self._basic_vop_request(self.vop_unenroll, data)
