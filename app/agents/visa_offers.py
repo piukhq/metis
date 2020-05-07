@@ -99,7 +99,7 @@ class Visa(AgentBase):
         if not resp_content:
             resp_content = {}
         resp_visa_status = resp_content.get('responseStatus', {})
-        resp_visa_status_code = resp_visa_status.get('code', '')
+        resp_visa_status_code = f"{action}:{resp_visa_status.get('code', '')}"
 
         if response.status_code >= 300 or not resp_visa_status_code:
             resp_status = VOPResultStatus.RETRY
