@@ -1,12 +1,40 @@
-import settings
 import json
-import requests
-from app.agents.agent_base import AgentBase
+from enum import Enum
 from uuid import uuid4
+
+import requests
+
+import settings
+from app.agents.agent_base import AgentBase
+from app.card_router import ActionCode
+
+
+class VOPResultStatus(str, Enum):
+    FAILED = 'Failed'
+    SUCCESS = 'Success'
+    RETRY = 'Retry'
 
 
 class Visa(AgentBase):
     header = {'Content-Type': 'application/json'}
+    MAX_RETRIES = 3
+    ERROR_MAPPING = {
+        ActionCode.ACTIVATE_MERCHANT: {
+            "1000": VOPResultStatus.FAILED,
+            "1010": VOPResultStatus.FAILED,
+            "2000": VOPResultStatus.FAILED,
+            "3000": VOPResultStatus.RETRY,
+            "4000": VOPResultStatus.RETRY,
+            "5000": VOPResultStatus.RETRY,
+            "6000": VOPResultStatus.RETRY,
+            "7000": VOPResultStatus.FAILED,
+            "RTMOACTVE01": VOPResultStatus.FAILED,
+            "RTMOACTVE02": VOPResultStatus.FAILED,
+            "RTMOACTVE03": VOPResultStatus.FAILED,
+            "RTMOACTVE04": VOPResultStatus.FAILED,
+            "RTMOACTVE05": VOPResultStatus.RETRY
+        }
+    }
 
     def __init__(self):
         self.vop_enrol = "/vop/v1/users/enroll"
@@ -42,7 +70,31 @@ class Visa(AgentBase):
         return f"{self.spreedly_receive_token}/deliver.json"
 
     @staticmethod
-    def process_vop_response(response, action):
+    def _log_success_response(resp_content, action):
+        resp_user_details = resp_content.get('userDetails', {})
+        resp_token = resp_user_details.get("externalUserId", 'unknown')
+        message = "Visa VOP {} successful - Token: {}, {}".format(action, resp_token, "Visa successfully processed")
+        settings.logger.info(message)
+        return message
+
+    @staticmethod
+    def _log_error_response(response, resp_visa_status, resp_visa_status_code, action):
+        settings.logger.warning("Visa {} response: {}, body: {}".format(action, response, response.text))
+        status_errors = "".join(resp_visa_status.get('responseStatusDetails', ['None']))
+        psp_message_list = [
+            resp_visa_status.get('message', 'Could not access the PSP receiver'),
+            f"with code: {resp_visa_status_code} Details: ",
+            status_errors
+        ]
+        psp_message = "".join(psp_message_list)
+        message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
+        settings.logger.error(message)
+        return message
+
+    def process_vop_response(self, response, action, status_mapping=None):
+        if status_mapping is None:
+            status_mapping = self.ERROR_MAPPING[action]
+
         resp_content = response.json()
         if not resp_content:
             resp_content = {}
@@ -50,29 +102,21 @@ class Visa(AgentBase):
         resp_visa_status_code = resp_visa_status.get('code', '')
 
         if response.status_code >= 300 or not resp_visa_status_code:
-            settings.logger.warning("Visa {} response: {}, body: {}".format(action, response, response.text))
-            status_errors = "".join(resp_visa_status.get('responseStatusDetails', ['None']))
-            psp_message_list = [
-                resp_visa_status.get('message', 'Could not access the PSP receiver'),
-                f"with code: {resp_visa_status_code} Details: ",
-                status_errors
-            ]
-            psp_message = "".join(psp_message_list)
-            message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
-            settings.logger.error(message)
-            success = False
+            resp_status = VOPResultStatus.RETRY
         else:
-            success = True
-            resp_user_details = resp_content.get('userDetails', {})
-            resp_token = resp_user_details.get("externalUserId", 'unknown')
-            message = "Visa VOP {} successful - Token: {}, {}".format(action, resp_token, "Visa successfully processed")
-            settings.logger.info(message)
+            resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.SUCCESS)
+
+        if resp_status == VOPResultStatus.SUCCESS:
+            message = self._log_success_response(resp_content, action)
+        else:
+            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action)
+
         resp_message = {'message': message, 'status_code': response.status_code}
-        return success, resp_message, resp_visa_status_code
+        return resp_status, resp_message, resp_visa_status_code
 
     def response_handler(self, response, action, status_mapping):
-        success, resp_message, resp_visa_status_code = self.process_vop_response(response, action)
-        if success:
+        resp_status, resp_message, resp_visa_status_code = self.process_vop_response(response, action, status_mapping)
+        if resp_status == VOPResultStatus.SUCCESS:
             if resp_visa_status_code and resp_visa_status_code in status_mapping:
                 resp_message['bink_status'] = status_mapping[resp_visa_status_code]
             else:
@@ -87,7 +131,7 @@ class Visa(AgentBase):
                 "userKey": card_info['payment_token'],
                 "externalUserId": card_info['payment_token'],
                 "cards": [{
-                            "cardNumber": "{{credit_card_number}}"
+                    "cardNumber": "{{credit_card_number}}"
                 }]
             },
             "communityTermsVersion": "1"
@@ -110,9 +154,27 @@ class Visa(AgentBase):
         url = f"{self.vop_url}{api_endpoint}"
         return requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
 
+    def try_activation_and_get_status(self, data, action):
+        resp_status = VOPResultStatus.RETRY
+        retry_count = 0
+
+        while resp_status == VOPResultStatus.RETRY:
+            if retry_count >= self.MAX_RETRIES:
+                resp_status = VOPResultStatus.FAILED
+            else:
+                retry_count += 1
+                response = self._basic_vop_request(self.vop_activation, data)
+                resp_status, _, _ = self.process_vop_response(response, action)
+
+        status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
+        return resp_status.value, status_code
+
     def is_success(self, response, action):
-        success, _, _ = self.process_vop_response(response, action)
-        return success
+        resp_status, _, _ = self.process_vop_response(response, action)
+        if resp_status == VOPResultStatus.SUCCESS:
+            return True
+
+        return False
 
     def activate_card(self, request_data):
         data = {
@@ -131,7 +193,7 @@ class Visa(AgentBase):
                 }
             ]
         }
-        return self.is_success(self._basic_vop_request(self.vop_activation, data), 'activate')
+        return self.try_activation_and_get_status(data, ActionCode.ACTIVATE_MERCHANT)
 
     def deactivate_card(self, request_data):
         data = {

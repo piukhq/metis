@@ -1,14 +1,16 @@
-import arrow
 import json
-from app.services import create_prod_receiver, retain_payment_method_token
-from flask_restful import Resource, Api
+
+import arrow
 from flask import request, make_response
+from flask_restful import Resource, Api
+from voluptuous import Schema, Required, MultipleInvalid, All, Length
+
 from app.agents.agent_manager import AgentManager
+from app.agents.visa_offers import Visa
 from app.auth import authorized
 from app.card_router import process_card, ActionCode
+from app.services import create_prod_receiver, retain_payment_method_token
 from settings import logger
-from voluptuous import Schema, Required, MultipleInvalid, All, Length
-from app.agents.visa_offers import Visa
 
 api = Api()
 
@@ -130,12 +132,10 @@ api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
 class VisaActivate(Resource):
 
     @staticmethod
-    def post(self):
+    def post():
         visa = Visa()
-        if visa.activate_card(request.json):
-            make_response('Success', 201)
-        else:
-            make_response('Failed', 200)
+        response_status, status_code = visa.activate_card(request.json)
+        make_response(response_status, status_code)
 
 
 api.add_resource(VisaActivate, '/visa/activate/')
