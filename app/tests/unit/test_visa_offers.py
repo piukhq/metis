@@ -173,7 +173,7 @@ class TestVisaOffers(TestCase):
         status_mapping = {}
         expected_status_code = 200
         response = ResponseMock(self.visa_success_response, expected_status_code)
-        resp = self.visa.response_handler(response, "add", status_mapping)
+        resp = self.visa.response_handler(response, "Add", status_mapping)
         self.assertEqual(expected_status_code, resp['status_code'])
         self.assertTrue("a74hd93d9812wir0174mk093dkie1" in resp['message'])
         self.assertTrue("successful" in resp['message'])
@@ -183,7 +183,7 @@ class TestVisaOffers(TestCase):
         status_mapping = {'BINK_UNKNOWN': "1"}
         expected_status_code = 200
         response = ResponseMock(self.visa_success_response, expected_status_code)
-        resp = self.visa.response_handler(response, "add", status_mapping)
+        resp = self.visa.response_handler(response, "Add", status_mapping)
         self.assertEqual(expected_status_code, resp['status_code'])
         self.assertTrue("a74hd93d9812wir0174mk093dkie1" in resp['message'])
         self.assertTrue("successful" in resp['message'])
@@ -193,7 +193,7 @@ class TestVisaOffers(TestCase):
         status_mapping = {'BINK_UNKNOWN': "1"}
         expected_status_code = 404
         response = ResponseMock(self.visa_fail_response, expected_status_code)
-        resp = self.visa.response_handler(response, "add", status_mapping)
+        resp = self.visa.response_handler(response, "Add", status_mapping)
         self.assertEqual(expected_status_code, resp['status_code'])
 
     def tearDown(self):

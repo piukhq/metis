@@ -104,15 +104,13 @@ class Visa(AgentBase):
         settings.logger.error(message)
         return message
 
-    def process_vop_response(self, response, action, status_mapping=None):
-        if status_mapping is None:
-            status_mapping = self.ERROR_MAPPING[action]
-
+    def process_vop_response(self, response, action_name, action_code):
+        status_mapping = self.ERROR_MAPPING[action_code]
         resp_content = response.json()
         if not resp_content:
             resp_content = {}
         resp_visa_status = resp_content.get('responseStatus', {})
-        resp_visa_status_code = f"{action}:{resp_visa_status.get('code', '')}"
+        resp_visa_status_code = resp_visa_status.get('code', '')
 
         if response.status_code >= 300 or not resp_visa_status_code:
             resp_status = VOPResultStatus.RETRY
@@ -120,21 +118,36 @@ class Visa(AgentBase):
             resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.SUCCESS)
 
         if resp_status == VOPResultStatus.SUCCESS:
-            message = self._log_success_response(resp_content, action)
+            message = self._log_success_response(resp_content, action_name)
         else:
-            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action)
+            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
 
         resp_message = {'message': message, 'status_code': response.status_code}
         return resp_status, resp_message, resp_visa_status_code
 
-    def response_handler(self, response, action, status_mapping):
-        resp_status, resp_message, resp_visa_status_code = self.process_vop_response(response, action, status_mapping)
+    def response_handler(self, response, action_name, status_mapping):
+        resp_content = response.json()
+        if not resp_content:
+            resp_content = {}
+        resp_visa_status = resp_content.get('responseStatus', {})
+        resp_visa_status_code = f"{action_name}:{resp_visa_status.get('code', '')}"
+
+        if response.status_code >= 300 or not resp_visa_status_code:
+            resp_status = VOPResultStatus.RETRY
+        else:
+            resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.SUCCESS)
+
+        if resp_status == VOPResultStatus.SUCCESS:
+            message = self._log_success_response(resp_content, action_name)
+        else:
+            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
+
         if resp_status == VOPResultStatus.SUCCESS:
             if resp_visa_status_code and resp_visa_status_code in status_mapping:
-                resp_message['bink_status'] = status_mapping[resp_visa_status_code]
+                message['bink_status'] = status_mapping[resp_visa_status_code]
             else:
-                resp_message['bink_status'] = status_mapping.get('BINK_UNKNOWN', "")
-        return resp_message
+                message['bink_status'] = status_mapping.get('BINK_UNKNOWN', "")
+        return message
 
     def add_card_request_body(self, card_info):
         data = {
@@ -182,7 +195,7 @@ class Visa(AgentBase):
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         return resp_status.value, status_code
 
-    def try_vop_and_get_status(self, data, action, api_endpoint):
+    def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_status = VOPResultStatus.RETRY
         retry_count = 0
 
@@ -192,7 +205,7 @@ class Visa(AgentBase):
             else:
                 retry_count += 1
                 response = self._basic_vop_request(api_endpoint, data)
-                resp_status, _, _ = self.process_vop_response(response, action)
+                resp_status, _, _ = self.process_vop_response(response, action_name, action_code)
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         return resp_status.value, status_code
@@ -248,5 +261,5 @@ class Visa(AgentBase):
             "communityCode": self.vop_community_code,
             "userKey": card_info['payment_token'],
         }
-        return self.try_vop_and_get_status(data, card_info['action_code'], self.vop_unenroll)
+        return self.try_vop_and_get_status(data, card_info['action_code'], 'Delete', self.vop_unenroll)
         return self._basic_vop_request(self.vop_unenroll, data)
