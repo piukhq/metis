@@ -4,8 +4,6 @@ from uuid import uuid4
 
 import requests
 
-import settings
-from app.agents.agent_base import AgentBase
 from app.card_router import ActionCode
 
 
@@ -15,7 +13,7 @@ class VOPResultStatus(str, Enum):
     RETRY = 'Retry'
 
 
-class Visa(AgentBase):
+class Visa:
     header = {'Content-Type': 'application/json'}
     MAX_RETRIES = 3
     ERROR_MAPPING = {
@@ -83,10 +81,10 @@ class Visa(AgentBase):
         return f"{self.spreedly_receive_token}/deliver.json"
 
     @staticmethod
-    def _log_success_response(resp_content, action):
+    def _log_success_response(resp_content, action_name):
         resp_user_details = resp_content.get('userDetails', {})
         resp_token = resp_user_details.get("externalUserId", 'unknown')
-        message = "Visa VOP {} successful - Token: {}, {}".format(action, resp_token, "Visa successfully processed")
+        message = "Visa VOP {} successful - Token: {}, {}".format(action_name, resp_token, "Visa successfully processed")
         settings.logger.info(message)
         return message
 
@@ -124,6 +122,38 @@ class Visa(AgentBase):
 
         resp_message = {'message': message, 'status_code': response.status_code}
         return resp_status, resp_message, resp_visa_status_code
+
+    def response_handler(self, response: object, action_name: str, status_mapping: dict) -> dict:
+        """
+        Response handler must have parameters in this form to be compatible with common service code
+        This code is not used for activate and deactivate where the legacy use of action name as opposed the Enum
+        is used for logging consistency
+        :param response: VOP call response object
+        :param action_name: name as a string passed from service
+        :param status_mapping: mapping dict from Hermes which must prepend "action_name:" eg Add: or Delete:
+        :return: response dict in with keys: "message", "status_code" and if success "bink_status"
+        """
+        resp_content = response.json()
+        if not resp_content:
+            resp_content = {}
+        resp_visa_status = resp_content.get('responseStatus', {})
+        resp_visa_status_code = resp_visa_status.get('code', '')
+        resp_mapping_status_code = f"{action_name}:{resp_visa_status_code}"
+
+        if response.status_code >= 300 or not resp_visa_status_code:
+            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
+            return {'message': message, 'status_code': response.status_code}
+
+        message = self._log_success_response(resp_content, action_name)
+        resp_dict = {'message': message, 'status_code': response.status_code}
+
+        if resp_visa_status_code and resp_mapping_status_code in status_mapping:
+            resp_dict['bink_status'] = status_mapping[resp_mapping_status_code]
+        else:
+            resp_dict['bink_status'] = status_mapping.get('BINK_UNKNOWN', "")
+
+        return resp_dict
+
 
     def response_handler(self, response, action_name, status_mapping):
         resp_content = response.json()
@@ -180,7 +210,7 @@ class Visa(AgentBase):
         url = f"{self.vop_url}{api_endpoint}"
         return requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
 
-    def try_activation_and_get_status(self, data, action):
+    def try_activation_and_get_status(self, data, action_name, action_code):
         resp_status = VOPResultStatus.RETRY
         retry_count = 0
 
@@ -190,7 +220,7 @@ class Visa(AgentBase):
             else:
                 retry_count += 1
                 response = self._basic_vop_request(self.vop_activation, data)
-                resp_status, _, _ = self.process_vop_response(response, action)
+                resp_status, _, _ = self.process_vop_response(response, action_name, action_code)
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         return resp_status.value, status_code
@@ -234,7 +264,7 @@ class Visa(AgentBase):
                 }
             ]
         }
-        return self.try_activation_and_get_status(data, ActionCode.ACTIVATE_MERCHANT)
+        return self.try_activation_and_get_status(data, "activate", ActionCode.ACTIVATE_MERCHANT)
 
     def deactivate_card(self, request_data):
         data = {
