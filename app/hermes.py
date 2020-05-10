@@ -10,11 +10,15 @@ def get_provider_status_mappings(slug):
     return {x['provider_status_code']: x['bink_status_code'] for x in status_mapping}
 
 
-def put_account_status(status_code, card_id=None, token=None):
+def put_account_status(status_code, card_id=None, token=None, response_status=None):
     if not (card_id or token):
         raise AttributeError('You must pass either a card_id or token to put_account_status.')
 
     request_data = {'status': status_code}
+
+    if response_status:
+        request_data['response_status'] = response_status
+
     if card_id:
         request_data['id'] = card_id
     else:
