@@ -134,7 +134,7 @@ class VisaActivate(Resource):
     @staticmethod
     def post():
         visa = Visa()
-        response_status, status_code = visa.activate_card(request.json)
+        response_status, status_code, _ = visa.activate_card(request.json)
         make_response(response_status, status_code)
 
 
