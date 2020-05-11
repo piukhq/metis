@@ -1,10 +1,14 @@
 import json
 import logging
 from unittest import TestCase, mock
-from app.card_router import ActionCode
-from app.agents.visa_offers import Visa
 from uuid import uuid4
+
+import httpretty
+from settings import HERMES_URL
 import settings
+from app.agents.visa_offers import Visa
+from app.card_router import ActionCode
+from app.services import remove_card
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -195,6 +199,41 @@ class TestVisaOffers(TestCase):
         response = ResponseMock(self.visa_fail_response, expected_status_code)
         resp = self.visa.response_handler(response, "Add", status_mapping)
         self.assertEqual(expected_status_code, resp['status_code'])
+
+    @httpretty.activate
+    def test_un_enrol_success(self):
+        visa = Visa()
+        httpretty.register_uri(
+            httpretty.POST,
+            f"{visa.vop_url}{visa.vop_unenroll}",
+            body='{"responseStatus":{"code": "SUCCESS","message": "unenrol success","responseStatusDetails": []}}'
+        )
+        card_info = self.card_info_add[0]
+        card_info['action_code'] = ActionCode.DELETE
+        card_info['partner_slug'] = "visa"
+        result = remove_card(card_info)
+        self.assertDictEqual(result, {'response_status': 'Success', 'status_code': 201})
+
+    @httpretty.activate
+    @mock.patch('app.services.put_account_status')
+    def test_un_enrol_fail(self, mock_post):
+        visa = Visa()
+        httpretty.register_uri(
+            httpretty.POST,
+            f"{visa.vop_url}{visa.vop_unenroll}",
+            body='{"responseStatus":{"code": "1000","message": "unenrol failure message","responseStatusDetails": []}}'
+        )
+        httpretty.register_uri(
+            httpretty.GET,
+            f"{HERMES_URL}/payment_cards/provider_status_mappings/visa",
+            body='[{"provider_status_code": "Delete:1000" ,"bink_status_code": 10}]'
+        )
+        card_info = self.card_info_add[0]
+        card_info['action_code'] = ActionCode.DELETE
+        card_info['partner_slug'] = "visa"
+        result = remove_card(card_info)
+        self.assertDictEqual(result, {'response_status': 'Failed', 'status_code': 200})
+        mock_post.assert_called_with(10, card_id=1, response_status='Failed')
 
     def tearDown(self):
         self.logger.handlers = self.orig_handlers
