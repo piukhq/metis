@@ -268,8 +268,8 @@ class TestVisaOffers(TestCase):
         self.mock_status_mappings_call()
         card_info = self.card_info_add[0]
         resp = self.client.delete(self.metis_payment_card_endpoint,
-                                headers={'content-type': 'application/json', 'Authorization': auth_key},
-                                data=json.dumps(card_info))
+                                  headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                  data=json.dumps(card_info))
         return resp
 
     def activate_scenario(self, scenario):
@@ -394,7 +394,7 @@ class TestVisaOffers(TestCase):
     def test_activate_success(self):
         resp = self.activate_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 201)
-        self.assertDictEqual(resp.json,{'response_status': 'Success', 'agent_response_code': 'Activate:SUCCESS'})
+        self.assertDictEqual(resp.json, {'response_status': 'Success', 'agent_response_code': 'Activate:SUCCESS'})
         self.assertEqual(1, self.call_count, f"Error in retry logic")
 
     @httpretty.activate
@@ -408,7 +408,7 @@ class TestVisaOffers(TestCase):
     def test_activate_retry(self):
         resp = self.activate_scenario(self.mock_vop_retry_response)
         self.assertEqual(resp.status_code, 200)
-        self.assertDictEqual(resp.json, {'response_status': 'Retry', 'agent_response_code': 'Deactivate:4000'})
+        self.assertDictEqual(resp.json, {'response_status': 'Retry', 'agent_response_code': 'Activate:4000'})
         self.assertEqual(self.visa.MAX_RETRIES, self.call_count, f"Retry count should be {self.visa.MAX_RETRIES}")
 
     @httpretty.activate
@@ -419,19 +419,18 @@ class TestVisaOffers(TestCase):
         self.assertEqual(1, self.call_count, f"Error in retry logic")
 
     @httpretty.activate
-    def test_activate_fail(self):
+    def test_deactivate_fail(self):
         resp = self.deactivate_scenario(self.mock_vop_fail_response)
         self.assertEqual(resp.status_code, 200)
         self.assertDictEqual(resp.json, {'response_status': 'Failed', 'agent_response_code': 'Deactivate:1000'})
         self.assertEqual(1, self.call_count, f"Error in retry logic")
 
     @httpretty.activate
-    def test_activate_retry(self):
+    def test_deactivate_retry(self):
         resp = self.deactivate_scenario(self.mock_vop_retry_response)
         self.assertEqual(resp.status_code, 200)
         self.assertDictEqual(resp.json, {'response_status': 'Retry', 'agent_response_code': 'Deactivate:4000'})
         self.assertEqual(self.visa.MAX_RETRIES, self.call_count, f"Retry count should be {self.visa.MAX_RETRIES}")
-
 
     @httpretty.activate
     @mock.patch('app.resources.process_card', side_effect=mock_process_card)
