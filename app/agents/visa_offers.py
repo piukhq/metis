@@ -47,7 +47,79 @@ class Visa:
             "RTMENRE0026": VOPResultStatus.SUCCESS,
             "RTMENRE0049": VOPResultStatus.FAILED,
             "RTMENRE0050": VOPResultStatus.FAILED,
-        }
+        },
+        ActionCode.DEACTIVATE_MERCHANT: {
+            "SUCCESS": VOPResultStatus.SUCCESS,
+            "1000": VOPResultStatus.FAILED,
+            "1010": VOPResultStatus.FAILED,
+            "2000": VOPResultStatus.FAILED,
+            "3000": VOPResultStatus.RETRY,
+            "4000": VOPResultStatus.RETRY,
+            "5000": VOPResultStatus.RETRY,
+            "6000": VOPResultStatus.RETRY,
+            "7000": VOPResultStatus.FAILED,
+            "RTMOACTVE01": VOPResultStatus.FAILED,
+            "RTMOACTVE02": VOPResultStatus.FAILED,
+            "RTMOACTVE03": VOPResultStatus.FAILED,
+            "RTMOACTVE04": VOPResultStatus.FAILED,
+            "RTMOACTVE05": VOPResultStatus.RETRY,
+        },
+        ActionCode.ADD: {
+            "SUCCESS": VOPResultStatus.SUCCESS,
+            "1000": VOPResultStatus.FAILED,
+            "1010": VOPResultStatus.FAILED,
+            "2000": VOPResultStatus.FAILED,
+            "3000": VOPResultStatus.RETRY,
+            "4000": VOPResultStatus.RETRY,
+            "5000": VOPResultStatus.RETRY,
+            "6000": VOPResultStatus.RETRY,
+            "7000": VOPResultStatus.FAILED,
+            "RTMENRE0003": VOPResultStatus.FAILED,
+            "RTMENRE0005": VOPResultStatus.FAILED,
+            "RTMENRE0008": VOPResultStatus.FAILED,
+            "RTMENRE0011": VOPResultStatus.FAILED,
+            "RTMENRE0015": VOPResultStatus.FAILED,
+            "RTMENRE0016": VOPResultStatus.FAILED,
+            "RTMENRE0017": VOPResultStatus.FAILED,
+            "RTMENRE0019": VOPResultStatus.FAILED,
+            "RTMENRE0021": VOPResultStatus.FAILED,
+            "RTMENRE0022": VOPResultStatus.FAILED,
+            "RTMENRE0023": VOPResultStatus.FAILED,
+            "RTMENRE0025": VOPResultStatus.FAILED,
+            "RTMENRE0028": VOPResultStatus.FAILED,
+            "RTMENRE0032": VOPResultStatus.FAILED,
+            "RTMENRE0035": VOPResultStatus.FAILED,
+            "RTMENRE0039": VOPResultStatus.FAILED,
+            "RTMENRE0042": VOPResultStatus.FAILED,
+            "RTMENRE0044": VOPResultStatus.FAILED,
+            "RTMENRE0049": VOPResultStatus.FAILED,
+            "RTMENRE0052": VOPResultStatus.FAILED,
+            "RTMENRE0053": VOPResultStatus.FAILED,
+            "RTMENRE0054": VOPResultStatus.FAILED,
+            "RTMENRE0055": VOPResultStatus.FAILED,
+            "RTMENRE0056": VOPResultStatus.FAILED,
+            "RTMENRE0057": VOPResultStatus.FAILED,
+            "RTMENRE0058": VOPResultStatus.FAILED,
+            "RTMENRE0059": VOPResultStatus.FAILED,
+            "RTMENRE0060": VOPResultStatus.FAILED,
+            "RTMENRE0061": VOPResultStatus.FAILED,
+            "RTMENRE0071": VOPResultStatus.FAILED,
+            "RTMENRE0072": VOPResultStatus.FAILED,
+            "RTMENRE0075": VOPResultStatus.FAILED,
+            "RTMENRE0077": VOPResultStatus.FAILED,
+            "RTMENRE0078": VOPResultStatus.FAILED,
+            "RTMENRE0080": VOPResultStatus.FAILED,
+            "RTMENRE0081": VOPResultStatus.FAILED,
+            "RTMENRE0082": VOPResultStatus.FAILED,
+            "RTMENRE0083": VOPResultStatus.FAILED,
+            "RTMENRE0084": VOPResultStatus.FAILED,
+            "RTMENRE0085": VOPResultStatus.FAILED,
+            "RTMENRE0086": VOPResultStatus.FAILED,
+            "RTMENRE0087": VOPResultStatus.FAILED,
+            "RTMENRE0088": VOPResultStatus.FAILED,
+            "RTMENRE0089": VOPResultStatus.FAILED,
+        },
+
     }
 
     def __init__(self):
@@ -126,9 +198,8 @@ class Visa:
         return resp_status, resp_visa_status_code
 
     @staticmethod
-    def get_bink_status(action_name, resp_visa_status_code, status_mapping):
-        resp_mapping_status_code = f"{action_name}:{resp_visa_status_code}"
-        if resp_visa_status_code and resp_mapping_status_code in status_mapping:
+    def get_bink_status(resp_mapping_status_code, status_mapping):
+        if resp_mapping_status_code in status_mapping:
             bink_status = status_mapping[resp_mapping_status_code]
         else:
             bink_status = status_mapping.get('BINK_UNKNOWN', "")
@@ -154,10 +225,11 @@ class Visa:
             return {'message': message, 'status_code': response.status_code}
 
         message = self._log_success_response(resp_content, action_name)
+        resp_mapping_status_code = f"{action_name}:{resp_visa_status_code}"
         return {
             'message': message,
             'status_code': response.status_code,
-            'bink_status': self.get_bink_status(action_name, resp_visa_status_code, status_mapping)
+            'bink_status': self.get_bink_status(resp_mapping_status_code, status_mapping)
         }
 
     def add_card_request_body(self, card_info):
@@ -194,18 +266,18 @@ class Visa:
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_status = VOPResultStatus.RETRY
         agent_status_code = None
-        retry_count = 0
+        retry_count = self.MAX_RETRIES
 
-        while resp_status == VOPResultStatus.RETRY:
-            if retry_count >= self.MAX_RETRIES:
-                resp_status = VOPResultStatus.FAILED
-            else:
-                retry_count += 1
-                response = self._basic_vop_request(api_endpoint, data)
-                resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
+        while retry_count:
+            retry_count -= 1
+            response = self._basic_vop_request(api_endpoint, data)
+            resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
+            if resp_status != VOPResultStatus.RETRY:
+                retry_count = 0
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
-        return resp_status.value, status_code, agent_status_code
+        full_agent_status_code = f"{action_name}:{agent_status_code}"
+        return resp_status.value, status_code, full_agent_status_code
 
     def is_success(self, response, action, action_code):
         resp_status, _ = self.process_vop_response(response, action, action_code)
@@ -214,8 +286,8 @@ class Visa:
 
         return False
 
-    def activate_card(self, card_info):
-        data = {
+    def activate_deactivate_data(self, card_info):
+        return {
             "communityCode": self.vop_community_code,
             "userKey": card_info['payment_token'],
             "offerId": self.offerid,
@@ -227,33 +299,25 @@ class Visa:
                 },
                 {
                     "name": "ExternalId",
-                    "value": card_info['merchant_slug']
+                    "value": card_info['partner_slug']
                 }
             ]
         }
-        return self.try_vop_and_get_status(data, "activate", ActionCode.ACTIVATE_MERCHANT)
+
+    def activate_card(self, card_info):
+        return self.try_vop_and_get_status(
+            self.activate_deactivate_data(card_info),
+            "Activate",
+            ActionCode.ACTIVATE_MERCHANT,
+            self.vop_activation
+        )
 
     def deactivate_card(self, card_info):
-        data = {
-            "communityCode": self.vop_community_code,
-            "userKey": card_info['payment_token'],
-            "offerId": self.offerid,
-            "recurrenceLimit": "-1",
-            "activations": [
-                {
-                    "name": "MerchantGroupName",
-                    "value": self.merchant_group
-                },
-                {
-                    "name": "ExternalId",
-                    "value": card_info['merchant_slug']
-                }
-            ]
-        }
-        return self.is_success(
-            self._basic_vop_request(self.vop_deactivation, data),
-            'deactivate',
-            card_info['action_code']
+        return self.try_vop_and_get_status(
+            self.activate_deactivate_data(card_info),
+            "Deactivate",
+            ActionCode.DEACTIVATE_MERCHANT,
+            self.vop_deactivation
         )
 
     def un_enroll(self, card_info, action_name):

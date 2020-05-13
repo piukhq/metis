@@ -127,7 +127,7 @@ def remove_card(card_info):
         if status_code != 201:
             settings.logger.info('VOP Card add unsuccessful, calling Hermes to set card status.')
             status_mapping = get_provider_status_mappings(card_info['partner_slug'])
-            card_status_code = agent_instance.get_bink_status(action_name, agent_status_code, status_mapping)
+            card_status_code = agent_instance.get_bink_status(agent_status_code, status_mapping)
             put_account_status(card_status_code, card_id=card_info['id'], response_status=response_status)
         # Note this celery task does not returned anything but we return values for test purposes or if celery removed
         return {'response_status': response_status, 'status_code': status_code}
