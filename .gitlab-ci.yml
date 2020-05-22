@@ -59,8 +59,8 @@ build-preprod:
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
-    - docker build --pull -t "$CI_REGISTRY/metis:preprod" .
-    - docker push "$CI_REGISTRY/metis:preprod"
+    - docker build --pull -t "$CI_REGISTRY/metis:preprod-$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY/metis:preprod-$CI_COMMIT_SHORT_SHA"
   only:
     - VOP_develop
 
@@ -85,16 +85,6 @@ tag-staging:
     - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:$CI_COMMIT_TAG" --tag "staging-$CI_COMMIT_TAG"
   only:
     - tags
-
-tag-preprod:
-  stage: tagging
-  image: binkops.azurecr.io/tagbot:latest
-  environment: prod
-  script:
-    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:preprod" --tag "preprod-$CI_COMMIT_TAG"
-  when: manual
-  only:
-    - VOP_develop
 
 tag-prod:
   stage: tagging
