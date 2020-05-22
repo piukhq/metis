@@ -1,5 +1,4 @@
 import requests
-
 from app.utils import resolve_agent
 from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
@@ -113,26 +112,42 @@ def remove_card(card_info):
     settings.logger.info('Start Remove card for {}'.format(card_info['partner_slug']))
 
     agent_instance = get_agent(card_info['partner_slug'])
-
     header = agent_instance.header
-    # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
-    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    action_name = 'Delete'
 
-    try:
-        request_data = agent_instance.remove_card_body(card_info)
-    except OAuthError:
-        # 5 = PROVIDER_SERVER_DOWN
-        # TODO: get this from gaia
-        put_account_status(5, card_id=card_info['id'])
-        return None
+    if card_info['partner_slug'] == 'visa':
+        # Note the other agents use Spreedly as a Proxy which may need to be changed at some stage by adding to each
+        # agent_instance an un_enroll method and removing remove_card_body(card_info)
+        # For VOP we will un-enroll directly with VOP and not use Spreedly
+        # There is no longer any requirement to redact the card with with Spreedly
+        # VOP Un-enroll
 
-    resp = post_request(url, header, request_data)
+        response_status, status_code, agent_status_code = agent_instance.un_enroll(card_info, action_name)
+        # Set card_payment status in hermes using 'id' HERMES_URL
+        if status_code != 201:
+            settings.logger.info('VOP Card add unsuccessful, calling Hermes to set card status.')
+            status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+            card_status_code = agent_instance.get_bink_status(agent_status_code, status_mapping)
+            put_account_status(card_status_code, card_id=card_info['id'], response_status=response_status)
+        # Note this celery task does not returned anything but we return values for test purposes or if celery removed
+        return {'response_status': response_status, 'status_code': status_code}
+    else:
+        # Older call used with Agents prior to VOP which proxy through Spreedly
+        # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+        url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
 
-    # get the status mapping for this provider from hermes.
-    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
-
-    resp = agent_instance.response_handler(resp, 'Delete', status_mapping)
-    return resp
+        try:
+            request_data = agent_instance.remove_card_body(card_info)
+        except OAuthError:
+            # 5 = PROVIDER_SERVER_DOWN
+            # TODO: get this from gaia
+            put_account_status(5, card_id=card_info['id'])
+            return None
+        resp = post_request(url, header, request_data)
+        # get the status mapping for this provider from hermes.
+        status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+        resp = agent_instance.response_handler(resp, action_name, status_mapping)
+        return resp
 
 
 def reactivate_card(card_info):

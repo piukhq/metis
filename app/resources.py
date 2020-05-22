@@ -1,13 +1,16 @@
-import arrow
 import json
-from app.services import create_prod_receiver, retain_payment_method_token
-from flask_restful import Resource, Api
+
+import arrow
 from flask import request, make_response
+from flask_restful import Resource, Api
+from voluptuous import Schema, Required, MultipleInvalid, All, Length
+
 from app.agents.agent_manager import AgentManager
+from app.agents.visa_offers import Visa
 from app.auth import authorized
 from app.card_router import process_card, ActionCode
+from app.services import create_prod_receiver, retain_payment_method_token
 from settings import logger
-from voluptuous import Schema, Required, MultipleInvalid, All, Length
 
 api = Api()
 
@@ -124,3 +127,33 @@ class Notify(Resource):
 
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
+
+
+class VisaActivate(Resource):
+
+    @staticmethod
+    def post():
+        visa = Visa()
+        response_status, status_code, agent_response_code = visa.activate_card(request.json)
+        return make_response(json.dumps({
+            'response_status': response_status,
+            'agent_response_code': agent_response_code
+        }), status_code)
+
+
+api.add_resource(VisaActivate, '/visa/activate/')
+
+
+class VisaDeActivate(Resource):
+
+    @staticmethod
+    def post():
+        visa = Visa()
+        response_status, status_code, agent_response_code = visa.deactivate_card(request.json)
+        return make_response(json.dumps({
+            'response_status': response_status,
+            'agent_response_code': agent_response_code
+        }), status_code)
+
+
+api.add_resource(VisaDeActivate, '/visa/deactivate/')

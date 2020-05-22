@@ -1,15 +1,19 @@
+import pickle
+from enum import Enum
+
+import pika
+
+import settings
 from app.hermes import put_account_status
 from app.tasks import add_card, remove_card, reactivate_card
-from enum import Enum
-import settings
-import pickle
-import pika
 
 
 class ActionCode(Enum):
     ADD = 'A'
     DELETE = 'D'
     REACTIVATE = 'R'
+    ACTIVATE_MERCHANT = 'M'
+    DEACTIVATE_MERCHANT = 'X'
 
 
 def celery_handler(action_code, card_info):
@@ -43,7 +47,8 @@ def rabbitmq_handler(action_code, card_info):
 handlers = {
     'amex': celery_handler,
     'mastercard': celery_handler,
-    'visa': rabbitmq_handler,
+    # the current handler is 'visa': rabbitmq_handler, will become obsolete when this code is released
+    'visa': celery_handler,
 }
 
 
