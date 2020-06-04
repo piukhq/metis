@@ -227,7 +227,7 @@ class Visa:
                 },
                 {
                     "name": "ExternalId",
-                    "value": card_info['merchant_slug']
+                    "value": card_info['partner_slug']
                 }
             ]
         }
@@ -246,7 +246,7 @@ class Visa:
                 },
                 {
                     "name": "ExternalId",
-                    "value": card_info['merchant_slug']
+                    "value": card_info['partner_slug']
                 }
             ]
         }
