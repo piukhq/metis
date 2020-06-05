@@ -270,8 +270,16 @@ class Visa:
 
         while retry_count:
             retry_count -= 1
-            response = self._basic_vop_request(api_endpoint, data)
-            resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
+            try:
+                response = self._basic_vop_request(api_endpoint, data)
+                resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
+            except json.decoder.JSONDecodeError as error:
+                agent_status_code = "Agent response was not valid JSON"
+                resp_status = VOPResultStatus.RETRY
+            except Exception as error:
+                agent_status_code = error
+                resp_status = VOPResultStatus.RETRY
+
             if resp_status != VOPResultStatus.RETRY:
                 retry_count = 0
 
