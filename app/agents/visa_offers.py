@@ -1,9 +1,9 @@
 import json
 from enum import Enum
 from uuid import uuid4
-
+from time import sleep
 import requests
-
+import base64
 import settings
 from app.card_router import ActionCode
 
@@ -14,8 +14,35 @@ class VOPResultStatus(str, Enum):
     RETRY = 'Retry'
 
 
+def cache_vop_security_data():
+    vop_bink_client_cer = ""
+    vop_bink_client_key = ""
+    # When reading the vault on start up we may need a retry loop with a sleep
+    sleep(1)
+    if vop_bink_client_key and vop_bink_client_cer:
+        try:
+            with open(settings.VOP_CLIENT_KEY_PATH, 'w') as file:
+                file.write(vop_bink_client_key)
+            with open(settings.VOP_CLIENT_CER_PATH, 'w') as file:
+                file.write(vop_bink_client_cer)
+        except Exception as err:
+            message = f"FAILED VOP Client Certificates were not installed on /temp. Error: {err}"
+            settings.logger.error(message)
+        else:
+            message = "Success VOP Client Certificates correctly installed on /temp"
+            settings.logger.info(message)
+    else:
+        message = f"FAILED VOP Client Certificates could not be read from Vault."
+        settings.logger.error(message)
+
+
+# This runs when the module is first loaded
+cache_vop_security_data()
+
+
 class Visa:
     header = {'Content-Type': 'application/json'}
+
     MAX_RETRIES = 3
     ERROR_MAPPING = {
         ActionCode.ACTIVATE_MERCHANT: {
@@ -129,24 +156,46 @@ class Visa:
         self.vop_unenroll = "/vop/v1/users/unenroll"
 
         if settings.TESTING:
-            # Test
+            # Staging
             self.vop_community_code = "BINKCTE01"
             self.vop_url = "https://cert.api.visa.com"
-            self.spreedly_receive_token = "visa"
+            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
             self.offerid = "48016"
             self.auth_type = 'Basic'
-            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.vop_user_id = 'O8LIJL087433HBEFINYP21XvJukeEFn-VPS2lb1xgJ_tfwmEY'
+            self.vop_password = 'VcEOK6Crx37TZef10LN6sG7zMAwnC9t9p9Yuz'
+            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
+            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
+            self.merchant_group = "BIN_CAID_MRCH_GRP"
+
+        elif settings.PRE_PRODUCTION:
+            # PRE-PRODUCTION
+            self.vop_community_code = "BINKCL"
+            self.vop_url = "https://api.visa.com"
+            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
+            self.offerid = "102414"
+            self.auth_type = 'Basic'
+            self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
+            self.vop_password = '73RkA59eWWosyB133Tt3rh556gBvvelVF17f'
+            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
+            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
             self.merchant_group = "BIN_CAID_MRCH_GRP"
 
         else:
             # Production
-            self.vop_community_code = "BINKCTE01"
+            self.vop_community_code = "BINKCL"
             self.vop_url = "https://api.visa.com"
-            self.spreedly_receive_token = "HwA3Nr2SGNEwBWISKzmNZfkHl6D"
-            self.offerid = "48016"
+            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
+            self.offerid = "102414"
             self.auth_type = 'Basic'
-            self.auth_value = 'QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+            self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
+            self.vop_password = '73RkA59eWWosyB133Tt3rh556gBvvelVF17f'
+            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
+            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
             self.merchant_group = "BIN_CAID_MRCH_GRP"
+
+        self.spreedly_vop_auth_value = base64.b64encode(
+            f'{spreedly_vop_user_id}:{spreedly_vop_password}'.encode('utf8')).decode('ascii')
 
         # Override  settings if stubbed
         if settings.STUBBED_VOP_URL:
@@ -154,6 +203,13 @@ class Visa:
 
     def receiver_token(self):
         return f"{self.spreedly_receive_token}/deliver.json"
+
+    @property
+    def spreedly_vop_headers(self):
+        """
+        :return: headers for Spreedly to talk to VOP, as a new line separated string for use in deliver body
+        """
+        return f"Authorization: {self.auth_type} {self.spreedly_vop_auth_value}\nContent-Type: application/json"
 
     @staticmethod
     def _log_success_response(resp_content, action_name):
@@ -252,7 +308,7 @@ class Visa:
             "delivery": {
                 "payment_method_token": card_info['payment_token'],
                 "url": f"{self.vop_url}{self.vop_enrol}",
-                "headers": "Content-Type: application/json",
+                "headers": self.spreedly_vop_headers,
                 "body": self.add_card_request_body(card_info),
             }
         }
@@ -261,7 +317,11 @@ class Visa:
 
     def _basic_vop_request(self, api_endpoint, data):
         url = f"{self.vop_url}{api_endpoint}"
-        return requests.request('POST', url, auth=(self.auth_type, self.auth_value), headers=self.header, data=data)
+        headers = {'Content-Type': 'application/json'}
+        return requests.request(
+            'POST', url, auth=(self.vop_user_id, self.vop_password),
+            cert=(settings.VOP_CLIENT_CER_PATH, settings.VOP_CLIENT_KEY_PATH),
+            headers=headers, data=data)
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_status = VOPResultStatus.RETRY
@@ -274,7 +334,7 @@ class Visa:
                 response = self._basic_vop_request(api_endpoint, data)
                 resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
             except json.decoder.JSONDecodeError as error:
-                agent_status_code = "Agent response was not valid JSON"
+                agent_status_code = f"Agent response was not valid JSON Error: {error}"
                 resp_status = VOPResultStatus.RETRY
             except Exception as error:
                 agent_status_code = error

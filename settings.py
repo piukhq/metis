@@ -22,6 +22,8 @@ DEV_HOST = env_var("DEV_HOST", "0.0.0.0")
 DEV_PORT = env_var("DEV_PORT", "5050")
 
 TESTING = env_var("METIS_TESTING", False)
+PRE_PRODUCTION = env_var("METIS_PRE_PRODUCTION", False)
+
 STUBBED_VOP_URL = env_var("STUBBED_VOP_URL", '')
 
 HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
@@ -109,3 +111,6 @@ VISA_ARCHIVE_DIR = env_var('VISA_ARCHIVE_DIR', '/tmp/archive/visa')
 VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 
 TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
+
+VOP_CLIENT_KEY_PATH = "/tmp/vop_bink_client_key.pem"
+VOP_CLIENT_CER_PATH = "/tmp/vop_bink_client_cer.pem"
