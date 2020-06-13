@@ -112,5 +112,15 @@ VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 
 TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
 
-VOP_CLIENT_KEY_PATH = "/tmp/vop_bink_client_key.pem"
-VOP_CLIENT_CER_PATH = "/tmp/vop_bink_client_cer.pem"
+AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "http://127.0.0.1:8200")
+
+FILE_SECRETS = {
+    "vop_client_certificate_path": {
+        "vault_name": "/v1/secret/vop/clientCert",
+        "path": "/tmp/vop_client_certificate.pem",
+    },
+    "vop_client_key_path": {
+        "vault_name": "/v1/secret/vop/clientKey",
+        "path": "/tmp/vop_client_key.pem",
+    }
+}
