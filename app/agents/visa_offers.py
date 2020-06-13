@@ -5,7 +5,6 @@ from time import sleep
 import requests
 import base64
 import settings
-from .secrets import Secret
 from app.card_router import ActionCode
 
 
@@ -130,12 +129,14 @@ class Visa:
         self.vop_deactivation = "/vop/v1/deactivations/merchant"
         self.vop_unenroll = "/vop/v1/users/unenroll"
 
+        self.spreedly_receive_token = settings.Secrets.spreedly_receive_token
+
         if settings.TESTING:
             # Staging
             self.vop_community_code = "BINKCTE01"
             self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://cert.api.visa.com"
-            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
+
             self.offerid = "48016"
             self.auth_type = 'Basic'
             self.vop_user_id = 'O8LIJL087433HBEFINYP21XvJukeEFn-VPS2lb1xgJ_tfwmEY'
@@ -149,7 +150,7 @@ class Visa:
             self.vop_community_code = "BINKCL"
             self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
-            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
+
             self.offerid = "102414"
             self.auth_type = 'Basic'
             self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
@@ -163,7 +164,7 @@ class Visa:
             self.vop_community_code = "BINKCL"
             self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
-            self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
+
             self.offerid = "102414"
             self.auth_type = 'Basic'
             self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
@@ -192,8 +193,10 @@ class Visa:
     @staticmethod
     def _log_success_response(resp_content, action_name):
         resp_user_details = resp_content.get('userDetails', {})
-        resp_token = resp_user_details.get("externalUserId", 'unknown')
-        message = f"Visa VOP {action_name} successful - Token: {resp_token}, Visa successfully processed"
+        resp_token = resp_user_details.get("externalUserId", '')
+        message = f"Visa VOP {action_name} successful, Visa successfully processed"
+        if resp_token:
+            message = f"{message}; token {resp_token}"
         settings.logger.info(message)
         return message
 
@@ -314,7 +317,7 @@ class Visa:
         headers = {'Content-Type': 'application/json'}
         return requests.request(
             'POST', url, auth=(self.vop_user_id, self.vop_password),
-            cert=(Secret.get('vop_client_certificate_path'), Secret.get('vop_client_key_path')),
+            cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
             headers=headers, data=data)
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):

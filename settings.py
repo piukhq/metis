@@ -113,14 +113,37 @@ VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
 
 AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "http://127.0.0.1:8200")
+VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
 
-FILE_SECRETS = {
-    "vop_client_certificate_path": {
-        "vault_name": "/v1/secret/vop/clientCert",
-        "path": "/tmp/vop_client_certificate.pem",
-    },
-    "vop_client_key_path": {
-        "vault_name": "/v1/secret/vop/clientKey",
-        "path": "/tmp/vop_client_key.pem",
+
+class Secrets:
+    # These attributes will contain the secrets
+    vop_client_certificate_path = None
+    vop_client_key_path = None
+    spreedly_receive_token = None
+    vop_user_id = None
+    vop_password = None
+    spreedly_vop_user_id = None
+    spreedly_vop_password = None
+
+    # One entry per attribute required in one of the following configs
+    SECRETS_STORED_IN_FILE = {
+        "vop_client_certificate_path": {
+            "vault_name": "/vop/clientCert",
+            "file_path": "/tmp/vop_client_certificate.pem",
+        },
+        "vop_client_key_path": {
+            "vault_name": "/vop/clientKey",
+            "file_path": "/tmp/vop_client_key.pem",
+        }
     }
-}
+
+    # attribute: vault_name
+    SECRETS_STORED_IN_MEMORY = {
+        "spreedly_receive_token": "/spreedly/receiveToken",
+        "vop_user_id": "/vop/authUserId",
+        "vop_password": "/vop/authPassword",
+        "spreedly_vop_user_id": "/spreedly/vopUserId",
+        "spreedly_vop_password": "/spreedly/vopPassword"
+    }
+
