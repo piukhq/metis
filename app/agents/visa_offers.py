@@ -5,6 +5,7 @@ from time import sleep
 import requests
 import base64
 import settings
+from .secrets import Secret
 from app.card_router import ActionCode
 
 
@@ -12,32 +13,6 @@ class VOPResultStatus(str, Enum):
     FAILED = 'Failed'
     SUCCESS = 'Success'
     RETRY = 'Retry'
-
-
-def cache_vop_security_data():
-    vop_bink_client_cer = ""
-    vop_bink_client_key = ""
-    # When reading the vault on start up we may need a retry loop with a sleep
-    sleep(1)
-    if vop_bink_client_key and vop_bink_client_cer:
-        try:
-            with open(settings.VOP_CLIENT_KEY_PATH, 'w') as file:
-                file.write(vop_bink_client_key)
-            with open(settings.VOP_CLIENT_CER_PATH, 'w') as file:
-                file.write(vop_bink_client_cer)
-        except Exception as err:
-            message = f"FAILED VOP Client Certificates were not installed on /temp. Error: {err}"
-            settings.logger.error(message)
-        else:
-            message = "Success VOP Client Certificates correctly installed on /temp"
-            settings.logger.info(message)
-    else:
-        message = f"FAILED VOP Client Certificates could not be read from Vault."
-        settings.logger.error(message)
-
-
-# This runs when the module is first loaded
-cache_vop_security_data()
 
 
 class Visa:
@@ -158,6 +133,7 @@ class Visa:
         if settings.TESTING:
             # Staging
             self.vop_community_code = "BINKCTE01"
+            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://cert.api.visa.com"
             self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
             self.offerid = "48016"
@@ -171,6 +147,7 @@ class Visa:
         elif settings.PRE_PRODUCTION:
             # PRE-PRODUCTION
             self.vop_community_code = "BINKCL"
+            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
             self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
             self.offerid = "102414"
@@ -179,11 +156,12 @@ class Visa:
             self.vop_password = '73RkA59eWWosyB133Tt3rh556gBvvelVF17f'
             spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
             spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
-            self.merchant_group = "BIN_CAID_MRCH_GRP"
+            self.merchant_group = "BINK_PREPROD_MRCH_GRP"
 
         else:
             # Production
             self.vop_community_code = "BINKCL"
+            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
             self.spreedly_receive_token = "LsMTji00tyfJuXRelZmgRMs3s29"
             self.offerid = "102414"
@@ -238,11 +216,27 @@ class Visa:
         resp_content = response.json()
         if not resp_content:
             resp_content = {}
+
+        detailed_visa_status_code = ""
+        detailed_visa_status_message = ""
         resp_visa_status = resp_content.get('responseStatus', {})
-        resp_visa_status_code = resp_visa_status.get('code', '')
+        resp_visa_status_code = resp_visa_status.get('code', "")
+        resp_visa_status_message = resp_visa_status.get('message', "")
+        resp_detail_list = resp_visa_status.get("responseStatusDetails", [])
+        if len(resp_detail_list) > 0:
+            resp_detail = resp_detail_list[0]
+            try:
+                detailed_visa_status_code = resp_detail.get('code', '')
+                detailed_visa_status_message = resp_detail.get('message', '')
+            except AttributeError as e:
+                pass
+        response_message = f"{resp_visa_status_message};{detailed_visa_status_message}"
 
         if response.status_code >= 300 or not resp_visa_status_code:
             resp_status = VOPResultStatus.RETRY
+        elif detailed_visa_status_code and detailed_visa_status_code in status_mapping:
+            resp_status = status_mapping[detailed_visa_status_code]
+            resp_visa_status_code = detailed_visa_status_code
         else:
             resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
 
@@ -251,7 +245,7 @@ class Visa:
         else:
             self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
 
-        return resp_status, resp_visa_status_code
+        return resp_status, resp_visa_status_code, response_message
 
     @staticmethod
     def get_bink_status(resp_mapping_status_code, status_mapping):
@@ -292,7 +286,7 @@ class Visa:
         data = {
             "correlationId": str(uuid4()),
             "userDetails": {
-                "communityCode": self.vop_community_code,
+                "communityCode": self.vop_spreedly_community_code,
                 "userKey": card_info['payment_token'],
                 "externalUserId": card_info['payment_token'],
                 "cards": [{
@@ -320,41 +314,38 @@ class Visa:
         headers = {'Content-Type': 'application/json'}
         return requests.request(
             'POST', url, auth=(self.vop_user_id, self.vop_password),
-            cert=(settings.VOP_CLIENT_CER_PATH, settings.VOP_CLIENT_KEY_PATH),
+            cert=(Secret.get('vop_client_certificate_path'), Secret.get('vop_client_key_path')),
             headers=headers, data=data)
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_status = VOPResultStatus.RETRY
         agent_status_code = None
         retry_count = self.MAX_RETRIES
+        json_data = json.dumps(data)
 
         while retry_count:
             retry_count -= 1
             try:
-                response = self._basic_vop_request(api_endpoint, data)
-                resp_status, agent_status_code = self.process_vop_response(response, action_name, action_code)
+                response = self._basic_vop_request(api_endpoint, json_data)
+                resp_status, agent_status_code, agent_message = self.process_vop_response(response, action_name,
+                                                                                          action_code)
             except json.decoder.JSONDecodeError as error:
-                agent_status_code = f"Agent response was not valid JSON Error: {error}"
-                resp_status = VOPResultStatus.RETRY
+                agent_message = f"Agent response was not valid JSON Error: {error}"
+                agent_status_code = 0
+                resp_status = VOPResultStatus.FAILED
             except Exception as error:
-                agent_status_code = error
-                resp_status = VOPResultStatus.RETRY
+                agent_message = f"Agent exception {error}"
+                agent_status_code = 0
+                resp_status = VOPResultStatus.FAILED
 
             if resp_status != VOPResultStatus.RETRY:
                 retry_count = 0
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
-        return resp_status.value, status_code, full_agent_status_code
+        return resp_status.value, status_code, full_agent_status_code, agent_message
 
-    def is_success(self, response, action, action_code):
-        resp_status, _ = self.process_vop_response(response, action, action_code)
-        if resp_status == VOPResultStatus.SUCCESS:
-            return True
-
-        return False
-
-    def activate_deactivate_data(self, card_info):
+    def activate_data(self, card_info):
         return {
             "communityCode": self.vop_community_code,
             "userKey": card_info['payment_token'],
@@ -367,14 +358,33 @@ class Visa:
                 },
                 {
                     "name": "ExternalId",
-                    "value": card_info['partner_slug']
+                    "value": card_info['merchant_slug']
+                }
+            ]
+        }
+
+    def deactivate_data(self, card_info):
+        return {
+            "communityCode": self.vop_spreedly_community_code,
+            "userKey": card_info['payment_token'],
+            "offerId": self.offerid,
+            "clientCommunityCode": self.vop_community_code,
+            "recurrenceLimit": "-1",
+            "activations": [
+                {
+                    "name": "MerchantGroupName",
+                    "value": self.merchant_group
+                },
+                {
+                    "name": "ExternalId",
+                    "value": card_info['merchant_slug']
                 }
             ]
         }
 
     def activate_card(self, card_info):
         return self.try_vop_and_get_status(
-            self.activate_deactivate_data(card_info),
+            self.activate_data(card_info),
             "Activate",
             ActionCode.ACTIVATE_MERCHANT,
             self.vop_activation
@@ -382,7 +392,7 @@ class Visa:
 
     def deactivate_card(self, card_info):
         return self.try_vop_and_get_status(
-            self.activate_deactivate_data(card_info),
+            self.deactivate_data(card_info),
             "Deactivate",
             ActionCode.DEACTIVATE_MERCHANT,
             self.vop_deactivation

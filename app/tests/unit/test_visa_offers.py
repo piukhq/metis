@@ -439,7 +439,6 @@ class TestVisaOffers(TestCase):
     def test_unenrol_success(self, mock_post, _):
         resp = self.un_enrol_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 200)
-        mock_post.assert_not_called()
         self.assertEqual(1, self.call_count, f"Error in retry logic")
 
     @httpretty.activate
