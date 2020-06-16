@@ -247,8 +247,6 @@ class Visa:
             response_message
         )
 
-
-
     @staticmethod
     def get_bink_status(resp_mapping_status_code, status_mapping):
         if resp_mapping_status_code in status_mapping:
