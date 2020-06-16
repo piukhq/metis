@@ -116,6 +116,7 @@ AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "http://127.0.0.1:8200")
 VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
+
 class Secrets:
     # These attributes will contain the secrets
     vop_client_certificate_path = None

@@ -1,9 +1,10 @@
+import base64
 import json
 from enum import Enum
 from uuid import uuid4
-from time import sleep
+
 import requests
-import base64
+
 import settings
 from app.card_router import ActionCode
 
@@ -207,7 +208,7 @@ class Visa:
             try:
                 detailed_visa_status_code = resp_detail.get('code', '')
                 detailed_visa_status_message = resp_detail.get('message', '')
-            except AttributeError as e:
+            except AttributeError:
                 pass
         response_message = f"{resp_visa_status_message};{detailed_visa_status_message}"
 
