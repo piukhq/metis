@@ -4,7 +4,7 @@ import os
 import sentry_sdk
 from environment import env_var, read_env
 from sentry_sdk.integrations.celery import CeleryIntegration
-
+from vault import secrets_from_vault
 
 SECRET_KEY = b'\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N['
 
@@ -114,7 +114,7 @@ TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
 
 AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "http://127.0.0.1:8200")
 VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
-
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
 class Secrets:
     # These attributes will contain the secrets
@@ -125,9 +125,14 @@ class Secrets:
     vop_password = None
     spreedly_vop_user_id = None
     spreedly_vop_password = None
+    vop_community_code = None
+    vop_spreedly_community_code = None
+    vop_merchant_group = None
+    vop_offerid = None
 
-    # One entry per attribute required in one of the following configs
-    SECRETS_STORED_IN_FILE = {
+    # One entry for each of the above attributes is required for app to start  The secret is stored in the attribute
+    # unless file path is declared in which case the secret is saved to the file and the attribute set to the file path
+    SECRETS_DEF = {
         "vop_client_certificate_path": {
             "vault_name": "/vop/clientCert",
             "file_path": "/tmp/vop_client_certificate.pem",
@@ -135,15 +140,35 @@ class Secrets:
         "vop_client_key_path": {
             "vault_name": "/vop/clientKey",
             "file_path": "/tmp/vop_client_key.pem",
+        },
+        "spreedly_receive_token": {
+            "vault_name": "/spreedly/receiveToken"
+        },
+        "vop_community_code": {
+            "vault_name": "/vop/communityCode"
+        },
+        "vop_spreedly_community_code": {
+            "vault_name": "/vop/spreedlyCommunityCode"
+        },
+        "vop_offerid": {
+            "vault_name": "/vop/offerId"
+        },
+        "vop_user_id": {
+            "vault_name": "/vop/authUserId"
+        },
+        "vop_password": {
+            "vault_name": "/vop/authPassword"
+        },
+        "spreedly_vop_user_id": {
+            "vault_name": "/spreedly/vopAuthUserId"
+        },
+        "spreedly_vop_password": {
+            "vault_name": "/spreedly/vopAuthPassword"
+        },
+        "vop_merchant_group": {
+            "vault_name": "/vop/merchantGroup"
         }
     }
 
-    # attribute: vault_name
-    SECRETS_STORED_IN_MEMORY = {
-        "spreedly_receive_token": "/spreedly/receiveToken",
-        "vop_user_id": "/vop/authUserId",
-        "vop_password": "/vop/authPassword",
-        "spreedly_vop_user_id": "/spreedly/vopUserId",
-        "spreedly_vop_password": "/spreedly/vopPassword"
-    }
 
+secrets_from_vault()

@@ -128,51 +128,27 @@ class Visa:
         self.vop_activation = "/vop/v1/activations/merchant"
         self.vop_deactivation = "/vop/v1/deactivations/merchant"
         self.vop_unenroll = "/vop/v1/users/unenroll"
-
+        self.auth_type = 'Basic'
         self.spreedly_receive_token = settings.Secrets.spreedly_receive_token
+        self.vop_community_code = settings.Secrets.vop_community_code
+        self.vop_spreedly_community_code = settings.Secrets.vop_spreedly_community_code
+        self.offerid = settings.Secrets.vop_offerid
+        self.vop_user_id = settings.Secrets.vop_user_id
+        self.vop_password = settings.Secrets.vop_password
+        spreedly_vop_user_id = settings.Secrets.spreedly_vop_user_id
+        spreedly_vop_password = settings.Secrets.spreedly_vop_password
+        self.merchant_group = settings.Secrets.vop_merchant_group
 
         if settings.TESTING:
             # Staging
-            self.vop_community_code = "BINKCTE01"
-            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://cert.api.visa.com"
-
-            self.offerid = "48016"
-            self.auth_type = 'Basic'
-            self.vop_user_id = 'O8LIJL087433HBEFINYP21XvJukeEFn-VPS2lb1xgJ_tfwmEY'
-            self.vop_password = 'VcEOK6Crx37TZef10LN6sG7zMAwnC9t9p9Yuz'
-            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
-            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
-            self.merchant_group = "BIN_CAID_MRCH_GRP"
 
         elif settings.PRE_PRODUCTION:
             # PRE-PRODUCTION
-            self.vop_community_code = "BINKCL"
-            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
-
-            self.offerid = "102414"
-            self.auth_type = 'Basic'
-            self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
-            self.vop_password = '73RkA59eWWosyB133Tt3rh556gBvvelVF17f'
-            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
-            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
-            self.merchant_group = "BINK_PREPROD_MRCH_GRP"
-
         else:
             # Production
-            self.vop_community_code = "BINKCL"
-            self.vop_spreedly_community_code = "BINK"
             self.vop_url = "https://api.visa.com"
-
-            self.offerid = "102414"
-            self.auth_type = 'Basic'
-            self.vop_user_id = 'FOQJBR614G1XCY1K687H21xqVQjpmmYApS77BSHxJIwF7he4w'
-            self.vop_password = '73RkA59eWWosyB133Tt3rh556gBvvelVF17f'
-            spreedly_vop_user_id = '2GB20ZMDO1T6C5UG5JBT21a8v98h-dDnWJ347eaRdVASvwoA8'
-            spreedly_vop_password = 'dOffXkB9OG6A0ZOU7IBAYf7Y709qs7zEqrFORLD'
-            self.merchant_group = "BIN_CAID_MRCH_GRP"
-
         self.spreedly_vop_auth_value = base64.b64encode(
             f'{spreedly_vop_user_id}:{spreedly_vop_password}'.encode('utf8')).decode('ascii')
 
