@@ -191,10 +191,29 @@ class Visa:
         settings.logger.error(message)
         return message
 
+    def check_success(self, response, action_code, action_name, resp_content, resp_status, resp_visa_status,
+                      resp_visa_status_code, response_message):
+        other_data = {}
+        if resp_status == VOPResultStatus.SUCCESS:
+            if action_code == ActionCode.ACTIVATE_MERCHANT:
+                activation_id = resp_content.get('activationId', None)
+                if not activation_id:
+                    resp_status = VOPResultStatus.FAILED
+                    resp_visa_status_code = 0
+                    response_message = "VOP reported success but no activationId returned"
+                    resp_visa_status['activation_error'] = response_message
+                    self._log_error_response(response, action_name, resp_visa_status_code, action_name)
+                else:
+                    other_data['activation_id'] = activation_id
+                    self._log_success_response(resp_content, action_name)
+        else:
+            self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
+
+        return resp_status, resp_visa_status_code, response_message, other_data
+
     def process_vop_response(self, response, action_name, action_code):
         status_mapping = self.ERROR_MAPPING[action_code]
         resp_content = response.json()
-        other_data = {}
         if not resp_content:
             resp_content = {}
 
@@ -222,22 +241,13 @@ class Visa:
         else:
             resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
 
-        if resp_status == VOPResultStatus.SUCCESS:
-            if action_code == ActionCode.DEACTIVATE_MERCHANT:
-                activation_id = resp_content.get('activationId', None)
-                if not activation_id:
-                    resp_status = VOPResultStatus.FAILED
-                    resp_visa_status_code = 0
-                    response_message = "VOP reported success but no activationId returned"
-                    resp_visa_status['activation_error'] = response_message
-                    self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
-                else:
-                    other_data['activation_id'] = activation_id
-                    self._log_success_response(resp_content, action_name)
-        else:
-            self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
+        return self.check_success(
+            response, action_code, action_name, resp_content,
+            resp_status, resp_visa_status, resp_visa_status_code,
+            response_message
+        )
 
-        return resp_status, resp_visa_status_code, response_message, other_data
+
 
     @staticmethod
     def get_bink_status(resp_mapping_status_code, status_mapping):
