@@ -112,7 +112,7 @@ VISA_ENCRYPTED_FILE_EXTENSION = env_var('VISA_ENCRYPTED_FILE_EXTENSION', 'pgp')
 
 TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
 
-AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "http://127.0.0.1:8200")
+AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "https://bink-uksouth-dev.vault.azure.net")
 VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
