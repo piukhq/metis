@@ -134,11 +134,12 @@ class VisaActivate(Resource):
     @staticmethod
     def post():
         visa = Visa()
-        response_status, status_code, agent_response_code, agent_message = visa.activate_card(request.json)
+        response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
         return make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
-            'agent_response_message': agent_message
+            'agent_response_message': agent_message,
+            'activate_id': other_data['activation_id']
         }), status_code)
 
 
@@ -150,7 +151,7 @@ class VisaDeActivate(Resource):
     @staticmethod
     def post():
         visa = Visa()
-        response_status, status_code, agent_response_code, agent_message = visa.deactivate_card(request.json)
+        response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
         return make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,

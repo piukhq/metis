@@ -194,6 +194,7 @@ class Visa:
     def process_vop_response(self, response, action_name, action_code):
         status_mapping = self.ERROR_MAPPING[action_code]
         resp_content = response.json()
+        other_data = {}
         if not resp_content:
             resp_content = {}
 
@@ -201,6 +202,7 @@ class Visa:
         detailed_visa_status_message = ""
         resp_visa_status = resp_content.get('responseStatus', {})
         resp_visa_status_code = resp_visa_status.get('code', "")
+
         resp_visa_status_message = resp_visa_status.get('message', "")
         resp_detail_list = resp_visa_status.get("responseStatusDetails", [])
         if len(resp_detail_list) > 0:
@@ -221,11 +223,21 @@ class Visa:
             resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
 
         if resp_status == VOPResultStatus.SUCCESS:
-            self._log_success_response(resp_content, action_name)
+            if action_code == ActionCode.DEACTIVATE_MERCHANT:
+                activation_id = resp_content.get('activationId', None)
+                if not activation_id:
+                    resp_status = VOPResultStatus.FAILED
+                    resp_visa_status_code = 0
+                    response_message = "VOP reported success but no activationId returned"
+                    resp_visa_status['activation_error'] = response_message
+                    self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
+                else:
+                    other_data['activation_id'] = activation_id
+                    self._log_success_response(resp_content, action_name)
         else:
             self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
 
-        return resp_status, resp_visa_status_code, response_message
+        return resp_status, resp_visa_status_code, response_message, other_data
 
     @staticmethod
     def get_bink_status(resp_mapping_status_code, status_mapping):
@@ -300,15 +312,19 @@ class Visa:
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_status = VOPResultStatus.RETRY
         agent_status_code = None
+        agent_message = ""
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
+        other_data = {}
 
         while retry_count:
             retry_count -= 1
             try:
                 response = self._basic_vop_request(api_endpoint, json_data)
-                resp_status, agent_status_code, agent_message = self.process_vop_response(response, action_name,
-                                                                                          action_code)
+                resp_status, agent_status_code, agent_message, other_data = self.process_vop_response(
+                    response, action_name, action_code
+                )
+
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
                 agent_status_code = 0
@@ -323,7 +339,7 @@ class Visa:
 
         status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
-        return resp_status.value, status_code, full_agent_status_code, agent_message
+        return resp_status.value, status_code, full_agent_status_code, agent_message, other_data
 
     def activate_data(self, card_info):
         return {
@@ -349,17 +365,7 @@ class Visa:
             "userKey": card_info['payment_token'],
             "offerId": self.offerid,
             "clientCommunityCode": self.vop_community_code,
-            "recurrenceLimit": "-1",
-            "activations": [
-                {
-                    "name": "MerchantGroupName",
-                    "value": self.merchant_group
-                },
-                {
-                    "name": "ExternalId",
-                    "value": card_info['merchant_slug']
-                }
-            ]
+            "activationId": card_info['activation_id'],
         }
 
     def activate_card(self, card_info):

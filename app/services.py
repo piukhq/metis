@@ -122,7 +122,7 @@ def remove_card(card_info):
         # There is no longer any requirement to redact the card with with Spreedly
         # VOP Un-enroll
 
-        response_status, status_code, agent_status_code, agent_message =\
+        response_status, status_code, agent_status_code, agent_message, _ =\
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
