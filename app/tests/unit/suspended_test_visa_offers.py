@@ -159,6 +159,7 @@ class TestVisaOffers(TestCase):
     def get_expected_add_response(self, uid, index=0):
         card = self.card_info_add[index]
         payment_token = card['payment_token']
+        visa = Visa()
         # This structure is defined in:
         # "https://hellobink.atlassian.net/wiki/spaces/ARCH/pages/934019468/Flows+-+Enrollment
         # The actual results will be compared
@@ -166,7 +167,7 @@ class TestVisaOffers(TestCase):
             "delivery": {
                 "payment_method_token": f"{payment_token}",
                 "url": "https://cert.api.visa.com/vop/v1/users/enroll",
-                "headers": "Content-Type: application/json",
+                "headers": visa.spreedly_vop_headers,
                 "body": '{'
                         f'"correlationId": "{uid}",'
                         '"userDetails": {"communityCode": "BINKCTE01",'
@@ -438,7 +439,6 @@ class TestVisaOffers(TestCase):
     def test_unenrol_success(self, mock_post, _):
         resp = self.un_enrol_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 200)
-        mock_post.assert_not_called()
         self.assertEqual(1, self.call_count, f"Error in retry logic")
 
     @httpretty.activate

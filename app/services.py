@@ -102,7 +102,7 @@ def add_card(card_info):
         card_status_code = 1
     else:
         settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')
-        card_status_code = resp['bink_status']
+        card_status_code = resp.get('bink_status', 'Unknown')
     put_account_status(card_status_code, card_id=card_info['id'])
 
     return resp
@@ -122,13 +122,15 @@ def remove_card(card_info):
         # There is no longer any requirement to redact the card with with Spreedly
         # VOP Un-enroll
 
-        response_status, status_code, agent_status_code = agent_instance.un_enroll(card_info, action_name)
+        response_status, status_code, agent_status_code, agent_message =\
+            agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
             settings.logger.info('VOP Card add unsuccessful, calling Hermes to set card status.')
-            status_mapping = get_provider_status_mappings(card_info['partner_slug'])
-            card_status_code = agent_instance.get_bink_status(agent_status_code, status_mapping)
-            put_account_status(card_status_code, card_id=card_info['id'], response_status=response_status)
+            # We will need to return something for retry from Hermes - comment in next lines when Hermes supports it
+            # status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+            # card_status_code = agent_instance.get_bink_status(agent_status_code, status_mapping)
+            # put_account_status(card_status_code, card_id=card_info['id'], response_status=response_status)
         # Note this celery task does not returned anything but we return values for test purposes or if celery removed
         return {'response_status': response_status, 'status_code': status_code}
     else:
