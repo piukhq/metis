@@ -86,6 +86,16 @@ tag-staging:
   only:
     - tags
 
+tag-preprod:
+  stage: tagging
+  image: binkops.azurecr.io/tagbot:latest
+  environment: prod
+  script:
+    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:preprod-$CI_COMMIT_SHORT_SHA" --tag "preprod-$CI_COMMIT_SHORT_SHA"
+  when: manual
+  only:
+    - VOP_develop
+
 tag-prod:
   stage: tagging
   image: binkops.azurecr.io/tagbot:latest
