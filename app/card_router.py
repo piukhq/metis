@@ -13,6 +13,7 @@ class ActionCode(Enum):
     DELETE = 'D'
     REACTIVATE = 'R'
     ACTIVATE_MERCHANT = 'M'
+    DEACTIVATE_MERCHANT = 'X'
 
 
 def celery_handler(action_code, card_info):
