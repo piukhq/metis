@@ -231,13 +231,13 @@ class Visa:
                 pass
         response_message = f"{resp_visa_status_message};{detailed_visa_status_message}"
 
-        if response_status_code >= 300 or not resp_visa_status_code:
-            resp_state = VOPResultStatus.RETRY
-        elif detailed_visa_status_code and detailed_visa_status_code in status_mapping:
+        if detailed_visa_status_code and detailed_visa_status_code in status_mapping:
             resp_state = status_mapping[detailed_visa_status_code]
             resp_visa_status_code = detailed_visa_status_code
-        else:
+        elif resp_visa_status_code:
             resp_state = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
+        elif response_status_code >= 300:
+            resp_state = VOPResultStatus.FAILED
 
         return self.check_success(
             action_code, action_name, resp_content,

@@ -3,7 +3,7 @@ import json
 import arrow
 from flask import request, make_response
 from flask_restful import Resource, Api
-from voluptuous import Schema, Required, MultipleInvalid, All, Length
+from voluptuous import Schema, Required, Optional, MultipleInvalid, All, Length
 
 from app.agents.agent_manager import AgentManager
 from app.agents.visa_offers import Visa
@@ -20,6 +20,7 @@ card_info_schema = Schema({
     Required('card_token'): All(str, Length(min=1)),
     Required('date'): int,
     Required('partner_slug'): All(str, Length(min=1)),
+    Optional('retry_id'): int
 })
 
 
