@@ -140,7 +140,7 @@ class VisaActivate(Resource):
             'response_status': response_status,
             'agent_response_code': agent_response_code,
             'agent_response_message': agent_message,
-            'activation_id': other_data['activation_id']
+            'activation_id': other_data.get('activation_id', "")
         }), status_code)
 
 
