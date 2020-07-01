@@ -2,6 +2,7 @@ import base64
 import json
 from enum import Enum
 from uuid import uuid4
+import hashlib
 
 import requests
 
@@ -311,6 +312,10 @@ class Visa:
     def _basic_vop_request(self, api_endpoint, data):
         url = f"{self.vop_url}{api_endpoint}"
         headers = {'Content-Type': 'application/json'}
+        settings.logger.info(f"VOP request being sent to {url} cert paths"
+                             f" {settings.Secrets.vop_client_certificate_path} and "
+                             f" {settings.Secrets.vop_client_key_path}"
+                             f" auth {hashlib.sha256((self.vop_user_id+self.vop_password).encode('utf8')).hexdigest()}")
         return requests.request(
             'POST', url, auth=(self.vop_user_id, self.vop_password),
             cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
@@ -328,22 +333,26 @@ class Visa:
             retry_count -= 1
             try:
                 response = self._basic_vop_request(api_endpoint, json_data)
+                settings.logger.info(f"VOP request response {response.status_code}, {response.text}")
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
+                settings.logger.error(f"VOP request exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
             except Exception as error:
                 agent_message = f"Agent exception {error}"
+                settings.logger.error(f"VOP request exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
+        settings.logger.info(f"VOP response state {resp_state} error_code {action_name}:{agent_status_code}")
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
         return resp_state.value, status_code, full_agent_status_code, agent_message, other_data
