@@ -102,9 +102,21 @@ def add_card(card_info):
         card_status_code = 1
     else:
         settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')
-        card_status_code = resp.get('bink_status', 'Unknown')
-    put_account_status(card_status_code, card_id=card_info['id'])
+        card_status_code = resp.get('bink_status', 0)  # Defaults to pending
 
+    hermes_data = {
+        'status_code': card_status_code,
+        'card_id': card_info['id'],
+        'response_state': resp.get("response_state"),
+        'response_status': resp.get("status_code"),
+        'response_message': resp.get("message"),
+        'retry_id': card_info.get("retry_id")
+    }
+    reply = put_account_status(**hermes_data)
+
+    settings.logger.info(f'Sent add request to hermes status {reply.status_code}: data '
+                         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}')
+    # Return response effect as in task but useful for test cases
     return resp
 
 
@@ -122,7 +134,7 @@ def remove_card(card_info):
         # There is no longer any requirement to redact the card with with Spreedly
         # VOP Un-enroll
 
-        response_status, status_code, agent_status_code, agent_message =\
+        response_status, status_code, agent_status_code, agent_message, _ =\
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:

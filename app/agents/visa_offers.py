@@ -178,22 +178,40 @@ class Visa:
         return message
 
     @staticmethod
-    def _log_error_response(response, resp_visa_status, resp_visa_status_code, action):
-        settings.logger.warning("Visa {} response: {}, body: {}".format(action, response, response.text))
-        status_errors = "".join(resp_visa_status.get('responseStatusDetails', ['None']))
+    def _log_error_response(resp_visa_status_code, action_name, add_message):
+        if not add_message:
+            add_message = 'Could not access the PSP receiver'
+
         psp_message_list = [
-            resp_visa_status.get('message', 'Could not access the PSP receiver'),
-            f"with code: {resp_visa_status_code} Details: ",
-            status_errors
+            f'VOP_status_code: {resp_visa_status_code}',
+            add_message
         ]
-        psp_message = "".join(psp_message_list)
-        message = 'Problem connecting to PSP. Action: Visa {}. Error:{}'.format(action, psp_message)
+        message = f'Problem with PSP call: Action: Visa {action_name}. Error:{" ".join(psp_message_list)}'
         settings.logger.error(message)
         return message
 
-    def process_vop_response(self, response, action_name, action_code):
+    def check_success(self, action_code, action_name, resp_content, resp_state, resp_visa_status,
+                      resp_visa_status_code, response_message):
+        other_data = {'activation_id': None}
+        if resp_state == VOPResultStatus.SUCCESS:
+            if action_code == ActionCode.ACTIVATE_MERCHANT:
+                activation_id = resp_content.get('activationId', None)
+                if not activation_id:
+                    resp_state = VOPResultStatus.FAILED
+                    resp_visa_status_code = 0
+                    response_message = "VOP reported success but no activationId returned"
+                    resp_visa_status['activation_error'] = response_message
+                    self._log_error_response(resp_visa_status_code, action_name, response_message)
+                else:
+                    other_data['activation_id'] = activation_id
+                    self._log_success_response(resp_content, action_name)
+        else:
+            self._log_error_response(resp_visa_status_code, action_name, response_message)
+
+        return resp_state, resp_visa_status_code, response_message, other_data
+
+    def process_vop_response(self, resp_content, response_status_code, action_name, action_code):
         status_mapping = self.ERROR_MAPPING[action_code]
-        resp_content = response.json()
         if not resp_content:
             resp_content = {}
 
@@ -201,6 +219,7 @@ class Visa:
         detailed_visa_status_message = ""
         resp_visa_status = resp_content.get('responseStatus', {})
         resp_visa_status_code = resp_visa_status.get('code', "")
+
         resp_visa_status_message = resp_visa_status.get('message', "")
         resp_detail_list = resp_visa_status.get("responseStatusDetails", [])
         if len(resp_detail_list) > 0:
@@ -212,27 +231,26 @@ class Visa:
                 pass
         response_message = f"{resp_visa_status_message};{detailed_visa_status_message}"
 
-        if response.status_code >= 300 or not resp_visa_status_code:
-            resp_status = VOPResultStatus.RETRY
-        elif detailed_visa_status_code and detailed_visa_status_code in status_mapping:
-            resp_status = status_mapping[detailed_visa_status_code]
+        if detailed_visa_status_code and detailed_visa_status_code in status_mapping:
+            resp_state = status_mapping[detailed_visa_status_code]
             resp_visa_status_code = detailed_visa_status_code
-        else:
-            resp_status = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
+        elif resp_visa_status_code:
+            resp_state = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
+        elif response_status_code >= 300:
+            resp_state = VOPResultStatus.FAILED
 
-        if resp_status == VOPResultStatus.SUCCESS:
-            self._log_success_response(resp_content, action_name)
-        else:
-            self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
-
-        return resp_status, resp_visa_status_code, response_message
+        return self.check_success(
+            action_code, action_name, resp_content,
+            resp_state, resp_visa_status, resp_visa_status_code,
+            response_message
+        )
 
     @staticmethod
     def get_bink_status(resp_mapping_status_code, status_mapping):
         if resp_mapping_status_code in status_mapping:
             bink_status = status_mapping[resp_mapping_status_code]
         else:
-            bink_status = status_mapping.get('BINK_UNKNOWN', "")
+            bink_status = status_mapping.get('BINK_UNKNOWN', 0)
         return bink_status
 
     def response_handler(self, response, action_name: str, status_mapping: dict) -> dict:
@@ -247,18 +265,19 @@ class Visa:
         resp_content = response.json()
         if not resp_content:
             resp_content = {}
-        resp_visa_status = resp_content.get('responseStatus', {})
-        resp_visa_status_code = resp_visa_status.get('code', '')
+        resp_transaction = resp_content.get('transaction', {})
+        resp_response = resp_transaction.get('response', {})
+        vop_response_status_code = resp_response.get('status', 0)
+        vop_response_body = resp_response.get('body', '{}')
+        action_code = ActionCode.ADD
+        resp_state, resp_visa_status_code, response_message, _ = self.process_vop_response(
+            json.loads(vop_response_body), vop_response_status_code, action_name, action_code)
 
-        if response.status_code >= 300 or not resp_visa_status_code:
-            message = self._log_error_response(response, resp_visa_status, resp_visa_status_code, action_name)
-            return {'message': message, 'status_code': response.status_code}
-
-        message = self._log_success_response(resp_content, action_name)
         resp_mapping_status_code = f"{action_name}:{resp_visa_status_code}"
         return {
-            'message': message,
-            'status_code': response.status_code,
+            'message': response_message,
+            'status_code': vop_response_status_code,
+            'response_state': resp_state.value,
             'bink_status': self.get_bink_status(resp_mapping_status_code, status_mapping)
         }
 
@@ -298,37 +317,41 @@ class Visa:
             headers=headers, data=data)
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
-        resp_status = VOPResultStatus.RETRY
+        resp_state = VOPResultStatus.RETRY
         agent_status_code = None
+        agent_message = ""
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
+        other_data = {}
 
         while retry_count:
             retry_count -= 1
             try:
                 response = self._basic_vop_request(api_endpoint, json_data)
-                resp_status, agent_status_code, agent_message = self.process_vop_response(response, action_name,
-                                                                                          action_code)
+                resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
+                    response.json(), response.status_code, action_name, action_code
+                )
+
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
                 agent_status_code = 0
-                resp_status = VOPResultStatus.FAILED
+                resp_state = VOPResultStatus.FAILED
             except Exception as error:
                 agent_message = f"Agent exception {error}"
                 agent_status_code = 0
-                resp_status = VOPResultStatus.FAILED
+                resp_state = VOPResultStatus.FAILED
 
-            if resp_status != VOPResultStatus.RETRY:
+            if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
-        status_code = 201 if resp_status == VOPResultStatus.SUCCESS else 200
+        status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
-        return resp_status.value, status_code, full_agent_status_code, agent_message
+        return resp_state.value, status_code, full_agent_status_code, agent_message, other_data
 
-    def activate_data(self, card_info):
+    def activate_data(self, payment_token, merchant_slug):
         return {
             "communityCode": self.vop_community_code,
-            "userKey": card_info['payment_token'],
+            "userKey": payment_token,
             "offerId": self.offerid,
             "recurrenceLimit": "-1",
             "activations": [
@@ -338,41 +361,48 @@ class Visa:
                 },
                 {
                     "name": "ExternalId",
-                    "value": card_info['merchant_slug']
+                    "value": merchant_slug
                 }
             ]
         }
 
-    def deactivate_data(self, card_info):
+    def deactivate_data(self, payment_token, activation_id):
         return {
             "communityCode": self.vop_spreedly_community_code,
-            "userKey": card_info['payment_token'],
+            "userKey": payment_token,
             "offerId": self.offerid,
             "clientCommunityCode": self.vop_community_code,
-            "recurrenceLimit": "-1",
-            "activations": [
-                {
-                    "name": "MerchantGroupName",
-                    "value": self.merchant_group
-                },
-                {
-                    "name": "ExternalId",
-                    "value": card_info['merchant_slug']
-                }
-            ]
+            "activationId": activation_id,
         }
 
     def activate_card(self, card_info):
+        try:
+            payment_token = card_info["payment_token"]
+            merchant_slug = card_info["merchant_slug"]
+            settings.logger.info(f"VOP Metis Processing Activate request: payment_token:"
+                                 f" {payment_token} merchant {merchant_slug}")
+        except KeyError:
+            settings.logger.error(f"VOP Metis Activate request failed due to missing payment_token or merchant slug")
+            return VOPResultStatus.FAILED.value, 400, "", "", {'activation_id': None}
         return self.try_vop_and_get_status(
-            self.activate_data(card_info),
+            self.activate_data(payment_token, merchant_slug),
             "Activate",
             ActionCode.ACTIVATE_MERCHANT,
             self.vop_activation
         )
 
     def deactivate_card(self, card_info):
+        try:
+            payment_token = card_info['payment_token']
+            activation_id = card_info['activation_id']
+            settings.logger.info(f"VOP Metis Processing DeActivate request: payment_token: {payment_token}"
+                                 f" activation_id {activation_id}")
+        except KeyError:
+            settings.logger.error(f"VOP Metis DeActivate request failed due to missing payment_token or activation_id")
+            return VOPResultStatus.FAILED.value, 400, "", "", {}
+
         return self.try_vop_and_get_status(
-            self.deactivate_data(card_info),
+            self.deactivate_data(payment_token, activation_id),
             "Deactivate",
             ActionCode.DEACTIVATE_MERCHANT,
             self.vop_deactivation

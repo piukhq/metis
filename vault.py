@@ -62,7 +62,7 @@ def _items(secret_name, secret_def):
 
 def secrets_from_vault():
     secrets = deepcopy(settings.Secrets.SECRETS_DEF)
-    time_delay = 0.5
+    time_delay = 10
     while secrets:
         sleep(time_delay)
         try_items = deepcopy(secrets)
@@ -70,4 +70,4 @@ def secrets_from_vault():
             ok = _items(secret_name, secret_def)
             if ok:
                 del(secrets[secret_name])
-        time_delay = 2
+        time_delay = 5

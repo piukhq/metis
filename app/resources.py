@@ -3,7 +3,7 @@ import json
 import arrow
 from flask import request, make_response
 from flask_restful import Resource, Api
-from voluptuous import Schema, Required, MultipleInvalid, All, Length
+from voluptuous import Schema, Required, Optional, MultipleInvalid, All, Length
 
 from app.agents.agent_manager import AgentManager
 from app.agents.visa_offers import Visa
@@ -20,6 +20,7 @@ card_info_schema = Schema({
     Required('card_token'): All(str, Length(min=1)),
     Required('date'): int,
     Required('partner_slug'): All(str, Length(min=1)),
+    Optional('retry_id'): int
 })
 
 
@@ -134,11 +135,12 @@ class VisaActivate(Resource):
     @staticmethod
     def post():
         visa = Visa()
-        response_status, status_code, agent_response_code, agent_message = visa.activate_card(request.json)
+        response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
         return make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
-            'agent_response_message': agent_message
+            'agent_response_message': agent_message,
+            'activation_id': other_data['activation_id']
         }), status_code)
 
 
@@ -150,7 +152,7 @@ class VisaDeActivate(Resource):
     @staticmethod
     def post():
         visa = Visa()
-        response_status, status_code, agent_response_code, agent_message = visa.deactivate_card(request.json)
+        response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
         return make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
