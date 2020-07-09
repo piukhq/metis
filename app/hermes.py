@@ -17,6 +17,8 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
     if status_code:
         # Un-enrol sends retry status and success/error status update but not payment card status
         request_data = {'status': status_code}
+    else:
+        request_data = {}
 
     if card_id:
         request_data['id'] = card_id
