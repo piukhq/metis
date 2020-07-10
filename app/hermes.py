@@ -10,29 +10,23 @@ def get_provider_status_mappings(slug):
     return {x['provider_status_code']: x['bink_status_code'] for x in status_mapping}
 
 
-def put_account_status(status_code, card_id=None, token=None, response_status=None,
-                       response_state=None, response_message="", retry_id=None):
+def put_account_status(status_code, card_id=None, token=None, **kwargs):
     if not (card_id or token):
         raise AttributeError('You must pass either a card_id or token to put_account_status.')
 
-    request_data = {'status': status_code}
+    if status_code:
+        # Un-enrol sends retry status and success/error status update but not payment card status
+        request_data = {'status': status_code}
+    else:
+        request_data = {}
 
-    if response_status:
-        request_data['response_status'] = response_status
-
-    if response_message:
-        request_data['response_message'] = response_message
-
-    if response_state:
-        request_data['response_state'] = response_state
-
-    if retry_id:
-        request_data['retry_id'] = retry_id
-
-    if id:
+    if card_id:
         request_data['id'] = card_id
     else:
         request_data['token'] = token
+
+    for kwarg in kwargs:
+        request_data[kwarg] = kwargs[kwarg]
 
     return requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
                         headers={'content-type': 'application/json',

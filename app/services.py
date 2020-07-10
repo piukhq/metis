@@ -105,14 +105,22 @@ def add_card(card_info):
         card_status_code = resp.get('bink_status', 0)  # Defaults to pending
 
     hermes_data = {
-        'status_code': card_status_code,
-        'card_id': card_info['id'],
-        'response_state': resp.get("response_state"),
-        'response_status': resp.get("status_code"),
-        'response_message': resp.get("message"),
-        'retry_id': card_info.get("retry_id")
+        'card_id': card_info['id']
     }
-    reply = put_account_status(**hermes_data)
+
+    if resp.get("response_state"):
+        hermes_data['response_state'] = resp["response_state"]
+
+    if resp.get("status_code"):
+        hermes_data['response_status'] = resp["status_code"]
+
+    if resp.get("message"):
+        hermes_data['response_message'] = resp["message"]
+
+    if card_info.get("retry_id"):
+        hermes_data['retry_id'] = card_info["retry_id"]
+
+    reply = put_account_status(card_status_code, **hermes_data)
 
     settings.logger.info(f'Sent add request to hermes status {reply.status_code}: data '
                          f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}')
@@ -134,17 +142,24 @@ def remove_card(card_info):
         # There is no longer any requirement to redact the card with with Spreedly
         # VOP Un-enroll
 
-        response_status, status_code, agent_status_code, agent_message, _ =\
+        response_state, status_code, agent_status_code, agent_message, _ =\
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
-            settings.logger.info('VOP Card add unsuccessful, calling Hermes to set card status.')
+            settings.logger.info('VOP Card delete unsuccessful, calling Hermes to log error/retry.')
             # We will need to return something for retry from Hermes - comment in next lines when Hermes supports it
-            # status_mapping = get_provider_status_mappings(card_info['partner_slug'])
-            # card_status_code = agent_instance.get_bink_status(agent_status_code, status_mapping)
-            # put_account_status(card_status_code, card_id=card_info['id'], response_status=response_status)
+            hermes_status_data = {
+                'card_id': card_info['id'],
+                'response_state': response_state,
+                'response_status': agent_status_code,
+                'response_message': agent_message,
+                'response_action': 'Delete'
+            }
+            if card_info.get("retry_id"):
+                hermes_status_data["retry_id"] = card_info["retry_id"]
+            put_account_status(None, **hermes_status_data)
         # Note this celery task does not returned anything but we return values for test purposes or if celery removed
-        return {'response_status': response_status, 'status_code': status_code}
+        return {'response_status': response_state, 'status_code': status_code}
     else:
         # Older call used with Agents prior to VOP which proxy through Spreedly
         # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
