@@ -7,6 +7,10 @@ tests:
   stage: tests
   image: olympus.azurecr.io/python:3.6
   script:
+    - mkdir -p /root/.ssh
+    - echo $DEPLOY_KEY | base64 -d > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
+    - ssh-keyscan git.bink.com > /root/.ssh/known_hosts
     - pipenv install --system --deploy --dev --ignore-pipfile
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
     - export PONTUS_USER="postgres"
