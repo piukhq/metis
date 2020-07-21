@@ -1,5 +1,4 @@
 import requests
-
 from app.utils import resolve_agent
 from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
@@ -103,9 +102,29 @@ def add_card(card_info):
         card_status_code = 1
     else:
         settings.logger.info('Card add unsuccessful, calling Hermes to set card status.')
-        card_status_code = resp['bink_status']
-    put_account_status(card_status_code, card_id=card_info['id'])
+        card_status_code = resp.get('bink_status', 0)  # Defaults to pending
 
+    hermes_data = {
+        'card_id': card_info['id']
+    }
+
+    if resp.get("response_state"):
+        hermes_data['response_state'] = resp["response_state"]
+
+    if resp.get("status_code"):
+        hermes_data['response_status'] = resp["status_code"]
+
+    if resp.get("message"):
+        hermes_data['response_message'] = resp["message"]
+
+    if card_info.get("retry_id"):
+        hermes_data['retry_id'] = card_info["retry_id"]
+
+    reply = put_account_status(card_status_code, **hermes_data)
+
+    settings.logger.info(f'Sent add request to hermes status {reply.status_code}: data '
+                         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}')
+    # Return response effect as in task but useful for test cases
     return resp
 
 
@@ -113,26 +132,55 @@ def remove_card(card_info):
     settings.logger.info('Start Remove card for {}'.format(card_info['partner_slug']))
 
     agent_instance = get_agent(card_info['partner_slug'])
-
     header = agent_instance.header
-    # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
-    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    action_name = 'Delete'
 
-    try:
-        request_data = agent_instance.remove_card_body(card_info)
-    except OAuthError:
-        # 5 = PROVIDER_SERVER_DOWN
-        # TODO: get this from gaia
-        put_account_status(5, card_id=card_info['id'])
-        return None
+    if card_info['partner_slug'] == 'visa':
+        # Note the other agents call Spreedly to Unenrol. This is incorrect as Spreedly should not
+        # be used as a Proxy to pass unmodified messages to the Agent. The use in add/enrol is an
+        # example of correct because Spreedly inserts the PAN when forwarding our message to the Agent.
+        # Note there is no longer any requirement to redact the card with with Spreedly so only VOP
+        # needs to be called to unenrol a card.
 
-    resp = post_request(url, header, request_data)
+        response_state, status_code, agent_status_code, agent_message, _ =\
+            agent_instance.un_enroll(card_info, action_name)
+        # Set card_payment status in hermes using 'id' HERMES_URL
+        if status_code != 201:
+            settings.logger.info('VOP Card delete unsuccessful, calling Hermes to log error/retry.')
+            hermes_status_data = {
+                'card_id': card_info['id'],
+                'response_state': response_state,
+                'response_status': agent_status_code,
+                'response_message': agent_message,
+                'response_action': 'Delete'
+            }
+            if card_info.get("retry_id"):
+                hermes_status_data["retry_id"] = card_info["retry_id"]
+            put_account_status(None, **hermes_status_data)
+        # put_account_status sends a async response back to Hermes.
+        # The return values below are not functional as this runs in a celery task.
+        # However, they have been kept for compatibility with other agents and to assist testing
+        return {'response_status': response_state, 'status_code': status_code}
+    else:
+        # Older call used with Agents prior to VOP which proxy through Spreedly
+        # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
+        url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
 
-    # get the status mapping for this provider from hermes.
-    status_mapping = get_provider_status_mappings(card_info['partner_slug'])
-
-    resp = agent_instance.response_handler(resp, 'Delete', status_mapping)
-    return resp
+        try:
+            request_data = agent_instance.remove_card_body(card_info)
+        except OAuthError:
+            # 5 = PROVIDER_SERVER_DOWN
+            # TODO: get this from gaia
+            put_account_status(5, card_id=card_info['id'])
+            return None
+        resp = post_request(url, header, request_data)
+        # get the status mapping for this provider from hermes.
+        status_mapping = get_provider_status_mappings(card_info['partner_slug'])
+        resp = agent_instance.response_handler(resp, action_name, status_mapping)
+        # @todo View this when looking at Metis re-design
+        # This response does nothing as it is in an celery task.  No message is returned to Hermes.
+        # getting status mapping is wrong as it is not returned nor would it be used by Hermes.
+        return resp
 
 
 def reactivate_card(card_info):
