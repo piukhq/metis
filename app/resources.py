@@ -147,7 +147,7 @@ class VisaActivate(Resource):
 api.add_resource(VisaActivate, '/visa/activate/')
 
 
-class VisaDeActivate(Resource):
+class VisaDeactivate(Resource):
 
     @staticmethod
     def post():
@@ -160,4 +160,4 @@ class VisaDeActivate(Resource):
         }), status_code)
 
 
-api.add_resource(VisaDeActivate, '/visa/deactivate/')
+api.add_resource(VisaDeactivate, '/visa/deactivate/')

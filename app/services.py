@@ -136,18 +136,17 @@ def remove_card(card_info):
     action_name = 'Delete'
 
     if card_info['partner_slug'] == 'visa':
-        # Note the other agents use Spreedly as a Proxy which may need to be changed at some stage by adding to each
-        # agent_instance an un_enroll method and removing remove_card_body(card_info)
-        # For VOP we will un-enroll directly with VOP and not use Spreedly
-        # There is no longer any requirement to redact the card with with Spreedly
-        # VOP Un-enroll
+        # Note the other agents call Spreedly to Unenrol. This is incorrect as Spreedly should not
+        # be used as a Proxy to pass unmodified messages to the Agent. The use in add/enrol is an
+        # example of correct because Spreedly inserts the PAN when forwarding our message to the Agent.
+        # Note there is no longer any requirement to redact the card with with Spreedly so only VOP
+        # needs to be called to unenrol a card.
 
         response_state, status_code, agent_status_code, agent_message, _ =\
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
             settings.logger.info('VOP Card delete unsuccessful, calling Hermes to log error/retry.')
-            # We will need to return something for retry from Hermes - comment in next lines when Hermes supports it
             hermes_status_data = {
                 'card_id': card_info['id'],
                 'response_state': response_state,
@@ -158,7 +157,9 @@ def remove_card(card_info):
             if card_info.get("retry_id"):
                 hermes_status_data["retry_id"] = card_info["retry_id"]
             put_account_status(None, **hermes_status_data)
-        # Note this celery task does not returned anything but we return values for test purposes or if celery removed
+        # put_account_status sends a async response back to Hermes.
+        # The return values below are not functional as this runs in a celery task.
+        # However, they have been kept for compatibility with other agents and to assist testing
         return {'response_status': response_state, 'status_code': status_code}
     else:
         # Older call used with Agents prior to VOP which proxy through Spreedly
@@ -176,6 +177,9 @@ def remove_card(card_info):
         # get the status mapping for this provider from hermes.
         status_mapping = get_provider_status_mappings(card_info['partner_slug'])
         resp = agent_instance.response_handler(resp, action_name, status_mapping)
+        # @todo View this when looking at Metis re-design
+        # This response does nothing as it is in an celery task.  No message is returned to Hermes.
+        # getting status mapping is wrong as it is not returned nor would it be used by Hermes.
         return resp
 
 
