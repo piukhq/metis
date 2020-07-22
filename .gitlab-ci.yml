@@ -31,7 +31,7 @@ flake8:
   stage: tests
   image: olympus.azurecr.io/python:3.6
   script:
-    - flake8 *
+    - flake8
 
 build-develop:
   stage: build
