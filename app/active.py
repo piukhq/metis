@@ -1,5 +1,5 @@
 AGENTS = {
     'mastercard': 'mastercard.MasterCard',
     'amex': 'amex.Amex',
-    'visa': 'visa.Visa',
+    'visa': 'visa_offers.Visa'
 }

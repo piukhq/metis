@@ -7,6 +7,10 @@ tests:
   stage: tests
   image: olympus.azurecr.io/python:3.6
   script:
+    - mkdir -p /root/.ssh
+    - echo $DEPLOY_KEY | base64 -d > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
+    - ssh-keyscan git.bink.com > /root/.ssh/known_hosts
     - pipenv install --system --deploy --dev --ignore-pipfile
     - export PONTUS_DATABASE="${POSTGRES_NAME}"
     - export PONTUS_USER="postgres"
@@ -27,7 +31,7 @@ flake8:
   stage: tests
   image: olympus.azurecr.io/python:3.6
   script:
-    - flake8 *
+    - flake8
 
 build-develop:
   stage: build
@@ -50,6 +54,20 @@ tag-develop:
     - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:latest" --tag "develop-$CI_COMMIT_SHORT_SHA"
   only:
     - develop
+
+build-preprod:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker build --pull -t "$CI_REGISTRY/metis:preprod-$CI_COMMIT_SHORT_SHA" .
+    - docker push "$CI_REGISTRY/metis:preprod-$CI_COMMIT_SHORT_SHA"
+  when: manual
+  only:
+    - VOP_develop
 
 build-master:
   stage: build

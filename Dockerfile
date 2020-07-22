@@ -1,20 +1,16 @@
-FROM python:3.6-alpine
+FROM binkhq/python:3.6
 
 WORKDIR /app
 ADD . .
 
-RUN apk add --no-cache --virtual build \
-      build-base \
-      libxslt-dev \
-      openssh \
-      git && \
-    apk add --no-cache \
-      libxslt \
-      postgresql-dev && \
-    mkdir -p /root/.ssh && mv /app/deploy_key /root/.ssh/id_rsa && \
-    chmod 0600 /root/.ssh/id_rsa && \
-    ssh-keyscan gitlab.com > /root/.ssh/known_hosts && \
-    pip install gunicorn pipenv && pipenv install --system --deploy --ignore-pipfile && \
-    apk del --no-cache build
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+ENV TZ=UTC
 
-CMD ["/usr/local/bin/gunicorn", "-c", "gunicorn.py", "wsgi:app"]
+RUN apt-get update && apt-get -y install libxslt-dev zlib1g-dev gcc && \
+    pip install --no-cache-dir pipenv==2018.11.26 gunicorn && \
+    pipenv install --system --deploy --ignore-pipfile && \
+    apt-get -y autoremove gcc && rm -rf /var/lib/apt/lists/*
+
+CMD [ "gunicorn", "--workers=2", "--threads=2", "--error-logfile=-", \
+                  "--access-logfile=-", "--bind=0.0.0.0:9000", "wsgi:app" ]

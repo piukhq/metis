@@ -1,13 +1,16 @@
-import arrow
 import json
-from app.services import create_prod_receiver, retain_payment_method_token
-from flask_restful import Resource, Api
+
+import arrow
 from flask import request, make_response
+from flask_restful import Resource, Api
+from voluptuous import Schema, Required, Optional, MultipleInvalid, All, Length
+
 from app.agents.agent_manager import AgentManager
+from app.agents.visa_offers import Visa
 from app.auth import authorized
 from app.card_router import process_card, ActionCode
+from app.services import create_prod_receiver, retain_payment_method_token
 from settings import logger
-from voluptuous import Schema, Required, MultipleInvalid, All, Length
 
 api = Api()
 
@@ -17,6 +20,7 @@ card_info_schema = Schema({
     Required('card_token'): All(str, Length(min=1)),
     Required('date'): int,
     Required('partner_slug'): All(str, Length(min=1)),
+    Optional('retry_id'): int
 })
 
 
@@ -124,3 +128,36 @@ class Notify(Resource):
 
 
 api.add_resource(Notify, '/payment_service/notify/<string:provider_slug>')
+
+
+class VisaActivate(Resource):
+
+    @staticmethod
+    def post():
+        visa = Visa()
+        response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
+        return make_response(json.dumps({
+            'response_status': response_status,
+            'agent_response_code': agent_response_code,
+            'agent_response_message': agent_message,
+            'activation_id': other_data.get('activation_id', "")
+        }), status_code)
+
+
+api.add_resource(VisaActivate, '/visa/activate/')
+
+
+class VisaDeactivate(Resource):
+
+    @staticmethod
+    def post():
+        visa = Visa()
+        response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
+        return make_response(json.dumps({
+            'response_status': response_status,
+            'agent_response_code': agent_response_code,
+            'agent_response_message': agent_message
+        }), status_code)
+
+
+api.add_resource(VisaDeactivate, '/visa/deactivate/')
