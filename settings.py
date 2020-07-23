@@ -14,6 +14,8 @@ SPREEDLY_SIGNING_SECRET = env_var('SPREEDLY_SIGNING_SECRET',
                                   '4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa')
 SPREEDLY_BASE_URL = env_var('SPREEDLY_BASE_URL', 'https://core.spreedly.com/v1')
 
+VOP_SPREEDLY_BASE_URL = env_var('VOP_SPREEDLY_BASE_URL', 'https://core.spreedly.com/v1')
+
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
 DEBUG = env_var("METIS_DEBUG", False)
