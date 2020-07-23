@@ -65,7 +65,7 @@ class PaymentCard(Resource):
             return make_response('Request parameters not complete', 400)
 
         if action_code == ActionCode.ADD:
-            resp = retain_payment_method_token(req_data['payment_token'])
+            resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
             if resp.status_code != 200:
                 logger.info(
                     'Retain unsuccessful: HTTP {} {} {} // Payment token: {}'.format(
