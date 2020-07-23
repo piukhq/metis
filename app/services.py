@@ -14,6 +14,12 @@ username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
 # username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
 
 
+def get_spreedly_url(partner_slug):
+    if partner_slug == 'visa' and settings.VOP_SPREEDLY_BASE_URL and not settings.STUBBED_VOP_URL:
+        return settings.VOP_SPREEDLY_BASE_URL
+    return settings.SPREEDLY_BASE_URL
+
+
 def create_receiver(hostname, receiver_type):
     header = {'Content-Type': 'application/xml'}
     """Creates a receiver on the Spreedly environment.
@@ -75,7 +81,7 @@ def add_card(card_info):
 
     agent_instance = get_agent(card_info['partner_slug'])
     header = agent_instance.header
-    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    url = '{}/receivers/{}'.format(get_spreedly_url(card_info['partner_slug']), agent_instance.receiver_token())
 
     settings.logger.info('Create request data {}'.format(card_info))
     try:
@@ -189,7 +195,7 @@ def reactivate_card(card_info):
     agent_instance = get_agent(card_info['partner_slug'])
 
     header = agent_instance.header
-    url = '{}/receivers/{}'.format(settings.SPREEDLY_BASE_URL, agent_instance.receiver_token())
+    url = '{}/receivers/{}'.format(get_spreedly_url(card_info['partner_slug']), agent_instance.receiver_token())
     request_data = agent_instance.reactivate_card_body(card_info)
 
     resp = post_request(url, header, request_data)
@@ -217,7 +223,7 @@ def get_agent(partner_slug):
     return agent_class()
 
 
-def retain_payment_method_token(payment_method_token):
-    url = '{}/payment_methods/{}/retain.json'.format(settings.SPREEDLY_BASE_URL, payment_method_token)
+def retain_payment_method_token(payment_method_token, partner_slug=None):
+    url = '{}/payment_methods/{}/retain.json'.format(get_spreedly_url(partner_slug), payment_method_token)
     resp = requests.put(url, auth=(username, password), headers={'Content-Type': 'application/json'})
     return resp
