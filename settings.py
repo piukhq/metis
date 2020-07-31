@@ -176,3 +176,15 @@ class Secrets:
 
 if AZURE_VAULT_URL:
     secrets_from_vault()
+else:
+    Secrets.vop_client_certificate_path = None
+    Secrets.vop_client_key_path = None
+    Secrets.spreedly_receive_token = "visa"
+    Secrets.vop_user_id = "test"
+    Secrets.vop_password = "test"
+    Secrets.spreedly_vop_user_id = "test"
+    Secrets.spreedly_vop_password = "test"
+    Secrets.vop_community_code = "community_code"
+    Secrets.vop_spreedly_community_code = "spreedly_code"
+    Secrets.vop_merchant_group = "test_merch"
+    Secrets.vop_offerid = "12345"
