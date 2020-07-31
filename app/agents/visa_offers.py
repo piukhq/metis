@@ -239,6 +239,13 @@ class Visa:
             resp_state = status_mapping.get(resp_visa_status_code, VOPResultStatus.FAILED)
         elif response_status_code >= 300:
             resp_state = VOPResultStatus.FAILED
+        else:
+            resp_state = VOPResultStatus.FAILED
+            if not resp_visa_status_message:
+                resp_visa_status_message = "No Visa status message"
+            if not detailed_visa_status_message:
+                detailed_visa_status_message = "No details given - Invalid VOP reply"
+                response_message = f"{resp_visa_status_message};{detailed_visa_status_message}"
 
         return self.check_success(
             action_code, action_name, resp_content,
@@ -312,14 +319,19 @@ class Visa:
     def _basic_vop_request(self, api_endpoint, data):
         url = f"{self.vop_url}{api_endpoint}"
         headers = {'Content-Type': 'application/json'}
-        settings.logger.info(f"VOP request being sent to {url} cert paths"
-                             f" {settings.Secrets.vop_client_certificate_path} and "
-                             f" {settings.Secrets.vop_client_key_path}"
-                             f" auth {hashlib.sha256((self.vop_user_id+self.vop_password).encode('utf8')).hexdigest()}")
-        return requests.request(
-            'POST', url, auth=(self.vop_user_id, self.vop_password),
-            cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
-            headers=headers, data=data)
+        if settings.STUBBED_VOP_URL:
+            settings.logger.info(f"VOP Mock request to Pelops being sent to: {url}")
+            return requests.request('POST', url, headers=headers, data=data)
+        else:
+            settings.logger.info(
+                f"VOP request being sent to {url} cert paths"
+                f" {settings.Secrets.vop_client_certificate_path} and "
+                f" {settings.Secrets.vop_client_key_path}"
+                f" auth {hashlib.sha256((self.vop_user_id + self.vop_password).encode('utf8')).hexdigest()}")
+            return requests.request(
+                'POST', url, auth=(self.vop_user_id, self.vop_password),
+                cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
+                headers=headers, data=data)
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
         resp_state = VOPResultStatus.RETRY
