@@ -123,7 +123,9 @@ class Secrets:
     # These attributes will contain the secrets
     vop_client_certificate_path = None
     vop_client_key_path = None
-    spreedly_receive_token = None
+    spreedly_visa_receive_token = None
+    spreedly_amex_receive_token = None
+    spreedly_mastercard_receive_token = None
     vop_user_id = None
     vop_password = None
     spreedly_vop_user_id = None
@@ -132,6 +134,10 @@ class Secrets:
     vop_spreedly_community_code = None
     vop_merchant_group = None
     vop_offerid = None
+    amex_client_id = None
+    amex_client_secret = None
+    spreedly_oauth_username = None
+    spreedly_oauth_password = None
 
     # One entry for each of the above attributes is required for app to start  The secret is stored in the attribute
     # unless file path is declared in which case the secret is saved to the file and the attribute set to the file path
@@ -144,8 +150,14 @@ class Secrets:
             "vault_name": "/vop/clientKey",
             "file_path": "/tmp/vop_client_key.pem",
         },
-        "spreedly_receive_token": {
-            "vault_name": "/spreedly/receiveToken"
+        "spreedly_visa_receive_token": {
+            "vault_name": "/spreedly/visaReceiveToken"
+        },
+        "spreedly_amex_receive_token": {
+            "vault_name": "/spreedly/amexReceiveToken"
+        },
+        "spreedly_mastercard_receive_token": {
+            "vault_name": "/spreedly/mastercardReceiveToken"
         },
         "vop_community_code": {
             "vault_name": "/vop/communityCode"
@@ -170,7 +182,19 @@ class Secrets:
         },
         "vop_merchant_group": {
             "vault_name": "/vop/merchantGroup"
-        }
+        },
+        "amex_client_id": {
+            "vault_name": "/amex/clientId"
+        },
+        "amex_client_secret": {
+            "vault_name": "/amex/clientSecret"
+        },
+        "spreedly_oauth_username": {
+            "vault_name": "/spreedly/oAuthUsername"
+        },
+        "spreedly_oauth_password": {
+            "vault_name": "/spreedly/oAuthPassword"
+        },
     }
 
 
@@ -179,7 +203,9 @@ if AZURE_VAULT_URL:
 else:
     Secrets.vop_client_certificate_path = None
     Secrets.vop_client_key_path = None
-    Secrets.spreedly_receive_token = "visa"
+    Secrets.spreedly_visa_receive_token = "visa"
+    Secrets.spreedly_amex_receive_token = "amex"
+    Secrets.spreedly_mastercard_receive_token = "mastercard"
     Secrets.vop_user_id = "test"
     Secrets.vop_password = "test"
     Secrets.spreedly_vop_user_id = "test"
@@ -188,3 +214,7 @@ else:
     Secrets.vop_spreedly_community_code = "spreedly_code"
     Secrets.vop_merchant_group = "test_merch"
     Secrets.vop_offerid = "12345"
+    Secrets.amex_client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
+    Secrets.amex_client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
+    Secrets.spreedly_oauth_username = "Yc7xn3gDP73PPOQLEB2BYpv31EV"
+    Secrets.spreedly_oauth_password = "test"

@@ -5,9 +5,9 @@ from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
-password = '4m8tVKWHvakjhfBXnRVDbfkOArB9NvAyo9U6lWtVulb2thuI6T439blRbQWGwQcH'
+password = settings.Secrets.spreedly_oauth_password
 # Production
-# This username is used for Amex testing, Visa and MasterCard use one above
+# This username is used for Amex testing, Visa and MasterCard use one below
 username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
 # Testing
 # Username used for MasterCard and Visa testing only

@@ -31,7 +31,7 @@ class MasterCard:
         if settings.TESTING:
             return 'mastercard' + '/deliver.xml'
         else:
-            return 'SiXfsuR5TQJ87wjH2O5Mo1I5WR' + '/deliver.xml'
+            return f"{settings.Secrets.spreedly_mastercard_receive_token}/deliver.xml"
 
     def request_header(self):
         header = '<![CDATA[Content-Type: text/xml;charset=utf-8]]>'
