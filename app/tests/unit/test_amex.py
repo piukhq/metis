@@ -9,6 +9,7 @@ import app.agents.amex as amex
 class TestAmex(TestCase):
     def setUp(self):
         settings.TESTING = True
+        settings.STUBBED_AMEX_URL = "http://localhost"
         self.amex = amex.Amex()
 
         self.card_info = {'partner_slug': 'amex',
