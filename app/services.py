@@ -6,12 +6,7 @@ import settings
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = settings.Secrets.spreedly_oauth_password
-# Production
-# This username is used for Amex testing, Visa and MasterCard use one below
-username = '1Lf7DiKgkcx5Anw7QxWdDxaKtTa'
-# Testing
-# Username used for MasterCard and Visa testing only
-# username = 'Yc7xn3gDP73PPOQLEB2BYpv31EV'
+username = settings.Secrets.spreedly_oauth_username
 
 
 def get_spreedly_url(partner_slug):
