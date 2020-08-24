@@ -26,7 +26,7 @@ DEV_PORT = env_var("DEV_PORT", "5050")
 TESTING = env_var("METIS_TESTING", False)
 PRE_PRODUCTION = env_var("METIS_PRE_PRODUCTION", False)
 
-STUBBED_AMEX_URL = env_var("STUBBED_AMEX_URL", '')
+STUBBED_AMEX_URL = env_var("STUBBED_AMEX_URL", "http://pelops")
 STUBBED_VOP_URL = env_var("STUBBED_VOP_URL", '')
 
 HERMES_URL = env_var("HERMES_URL", 'http://127.0.0.1:5010')
