@@ -31,7 +31,7 @@ class Amex:
         self.client_id = settings.Secrets.amex_client_id
         self.client_secret = settings.Secrets.amex_client_secret
         if settings.TESTING:
-            self.url = 'https://api.qa.americanexpress.com'
+            self.url = settings.STUBBED_AMEX_URL
             self.rec_token = 'amex' + '/deliver.xml'
         else:
             # Production
