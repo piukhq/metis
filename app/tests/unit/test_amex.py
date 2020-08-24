@@ -42,7 +42,7 @@ class TestAmex(TestCase):
         self.assertIn(result[:6], '<![CDATA[')
         self.assertIn(result[9:39], 'Content-Type: application/json')
         self.assertIn(result[40:55], 'Authorization: ')
-        self.assertIn(result[169:219], f'X-AMEX-API-KEY: {self.amex.client_id}')
+        self.assertIn(f'X-AMEX-API-KEY: {self.amex.client_id}', result)
 
     def test_remove_card_request_body(self):
         result = self.amex.remove_card_request_body(self.card_info)
