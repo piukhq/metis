@@ -27,18 +27,16 @@ class Amex:
     distrChan = '9999'  # 'Amex to provide'
 
     def __init__(self):
+        # Amex OAuth details
+        self.client_id = settings.Secrets.amex_client_id
+        self.client_secret = settings.Secrets.amex_client_secret
         if settings.TESTING:
-            # Amex OAuth details
-            self.client_id = "e0e1114e-b63d-4e72-882b-29ad364573ac"
-            self.client_secret = "a44bfb98-239c-4ac0-85ae-685ed110e3af"
-            self.url = 'https://api.qa.americanexpress.com'
+            self.url = settings.STUBBED_AMEX_URL
             self.rec_token = 'amex' + '/deliver.xml'
         else:
             # Production
-            self.client_id = "91d207ec-267f-469f-97b2-883d4cfce44d"
-            self.client_secret = "27230718-dce2-4627-a505-c6229f984dd0"
             self.url = 'https://api.americanexpress.com'
-            self.rec_token = 'ZQLPEvBP4jaaYhxHDl7SWobMXDt' + '/deliver.xml'
+            self.rec_token = f"{settings.Secrets.spreedly_amex_receive_token}/deliver.xml"
 
     def add_url(self):
         return '{}{}'.format(self.url, res_path_sync)

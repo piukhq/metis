@@ -131,7 +131,7 @@ class Visa:
         self.vop_deactivation = "/vop/v1/deactivations/merchant"
         self.vop_unenroll = "/vop/v1/users/unenroll"
         self.auth_type = 'Basic'
-        self.spreedly_receive_token = settings.Secrets.spreedly_receive_token
+        self.spreedly_receive_token = settings.Secrets.spreedly_visa_receive_token
         self.vop_community_code = settings.Secrets.vop_community_code
         self.vop_spreedly_community_code = settings.Secrets.vop_spreedly_community_code
         self.offerid = settings.Secrets.vop_offerid
