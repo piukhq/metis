@@ -430,9 +430,11 @@ class Visa:
         )
 
     def un_enroll(self, card_info, action_name):
+        payment_token = card_info["payment_token"]
+        settings.logger.info(f"VOP Metis processing unenrol request, payment_token: {payment_token}")
         data = {
             "correlationId": str(uuid4()),
             "communityCode": self.vop_spreedly_community_code,
-            "userKey": card_info['payment_token'],
+            "userKey": payment_token,
         }
-        return self.try_vop_and_get_status(data, action_name, card_info['action_code'], self.vop_unenroll)
+        return self.try_vop_and_get_status(data, action_name, card_info["action_code"], self.vop_unenroll)
