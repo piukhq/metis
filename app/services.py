@@ -1,8 +1,11 @@
+from typing import Union
+
 import requests
-from app.utils import resolve_agent
+
+import settings
 from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
-import settings
+from app.utils import resolve_agent
 
 # Username and password from Spreedly site - Loyalty Angels environments
 password = settings.Secrets.spreedly_oauth_password
@@ -15,6 +18,33 @@ def get_spreedly_url(partner_slug):
     return settings.SPREEDLY_BASE_URL
 
 
+def refresh_oauth_token():
+    global password
+    pass
+
+
+def send_request(method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response=True):
+    settings.logger.info(f'{method} Spreedly Request to URL: {url}')
+    params = {
+        'method': method,
+        'url': url,
+        'auth': (username, password),
+        'headers': headers
+    }
+    if request_data:
+        params['data'] = request_data
+
+    resp = requests.request(**params)
+    if resp.status_code in [401, 403]:
+        refresh_oauth_token()
+        resp = requests.request(**params)
+
+    if log_response:
+        settings.logger.info(f'Spreedly {method} response: {resp.text}')
+
+    return resp
+
+
 def create_receiver(hostname, receiver_type):
     header = {'Content-Type': 'application/xml'}
     """Creates a receiver on the Spreedly environment.
@@ -24,9 +54,9 @@ def create_receiver(hostname, receiver_type):
     url = settings.SPREEDLY_BASE_URL + '/receivers.xml'
     xml_data = '<receiver>' \
                '  <receiver_type>' + receiver_type + '</receiver_type>' \
-               '  <hostnames>' + hostname + '</hostnames>' \
-               '</receiver>'
-    resp = requests.post(url, auth=(username, password), headers=header, data=xml_data)
+                                                     '  <hostnames>' + hostname + '</hostnames>' \
+                                                                                  '</receiver>'
+    resp = send_request('POST', url, header, xml_data, log_response=False)
     return resp
 
 
@@ -39,8 +69,8 @@ def create_prod_receiver(receiver_type):
     url = settings.SPREEDLY_BASE_URL + '/receivers.xml'
     xml_data = '<receiver>' \
                '  <receiver_type>' + receiver_type + '</receiver_type>' \
-               '</receiver>'
-    resp = requests.post(url, auth=(username, password), headers=header, data=xml_data)
+                                                     '</receiver>'
+    resp = send_request('POST', url, header, xml_data, log_response=False)
     return resp
 
 
@@ -52,20 +82,15 @@ def create_sftp_receiver(sftp_details):
     url = settings.SPREEDLY_BASE_URL + '/receivers.xml'
     xml_data = '<receiver>' \
                '  <receiver_type>' + sftp_details["receiver_type"] + '</receiver_type>' \
-               '  <hostnames>' + sftp_details["hostnames"] + '</hostnames>' \
-               '  <protocol>' \
-               '    <user>' + sftp_details["username"] + '</user>' \
-               '    <password>' + sftp_details["password"] + '</password>' \
-               '  </protocol>' \
-               '</receiver>'
-    resp = requests.post(url, auth=(username, password), headers=header, data=xml_data)
-    return resp
-
-
-def post_request(url, header, request_data):
-    settings.logger.info('POST Spreedly Request to URL: {}'.format(url))
-    resp = requests.post(url, auth=(username, password), headers=header, data=request_data)
-    settings.logger.info('Spreedly POST response: {}'.format(resp.text))
+                                                                     '  <hostnames>' + sftp_details[
+                   "hostnames"] + '</hostnames>' \
+                                  '  <protocol>' \
+                                  '    <user>' + sftp_details["username"] + '</user>' \
+                                                                            '    <password>' + sftp_details[
+                   "password"] + '</password>' \
+                                 '  </protocol>' \
+                                 '</receiver>'
+    resp = send_request('POST', url, header, xml_data, log_response=False)
     return resp
 
 
@@ -88,7 +113,7 @@ def add_card(card_info):
         return None
     settings.logger.info('POST URL {}, header: {} *-* {}'.format(url, header, request_data))
 
-    resp = post_request(url, header, request_data)
+    resp = send_request('POST', url, header, request_data)
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info['partner_slug'])
@@ -143,7 +168,7 @@ def remove_card(card_info):
         # Note there is no longer any requirement to redact the card with with Spreedly so only VOP
         # needs to be called to unenrol a card.
 
-        response_state, status_code, agent_status_code, agent_message, _ =\
+        response_state, status_code, agent_status_code, agent_message, _ = \
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
@@ -174,7 +199,7 @@ def remove_card(card_info):
             # TODO: get this from gaia
             put_account_status(5, card_id=card_info['id'])
             return None
-        resp = post_request(url, header, request_data)
+        resp = send_request('POST', url, header, request_data)
         # get the status mapping for this provider from hermes.
         status_mapping = get_provider_status_mappings(card_info['partner_slug'])
         resp = agent_instance.response_handler(resp, action_name, status_mapping)
@@ -193,7 +218,7 @@ def reactivate_card(card_info):
     url = '{}/receivers/{}'.format(get_spreedly_url(card_info['partner_slug']), agent_instance.receiver_token())
     request_data = agent_instance.reactivate_card_body(card_info)
 
-    resp = post_request(url, header, request_data)
+    resp = send_request('POST', url, header, request_data)
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info['partner_slug'])
@@ -220,5 +245,5 @@ def get_agent(partner_slug):
 
 def retain_payment_method_token(payment_method_token, partner_slug=None):
     url = '{}/payment_methods/{}/retain.json'.format(get_spreedly_url(partner_slug), payment_method_token)
-    resp = requests.put(url, auth=(username, password), headers={'Content-Type': 'application/json'})
+    resp = send_request('POST', url, {'Content-Type': 'application/json'})
     return resp
