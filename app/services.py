@@ -36,11 +36,12 @@ def send_request(method: str, url: str, headers: dict, request_data: Union[dict,
 
     resp = requests.request(**params)
     if resp.status_code in [401, 403]:
+        settings.logger.info(f'Spreedly {method} status code: {resp.status_code}, reloading oauth password from Vault')
         refresh_oauth_token()
         resp = requests.request(**params)
 
     if log_response:
-        settings.logger.info(f'Spreedly {method} response: {resp.text}')
+        settings.logger.info(f'Spreedly {method} status code: {resp.status_code} response: {resp.text}')
 
     return resp
 
@@ -245,5 +246,5 @@ def get_agent(partner_slug):
 
 def retain_payment_method_token(payment_method_token, partner_slug=None):
     url = '{}/payment_methods/{}/retain.json'.format(get_spreedly_url(partner_slug), payment_method_token)
-    resp = send_request('POST', url, {'Content-Type': 'application/json'})
+    resp = send_request('PUT', url, {'Content-Type': 'application/json'})
     return resp
