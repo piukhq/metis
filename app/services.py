@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Union
 
 import requests
@@ -6,8 +7,9 @@ import settings
 from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
-
 # Username and password from Spreedly site - Loyalty Angels environments
+from vault import fetch_secrets
+
 password = settings.Secrets.spreedly_oauth_password
 username = settings.Secrets.spreedly_oauth_username
 
@@ -18,9 +20,12 @@ def get_spreedly_url(partner_slug):
     return settings.SPREEDLY_BASE_URL
 
 
-def refresh_oauth_token():
+def refresh_oauth_password() -> None:
     global password
-    pass
+    secret_name = 'spreedly_oauth_password'
+    secret_def = deepcopy(settings.Secrets.SECRETS_DEF[secret_name])
+    if fetch_secrets(secret_name, secret_def) and password != settings.Secrets.spreedly_oauth_password:
+        password = settings.Secrets.spreedly_oauth_password
 
 
 def send_request(method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response=True):
@@ -28,17 +33,16 @@ def send_request(method: str, url: str, headers: dict, request_data: Union[dict,
     params = {
         'method': method,
         'url': url,
-        'auth': (username, password),
         'headers': headers
     }
     if request_data:
         params['data'] = request_data
 
-    resp = requests.request(**params)
+    resp = requests.request(**params, auth=(username, password))
     if resp.status_code in [401, 403]:
         settings.logger.info(f'Spreedly {method} status code: {resp.status_code}, reloading oauth password from Vault')
-        refresh_oauth_token()
-        resp = requests.request(**params)
+        refresh_oauth_password()
+        resp = requests.request(**params, auth=(username, password))
 
     if log_response:
         settings.logger.info(f'Spreedly {method} status code: {resp.status_code} response: {resp.text}')
