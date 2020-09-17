@@ -38,18 +38,10 @@ def refresh_oauth_password() -> None:
 
 
 def send_request(
-    method: str,
-    url: str,
-    headers: dict,
-    request_data: Union[dict, str] = None,
-    log_response=True
+    method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response=True
 ) -> requests.Response:
     settings.logger.info(f"{method} Spreedly Request to URL: {url}")
-    params = {
-        "method": method,
-        "url": url,
-        "headers": headers
-    }
+    params = {"method": method, "url": url, "headers": headers}
     if request_data:
         params["data"] = request_data
 
@@ -146,9 +138,7 @@ def add_card(card_info: dict) -> requests.Response:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
 
-    hermes_data = {
-        "card_id": card_info["id"]
-    }
+    hermes_data = {"card_id": card_info["id"]}
 
     if resp.get("response_state"):
         hermes_data["response_state"] = resp["response_state"]
@@ -164,8 +154,10 @@ def add_card(card_info: dict) -> requests.Response:
 
     reply = put_account_status(card_status_code, **hermes_data)
 
-    settings.logger.info(f'Sent add request to hermes status {reply.status_code}: data '
-                         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}')
+    settings.logger.info(
+        f"Sent add request to hermes status {reply.status_code}: data "
+        f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}'
+    )
     # Return response effect as in task but useful for test cases
     return resp
 
@@ -184,8 +176,9 @@ def remove_card(card_info: dict) -> requests.Response:
         # Note there is no longer any requirement to redact the card with with Spreedly so only VOP
         # needs to be called to unenrol a card.
 
-        response_state, status_code, agent_status_code, agent_message, _ = \
-            agent_instance.un_enroll(card_info, action_name)
+        response_state, status_code, agent_status_code, agent_message, _ = agent_instance.un_enroll(
+            card_info, action_name
+        )
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
             settings.logger.info("VOP Card delete unsuccessful, calling Hermes to log error/retry.")
@@ -194,7 +187,7 @@ def remove_card(card_info: dict) -> requests.Response:
                 "response_state": response_state,
                 "response_status": agent_status_code,
                 "response_message": agent_message,
-                "response_action": "Delete"
+                "response_action": "Delete",
             }
             if card_info.get("retry_id"):
                 hermes_status_data["retry_id"] = card_info["retry_id"]
@@ -254,7 +247,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
     return resp
 
 
-def get_agent(partner_slug: str) -> Type['AgentBase()']:
+def get_agent(partner_slug: str) -> Type["AgentBase()"]:
     agent_class = resolve_agent(partner_slug)
     return agent_class()
 
