@@ -28,9 +28,13 @@ def get_spreedly_url(partner_slug: str) -> str:
 def refresh_oauth_password() -> None:
     global PASSWORD
     secret_name = "spreedly_oauth_password"
-    secret_def = deepcopy(settings.Secrets.SECRETS_DEF[secret_name])
-    if fetch_secrets(secret_name, secret_def) and PASSWORD != settings.Secrets.spreedly_oauth_password:
-        PASSWORD = settings.Secrets.spreedly_oauth_password
+    try:
+        secret_def = settings.Secrets.SECRETS_DEF[secret_name]
+    except KeyError:
+        settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
+    else:
+        if fetch_secrets(secret_name, deepcopy(secret_def)) and PASSWORD != settings.Secrets.spreedly_oauth_password:
+            PASSWORD = settings.Secrets.spreedly_oauth_password
 
 
 def send_request(
