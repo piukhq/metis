@@ -43,7 +43,7 @@ def _save_secret_to_file(secret_name, secret, file_path, failed_message):
     return ok
 
 
-def _items(secret_name, secret_def):
+def fetch_secrets(secret_name, secret_def):
     failed_message = f"FAILED to set {secret_name} from vault: {secret_def['vault_name']}"
     secret = _get_secret(secret_def['vault_name'], failed_message)
     file_path = secret_def.get('file_path', None)
@@ -67,7 +67,7 @@ def secrets_from_vault():
         sleep(time_delay)
         try_items = deepcopy(secrets)
         for secret_name, secret_def in try_items.items():
-            ok = _items(secret_name, secret_def)
+            ok = fetch_secrets(secret_name, secret_def)
             if ok:
                 del(secrets[secret_name])
         time_delay = 5
