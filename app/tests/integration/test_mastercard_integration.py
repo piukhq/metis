@@ -1,6 +1,6 @@
 import unittest
 import settings
-from app.services import post_request, add_card, remove_card, get_agent
+from app.services import send_request, add_card, remove_card, get_agent
 
 
 class TestServices(unittest.TestCase):
@@ -53,5 +53,5 @@ class TestServices(unittest.TestCase):
 
         request_data = agent_instance.do_echo_body(card_info)
 
-        resp = post_request(url, header, request_data)
+        resp = send_request('POST', url, header, request_data)
         return resp
