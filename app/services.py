@@ -147,7 +147,8 @@ def remove_card(card_info):
             agent_instance.un_enroll(card_info, action_name)
         # Set card_payment status in hermes using 'id' HERMES_URL
         if status_code != 201:
-            settings.logger.info('VOP Card delete unsuccessful, calling Hermes to log error/retry.')
+            settings.logger.info(f"VOP Card id: '{card_info['id']}' delete unsuccessful,"
+                                 f" calling Hermes to log error/retry.")
             hermes_status_data = {
                 'card_id': card_info['id'],
                 'response_state': response_state,
