@@ -10,7 +10,7 @@ from app.utils import resolve_agent
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
-    from app.agents.agent_base import AgentBase
+    from app.agents.agent_base import AgentBase  # noqa
 
 # Username and password from Spreedly site - Loyalty Angels environments
 PASSWORD = settings.Secrets.spreedly_oauth_password
