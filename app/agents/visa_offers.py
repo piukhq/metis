@@ -333,7 +333,7 @@ class Visa:
                 cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
                 headers=headers, data=data)
 
-    def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint):
+    def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint, card_id_info):
         resp_state = VOPResultStatus.RETRY
         agent_status_code = None
         agent_message = ""
@@ -345,29 +345,40 @@ class Visa:
             retry_count -= 1
             try:
                 response = self._basic_vop_request(api_endpoint, json_data)
-                settings.logger.info(f"VOP request response {response.status_code}, {response.text}")
+                settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
+                                     f" {response.status_code}, {response.text}")
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
-                settings.logger.error(f"VOP request exception error {agent_message}")
+                settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
             except Exception as error:
                 agent_message = f"Agent exception {error}"
-                settings.logger.error(f"VOP request exception error {agent_message}")
+                settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
-        settings.logger.info(f"VOP response state {resp_state} error_code {action_name}:{agent_status_code}")
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
+        settings.logger.info(f"VOP {action_name} returned processed response for {card_id_info} Result: {status_code},"
+                             f"{resp_state}, code: {full_agent_status_code}, message: {agent_message}")
         return resp_state.value, status_code, full_agent_status_code, agent_message, other_data
+
+    @staticmethod
+    def get_card_id_info(card_info):
+        cid = card_info.get('id', 'not sent')
+        token = card_info.get('payment_token', 'unknown')
+        activation = ""
+        if card_info.get('activation_id'):
+            activation = f" activation_id: '{card_info['activation_id']}'"
+        return f"Card id: '{cid}' userKey/token: '{token}'{activation}"
 
     def activate_data(self, payment_token, merchant_slug):
         return {
@@ -397,44 +408,54 @@ class Visa:
         }
 
     def activate_card(self, card_info):
+        card_id_info = self.get_card_id_info(card_info)
         try:
             payment_token = card_info["payment_token"]
             merchant_slug = card_info["merchant_slug"]
-            settings.logger.info(f"VOP Metis Processing Activate request: payment_token:"
-                                 f" {payment_token} merchant {merchant_slug}")
+            settings.logger.info(f"VOP Metis Processing Activate request for merchant {merchant_slug}, {card_id_info}")
         except KeyError:
-            settings.logger.error(f"VOP Metis Activate request failed due to missing payment_token or merchant slug")
+            settings.logger.error(f"VOP Metis Activate request failed for {card_id_info} "
+                                  f"due to missing payment_token or merchant slug")
             return VOPResultStatus.FAILED.value, 400, "", "", {'activation_id': None}
         return self.try_vop_and_get_status(
             self.activate_data(payment_token, merchant_slug),
             "Activate",
             ActionCode.ACTIVATE_MERCHANT,
-            self.vop_activation
+            self.vop_activation,
+            card_id_info
         )
 
     def deactivate_card(self, card_info):
+        card_id_info = card_info.get('id', "not sent")
         try:
             payment_token = card_info['payment_token']
             activation_id = card_info['activation_id']
-            settings.logger.info(f"VOP Metis Processing DeActivate request: payment_token: {payment_token}"
-                                 f" activation_id {activation_id}")
+            settings.logger.info(f"VOP Metis Processing DeActivate request for {card_id_info}")
         except KeyError:
-            settings.logger.error(f"VOP Metis DeActivate request failed due to missing payment_token or activation_id")
+            settings.logger.error(f"VOP Metis DeActivate request failed for {card_id_info} due to missing"
+                                  f" payment_token or activation_id")
             return VOPResultStatus.FAILED.value, 400, "", "", {}
 
         return self.try_vop_and_get_status(
             self.deactivate_data(payment_token, activation_id),
             "Deactivate",
             ActionCode.DEACTIVATE_MERCHANT,
-            self.vop_deactivation
+            self.vop_deactivation,
+            card_id_info
         )
 
     def un_enroll(self, card_info, action_name):
-        payment_token = card_info["payment_token"]
-        settings.logger.info(f"VOP Metis processing unenrol request, payment_token: {payment_token}")
-        data = {
-            "correlationId": str(uuid4()),
-            "communityCode": self.vop_spreedly_community_code,
-            "userKey": payment_token,
-        }
-        return self.try_vop_and_get_status(data, action_name, card_info["action_code"], self.vop_unenroll)
+        card_id_info = self.get_card_id_info(card_info)
+        settings.logger.info(f"VOP Metis processing unenrol request for {card_id_info}")
+        try:
+            data = {
+                "correlationId": str(uuid4()),
+                "communityCode": self.vop_spreedly_community_code,
+                "userKey": card_info["payment_token"],
+            }
+        except KeyError:
+            error_msg = f"VOP Metis Unenroll request failed for {card_id_info} due to missing payment_token"
+            settings.logger.error(error_msg)
+            return VOPResultStatus.FAILED.value, 400, "", error_msg, {}
+
+        return self.try_vop_and_get_status(data, action_name, card_info["action_code"], self.vop_unenroll, card_id_info)
