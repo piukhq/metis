@@ -1,5 +1,6 @@
-import requests
 import time
+
+import requests
 
 from settings import HERMES_URL, SERVICE_API_KEY
 
@@ -12,6 +13,7 @@ def get_provider_status_mappings(slug):
 
 
 def put_account_status(status_code, card_id=None, token=None, **kwargs):
+    resp = None
     if not (card_id or token):
         raise AttributeError('You must pass either a card_id or token to put_account_status.')
 

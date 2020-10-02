@@ -27,8 +27,7 @@ class VOPUnenroll(unittest.TestCase):
             'card_token': "card_token",
             'id': 1234,
             'date': arrow.now().timestamp,
-            'retry_id': -1,
-            "action_code": ActionCode.DELETE
+ z            "action_code": ActionCode.DELETE
         }
         httpretty.register_uri(
             httpretty.POST,

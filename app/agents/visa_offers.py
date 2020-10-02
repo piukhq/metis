@@ -7,7 +7,14 @@ import hashlib
 import requests
 
 import settings
-from app.card_router import ActionCode
+
+
+class ActionCode(Enum):
+    ADD = 'A'
+    DELETE = 'D'
+    REACTIVATE = 'R'
+    ACTIVATE_MERCHANT = 'M'
+    DEACTIVATE_MERCHANT = 'X'
 
 
 class VOPResultStatus(str, Enum):
