@@ -8,7 +8,7 @@ from app.agents.exceptions import OAuthError
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
 from vault import fetch_secrets
-from app.agents.visa_offers import VOPResultStatus, Visa
+from app.agents.visa_offers import VOPResultStatus
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
