@@ -1,4 +1,5 @@
 import requests
+import time
 
 from settings import HERMES_URL, SERVICE_API_KEY
 
@@ -28,7 +29,17 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
     for kwarg in kwargs:
         request_data[kwarg] = kwargs[kwarg]
 
-    return requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
-                        headers={'content-type': 'application/json',
-                                 'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
-                        json=request_data)
+    count = 0
+
+    while count < 5:
+        resp = requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
+                            headers={'content-type': 'application/json',
+                                     'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
+                            json=request_data)
+        if resp.status_code < 400:
+            break
+        else:
+            time.sleep(count)
+            count += 1
+
+    return resp
