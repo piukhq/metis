@@ -1,6 +1,6 @@
 import unittest
 import settings
-from app.card_router import ActionCode
+from app.action import ActionCode
 from app.agents.visa import Visa
 from app.tests.unit.fixture import real_list
 

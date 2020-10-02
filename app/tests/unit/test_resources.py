@@ -6,7 +6,7 @@ from flask_testing import TestCase
 from app import create_app
 from unittest.mock import patch
 
-from app.card_router import ActionCode
+from app.action import ActionCode
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'

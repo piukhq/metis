@@ -9,7 +9,7 @@ import httpretty
 from settings import HERMES_URL
 import settings
 from app.agents.visa_offers import Visa
-from app.card_router import ActionCode
+from app.action import ActionCode
 from app.services import remove_card
 from app.tasks import add_card as t_add_card, remove_card as t_remove_card, reactivate_card as t_reactivate_card
 

@@ -5,10 +5,11 @@ from flask import request, make_response
 from flask_restful import Resource, Api
 from voluptuous import Schema, Required, Optional, MultipleInvalid, All, Length
 
+from app.action import ActionCode
 from app.agents.agent_manager import AgentManager
 from app.agents.visa_offers import Visa
 from app.auth import authorized
-from app.card_router import process_card, ActionCode
+from app.card_router import process_card
 from app.services import create_prod_receiver, retain_payment_method_token
 from settings import logger
 

@@ -1,20 +1,13 @@
 import base64
+import hashlib
 import json
 from enum import Enum
 from uuid import uuid4
-import hashlib
 
 import requests
 
 import settings
-
-
-class ActionCode(Enum):
-    ADD = 'A'
-    DELETE = 'D'
-    REACTIVATE = 'R'
-    ACTIVATE_MERCHANT = 'M'
-    DEACTIVATE_MERCHANT = 'X'
+from app.action import ActionCode
 
 
 class VOPResultStatus(str, Enum):

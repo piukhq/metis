@@ -6,7 +6,7 @@ import arrow
 
 from testfixtures import log_capture
 from app.tests.unit.fixture import card_info_reduce
-from app.card_router import ActionCode
+from app.action import ActionCode
 from app.agents.visa import Visa, VisaCardFile, Header, Footer
 import settings
 

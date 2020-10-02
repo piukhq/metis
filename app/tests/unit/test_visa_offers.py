@@ -1,23 +1,22 @@
+import json
 import unittest
-from app.services import remove_card
-from unittest import mock
-from app.card_router import ActionCode
-import settings
+
 import arrow
 import httpretty
-import json
+
+import settings
 from app.agents.visa_offers import Visa
+from app.action import ActionCode
+from app.services import remove_card
 
 
 class VOPUnenroll(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         settings.TESTING = True
         cls.visa = Visa()
         cls.vop_un_enrol_url = f"{cls.visa.vop_url}{cls.visa.vop_unenroll}"
         cls.hermes_payment_card_call_back = f"{settings.HERMES_URL}/payment_cards/accounts/status"
-
 
     @httpretty.activate
     def test_remove_card_success(self):
@@ -27,13 +26,13 @@ class VOPUnenroll(unittest.TestCase):
             'card_token': "card_token",
             'id': 1234,
             'date': arrow.now().timestamp,
- z            "action_code": ActionCode.DELETE
+            "action_code": ActionCode.DELETE,
+            "retry_id": -1
         }
         httpretty.register_uri(
             httpretty.POST,
             self.vop_un_enrol_url,
-            body=json.dumps(
-            {
+            body=json.dumps({
                 "responseStatus": {
                     "code": "SUCCESS", "message": "un-enrol equivalent to success", "responseStatusDetails": []
                 }
@@ -55,7 +54,6 @@ class VOPUnenroll(unittest.TestCase):
         prev_req = httpretty.latest_requests()
         print(prev_req[0].body)
         print(prev_req[1].body)
-
 
 
 if __name__ == '__main__':

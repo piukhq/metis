@@ -1,4 +1,4 @@
-from app.card_router import ActionCode
+from app.action import ActionCode
 
 card_info = [{
     'id': 1,
