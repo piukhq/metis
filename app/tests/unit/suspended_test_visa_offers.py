@@ -257,7 +257,7 @@ class TestVisaOffers(TestCase):
         )
         self.mock_status_mappings_call()
         card_info = self.card_info_add[0]
-        card_info['action_code'] = ActionCode.DELETE
+        card_info['action_code'] = ActionCode.DELETE.value
         return remove_card(card_info)
 
     def un_enrol_scenario(self, scenario):

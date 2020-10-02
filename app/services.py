@@ -210,12 +210,23 @@ def remove_card(card_info: dict):
 
         activations = card_info.get('activations')
         if activations:
-            visa = Visa()
-            for activation in activations:
-                response_state, status_code = hermes_unenroll_call_back(card_info, "Deactivate",
-                                                                        *visa.deactivate_card(activation))
+            all_deactivated = True
+            for activation_index, deactivation_card_info in activations.items():
+                settings.logger.info(f"VOP Metis Unenrol Request - deactivating {activation_index}")
+                deactivation_card_info['payment_token'] = card_info['payment_token']
+                deactivation_card_info['id'] = card_info['id']
+                status_code, response_state =\
+                    hermes_unenroll_call_back(card_info, "Deactivate",
+                                              *agent_instance.deactivate_card(deactivation_card_info))
                 if response_state == VOPResultStatus.RETRY.value:
-                    return {"response_status": response_state, "status_code": status_code}
+                    all_deactivated = False
+                elif response_state == VOPResultStatus.FAILED.value:
+                    settings.logger.error(f"VOP Metis Unenrol Request for {card_info['id']}"
+                                          f"- permanent deactivation fail {activation_index}")
+            if not all_deactivated:
+                message = "Cannot unenrol some Activations still active and can be retried"
+                settings.logger.error(f"VOP Unenroll fail for {card_info['id']} {message}")
+                return {"message": message}
 
         # Do hermes call back of unenroll now that there are no outstanding activations
         response_state, status_code = hermes_unenroll_call_back(card_info, action_name,
