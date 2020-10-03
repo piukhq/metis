@@ -163,7 +163,8 @@ def add_card(card_info: dict) -> requests.Response:
     return resp
 
 
-def hermes_unenroll_call_back(card_info, action, response_state, status_code, agent_status_code, agent_message, _):
+def hermes_unenroll_call_back(card_info, action, deactivated_list, deactivate_errors,
+                              response_state, status_code, agent_status_code, agent_message, _):
     # Set card_payment status in hermes using 'id' HERMES_URL
     if status_code != 201:
         settings.logger.info(f"Error in unenrol call back to Hermes VOP Card id: {card_info['id']} "
@@ -176,6 +177,8 @@ def hermes_unenroll_call_back(card_info, action, response_state, status_code, ag
         "response_status": agent_status_code,
         "response_message": agent_message,
         "response_action": action,
+        "deactivated_list": deactivated_list,
+        "deactivate_errors": deactivate_errors
     }
     if card_info.get("retry_id"):
         hermes_status_data["retry_id"] = card_info["retry_id"]
@@ -209,27 +212,42 @@ def remove_card(card_info: dict):
         # so that if we retry only the remaining activations will be sent to this service
 
         activations = card_info.get('activations')
+        deactivated_list = []
+        deactivate_errors = {}
         if activations:
             all_deactivated = True
             for activation_index, deactivation_card_info in activations.items():
                 settings.logger.info(f"VOP Metis Unenrol Request - deactivating {activation_index}")
                 deactivation_card_info['payment_token'] = card_info['payment_token']
                 deactivation_card_info['id'] = card_info['id']
-                status_code, response_state =\
-                    hermes_unenroll_call_back(card_info, "Deactivate",
-                                              *agent_instance.deactivate_card(deactivation_card_info))
-                if response_state == VOPResultStatus.RETRY.value:
-                    all_deactivated = False
-                elif response_state == VOPResultStatus.FAILED.value:
-                    settings.logger.error(f"VOP Metis Unenrol Request for {card_info['id']}"
-                                          f"- permanent deactivation fail {activation_index}")
+                response_status, status_code, agent_response_code, agent_message, _ \
+                    = agent_instance.deactivate_card(deactivation_card_info)
+                if response_status == VOPResultStatus.SUCCESS.value:
+                    deactivated_list.append(activation_index)
+                else:
+                    deactivate_errors[activation_index] = {
+                        'response_status': response_status,
+                        'agent_response_code': agent_response_code,
+                        'agent_response_message': agent_message
+                    }
+                    if response_status == VOPResultStatus.RETRY.value:
+                        all_deactivated = False
+                        # Only if you can retry the deactivation will we allow it to block the unenroll
+                    elif response_status == VOPResultStatus.FAILED.value:
+                        settings.logger.error(f"VOP Metis Unenrol Request for {card_info['id']}"
+                                              f"- permanent deactivation fail {activation_index}")
             if not all_deactivated:
                 message = "Cannot unenrol some Activations still active and can be retried"
                 settings.logger.error(f"VOP Unenroll fail for {card_info['id']} {message}")
-                return {"message": message}
+
+                status_code, response_state = \
+                    hermes_unenroll_call_back(card_info, action_name, deactivated_list, deactivate_errors,
+                                              VOPResultStatus.RETRY.value, "", "", message, "")
+                return {"response_status": response_state, "status_code": status_code}
 
         # Do hermes call back of unenroll now that there are no outstanding activations
         response_state, status_code = hermes_unenroll_call_back(card_info, action_name,
+                                                                deactivated_list, deactivate_errors,
                                                                 *agent_instance.un_enroll(card_info, action_name))
 
         # put_account_status sends a async response back to Hermes.

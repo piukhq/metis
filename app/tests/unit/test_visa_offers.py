@@ -63,7 +63,7 @@ class VOPUnenroll(unittest.TestCase):
         request = httpretty.last_request()
         expected = {"id": 1234, "response_state": "Success", "response_status": "Delete:SUCCESS",
                     "response_message": "Request proceed successfully without error.;", "response_action": "Delete",
-                    "retry_id": -1}
+                    "retry_id": -1, "deactivated_list": [], "deactivate_errors": {}}
         actual = json.loads(request.body)
         self.assertDictEqual(expected, actual)
 
@@ -104,18 +104,19 @@ class VOPUnenroll(unittest.TestCase):
             }
         }
         remove_card(card_info)
-        self.assert_success()
         prev_req = httpretty.latest_requests()
-        self.assertEqual(6, len(prev_req))
-        req1 = json.loads(prev_req[0].body)
-        self.assertEqual("merchant1_activation_id", req1["activationId"])
-        req2 = json.loads(prev_req[1].body)
-        self.assertEqual("Deactivate:SUCCESS", req2["response_status"])
-        req3 = json.loads(prev_req[2].body)
-        self.assertEqual("merchant2_activation_id", req3["activationId"])
-        req4 = json.loads(prev_req[3].body)
-        self.assertEqual("Deactivate:SUCCESS", req4["response_status"])
-        self.assertEqual(6, len(prev_req))
+        self.assertEqual(4, len(prev_req))
+        req = json.loads(prev_req[0].body)
+        self.assertEqual("merchant1_activation_id", req["activationId"])
+        req = json.loads(prev_req[1].body)
+        self.assertEqual("merchant2_activation_id", req["activationId"])
+        req = json.loads(prev_req[3].body)
+        self.assertEqual(1234, req["id"])
+        self.assertEqual("Success", req["response_state"])
+        self.assertEqual("Delete:SUCCESS", req["response_status"])
+        self.assertEqual("Delete", req["response_action"])
+        self.assertEqual([345, 6789], req["deactivated_list"])
+        self.assertEqual(0, len(req["deactivate_errors"]))
 
     @httpretty.activate
     def test_remove_card_success_with_activation_retry(self):
@@ -143,7 +144,7 @@ class VOPUnenroll(unittest.TestCase):
         }
         remove_card(card_info)
         prev_req = httpretty.latest_requests()
-        self.assertEqual(8, len(prev_req))
+        self.assertEqual(7, len(prev_req))
         req = json.loads(prev_req[0].body)
         self.assertEqual("merchant1_activation_id", req["activationId"])
         req = json.loads(prev_req[1].body)
@@ -151,15 +152,17 @@ class VOPUnenroll(unittest.TestCase):
         req = json.loads(prev_req[2].body)
         self.assertEqual("merchant1_activation_id", req["activationId"])
         req = json.loads(prev_req[3].body)
-        self.assertEqual("Deactivate:3000", req["response_status"])
+        self.assertEqual("merchant2_activation_id", req["activationId"])
         req = json.loads(prev_req[4].body)
         self.assertEqual("merchant2_activation_id", req["activationId"])
         req = json.loads(prev_req[5].body)
         self.assertEqual("merchant2_activation_id", req["activationId"])
         req = json.loads(prev_req[6].body)
-        self.assertEqual("merchant2_activation_id", req["activationId"])
-        req = json.loads(prev_req[7].body)
-        self.assertEqual("Deactivate:3000", req["response_status"])
+        self.assertEqual(1234, req["id"])
+        self.assertEqual("Retry", req["response_state"])
+        self.assertEqual("Delete", req["response_action"])
+        self.assertEqual([], req["deactivated_list"])
+        self.assertEqual(2, len(req["deactivate_errors"]))
 
 
 if __name__ == '__main__':
