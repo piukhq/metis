@@ -1,14 +1,23 @@
 import json
 import unittest
+from copy import copy
 
 import arrow
 import httpretty
+from flask_testing import TestCase
 
 import settings
-from app.agents.visa_offers import Visa
+from app import create_app
 from app.action import ActionCode
+from app.agents.visa_offers import Visa
 from app.services import remove_card, add_card, get_spreedly_url
-from copy import copy
+
+auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
+           'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
+
+
+class Testing:
+    TESTING = True
 
 
 class VOPUnenroll(unittest.TestCase):
@@ -256,7 +265,8 @@ class VOPEnroll(unittest.TestCase):
 
     def assert_success(self):
         request = httpretty.last_request()
-        expected = {"id": 1234, "response_state": "Success", "response_status": "Add:SUCCESS",
+        expected = {"status": 1, "id": 1234, "response_state": "Success", "response_status": "Add:SUCCESS",
+                    "response_status_code": 200,
                     "response_message": "Request proceed successfully without error.;", "response_action": "Add",
                     "retry_id": -1
                     }
@@ -273,9 +283,75 @@ class VOPEnroll(unittest.TestCase):
         prev_req = httpretty.latest_requests()
         for req in prev_req:
             print(req.body)
+        self.assert_success()
 
-        ssert_success
 
+class VOPActivation(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        settings.TESTING = True
+        cls.visa = Visa()
+        cls.vop_activation_url = f"{cls.visa.vop_url}{cls.visa.vop_activation}"
+        cls.metis_activate_endpoint = "/visa/activate/"
+
+        cls.card_info = {
+            'payment_token': 'psp_token',
+            'partner_slug': 'visa',
+            'merchant_slug': "Merchant1",
+            'id': 1234
+        }
+
+    def create_app(self):
+        return create_app(Testing)
+
+    def activate_request(self, card_info, vop_response):
+        httpretty.register_uri(
+            httpretty.POST,
+            self.vop_activation_url,
+            body=json.dumps(vop_response)
+        )
+        resp = self.client.post(self.metis_activate_endpoint,
+                                headers={'content-type': 'application/json', 'Authorization': auth_key},
+                                data=json.dumps(card_info))
+        return resp
+
+    @httpretty.activate
+    def test_activation_success(self):
+        vop_message = "Request proceed successfully without error."
+        activation_id = "88395654-0b8a-4f2d-9046-2b8669f76bd2"
+        vop_response = {
+            "activationId": activation_id,
+            "correlationId": "96e38ed5-91d5-4567-82e9-6c441f4ca300",
+            "responseDateTime": "2020-01-30T11:13:43.5765614Z",
+            "responseStatus": {
+                "code": "SUCCESS",
+                "message": vop_message
+            }
+        }
+        resp = self.activate_request(self.card_info, vop_response)
+        self.assertEqual(resp.status_code, 201)
+        self.assertDictEqual(resp.json, {'response_status': 'Success', 'agent_response_code': 'Activate:SUCCESS',
+                                         'agent_response_message': f'{vop_message};',
+                                         'activation_id': activation_id})
+
+
+class VOPDeActivate(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        settings.TESTING = True
+        cls.visa = Visa()
+        cls.vop_deactivation_url = f"{cls.visa.vop_url}{cls.visa.vop_deactivation}"
+        cls.metis_deactivate_endpoint = "/visa/deactivate/"
+
+        cls.card_info = {
+            "partner_slug": "visa",
+            "payment_token": "psp_token",
+            'card_token': "card_token",
+            'id': 1234,
+            'date': arrow.now().timestamp,
+            "action_code": ActionCode.ADD,
+            "retry_id": -1
+        }
 
 
 if __name__ == '__main__':

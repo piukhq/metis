@@ -13,6 +13,7 @@ from app.action import ActionCode
 from app.services import remove_card
 from app.tasks import add_card as t_add_card, remove_card as t_remove_card, reactivate_card as t_reactivate_card
 
+
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
 

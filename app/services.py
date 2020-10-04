@@ -139,13 +139,16 @@ def add_card(card_info: dict) -> requests.Response:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
 
-    hermes_data = {"card_id": card_info["id"]}
+    hermes_data = {"card_id": card_info["id"], "response_action": "Add"}
 
     if resp.get("response_state"):
         hermes_data["response_state"] = resp["response_state"]
 
     if resp.get("status_code"):
-        hermes_data["response_status"] = resp["status_code"]
+        hermes_data["response_status_code"] = resp["status_code"]
+
+    if resp.get("agent_status_code"):
+        hermes_data["response_status"] = resp["agent_status_code"]
 
     if resp.get("message"):
         hermes_data["response_message"] = resp["message"]

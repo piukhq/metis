@@ -137,12 +137,14 @@ class VisaActivate(Resource):
     def post():
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
-        return make_response(json.dumps({
+        response = make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
             'agent_response_message': agent_message,
             'activation_id': other_data.get('activation_id', "")
         }), status_code)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 api.add_resource(VisaActivate, '/visa/activate/')
@@ -154,11 +156,13 @@ class VisaDeactivate(Resource):
     def post():
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
-        return make_response(json.dumps({
+        response = make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
             'agent_response_message': agent_message
         }), status_code)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 api.add_resource(VisaDeactivate, '/visa/deactivate/')
