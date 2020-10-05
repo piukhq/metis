@@ -40,12 +40,15 @@ class VOPUnenroll(unittest.TestCase):
         }
 
     def register_success_requests(self):
+        self.compile_requests(code="SUCCESS", message="Request proceed successfully without error.")
+
+    def compile_requests(self, code, message):
         self.register_requests({
             "correlationId": "ce708e6a-fd5f-48cc-b9ff-ce518a6fda1a",
             "responseDateTime": "2020-01-29T15:02:50.8109336Z",
             "responseStatus": {
-                    "code": "SUCCESS",
-                    "message": "Request proceed successfully without error."
+                    "code": code,
+                    "message": message
             }
         })
 
@@ -76,11 +79,35 @@ class VOPUnenroll(unittest.TestCase):
         actual = json.loads(request.body)
         self.assertDictEqual(expected, actual)
 
+    def assert_failed(self, state, code, message):
+        request = httpretty.last_request()
+        expected = {"id": 1234, "response_state": state, "response_status": f"Delete:{code.upper()}",
+                    "response_message": f"{message};", "response_action": "Delete",
+                    "retry_id": -1, "deactivated_list": [], "deactivate_errors": {}}
+        actual = json.loads(request.body)
+        self.assertDictEqual(expected, actual)
+
     @httpretty.activate
     def test_remove_card_success(self):
         self.register_success_requests()
         remove_card(self.card_info)
         self.assert_success()
+
+    @httpretty.activate
+    def test_remove_card_fail(self):
+        code = "1000"
+        message = "Permanent VOP Error"
+        self.compile_requests(code=code, message=message)
+        remove_card(self.card_info)
+        self.assert_failed("Failed", code, message)
+
+    @httpretty.activate
+    def test_remove_card_retry(self):
+        code = "3000"
+        message = "Temp VOP Error"
+        self.compile_requests(code=code, message=message)
+        remove_card(self.card_info)
+        self.assert_failed("Retry", code, message)
 
     @httpretty.activate
     def test_remove_card_success_with_null_activations(self):
@@ -89,6 +116,16 @@ class VOPUnenroll(unittest.TestCase):
         card_info['activations'] = {}
         remove_card(card_info)
         self.assert_success()
+
+    @httpretty.activate
+    def test_remove_card_retry_with_null_activations(self):
+        code = "3000"
+        message = "Temp VOP Error"
+        self.compile_requests(code=code, message=message)
+        card_info = copy(self.card_info)
+        card_info['activations'] = {}
+        remove_card(self.card_info)
+        self.assert_failed("Retry", code, message)
 
     @httpretty.activate
     def test_remove_card_success_with_activations(self):
@@ -126,6 +163,35 @@ class VOPUnenroll(unittest.TestCase):
         self.assertEqual("Delete", req["response_action"])
         self.assertEqual([345, 6789], req["deactivated_list"])
         self.assertEqual(0, len(req["deactivate_errors"]))
+
+    @httpretty.activate
+    def test_remove_card_retry_with_activations(self):
+        code = "3000"
+        message = "Temp VOP Error"
+        self.compile_requests(code=code, message=message)
+        self.register_deactivations({
+            "correlationId": "96e38ed5-91d5-4567-82e9-6c441f4ca300",
+            "responseDateTime": "2020-01-30T11:13:43.5765614Z",
+            "responseStatus": {
+                "code": "SUCCESS",
+                "message": "Request proceed successfully without error."
+            }
+        })
+        card_info = copy(self.card_info)
+        card_info['activations'] = {
+            345: {
+                'scheme': "merchant1",
+                'activation_id': "merchant1_activation_id"
+            },
+            6789: {
+                'scheme': "merchant2",
+                'activation_id': "merchant2_activation_id"
+            }
+        }
+        remove_card(self.card_info)
+        self.assert_failed("Retry", code, message)
+        prev_req = httpretty.latest_requests()
+        self.assertEqual(4, len(prev_req))
 
     @httpretty.activate
     def test_remove_card_success_with_activation_retry(self):
