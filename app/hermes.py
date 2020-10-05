@@ -17,7 +17,7 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
     if not (card_id or token):
         raise AttributeError('You must pass either a card_id or token to put_account_status.')
 
-    if status_code:
+    if status_code is not None:
         # Un-enrol sends retry status and success/error status update but not payment card status
         request_data = {'status': status_code}
     else:
