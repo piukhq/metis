@@ -2,7 +2,8 @@ import time
 
 import requests
 
-from settings import HERMES_URL, SERVICE_API_KEY
+
+from settings import HERMES_URL, SERVICE_API_KEY, logger
 
 
 def get_provider_status_mappings(slug):
@@ -32,8 +33,8 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
         request_data[kwarg] = kwargs[kwarg]
 
     count = 0
-
-    while count < 5:
+    max_count = 5
+    while count < max_count:
         resp = requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
                             headers={'content-type': 'application/json',
                                      'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
@@ -43,5 +44,10 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
         else:
             time.sleep(count)
             count += 1
+            if count == 1:
+                logger.info(f"Retry Payment Account Status Call Back for card/token: {card_id}{token}")
+            elif count == max_count:
+                logger.error(f"Failed Payment Account Status Call Back: {card_id}{token}, "
+                             f"given up after {max_count} attempts")
 
     return resp
