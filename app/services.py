@@ -241,7 +241,7 @@ def remove_card(card_info: dict):
                                               f"- permanent deactivation fail {activation_index}")
             if not all_deactivated:
                 message = "Cannot unenrol some Activations still active and can be retried"
-                settings.logger.error(f"VOP Unenroll fail for {card_info['id']} {message}")
+                settings.logger.info(f"VOP Unenroll fail for {card_info['id']} {message}")
 
                 status_code, response_state = \
                     hermes_unenroll_call_back(card_info, action_name, deactivated_list, deactivate_errors,
