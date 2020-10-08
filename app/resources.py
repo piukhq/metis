@@ -5,10 +5,11 @@ from flask import request, make_response
 from flask_restful import Resource, Api
 from voluptuous import Schema, Required, Optional, MultipleInvalid, All, Length
 
+from app.action import ActionCode
 from app.agents.agent_manager import AgentManager
 from app.agents.visa_offers import Visa
 from app.auth import authorized
-from app.card_router import process_card, ActionCode
+from app.card_router import process_card
 from app.services import create_prod_receiver, retain_payment_method_token
 from settings import logger
 
@@ -20,7 +21,8 @@ card_info_schema = Schema({
     Required('card_token'): All(str, Length(min=1)),
     Required('date'): int,
     Required('partner_slug'): All(str, Length(min=1)),
-    Optional('retry_id'): int
+    Optional('retry_id'): int,
+    Optional('activations'): dict
 })
 
 
@@ -57,13 +59,14 @@ class PaymentCard(Resource):
         req_data = json.loads(request.data.decode())
 
         action_name = {ActionCode.ADD: 'add', ActionCode.DELETE: 'delete'}[action_code]
-        logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
-
         try:
             card_info_schema(req_data)
         except MultipleInvalid:
+            logger.error(f'{arrow.now()} Received {action_name} payment card request failed '
+                         f'- invalid schema: {req_data}')
             return make_response('Request parameters not complete', 400)
 
+        logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
         if action_code == ActionCode.ADD:
             resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
             if resp.status_code != 200:
@@ -136,12 +139,14 @@ class VisaActivate(Resource):
     def post():
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
-        return make_response(json.dumps({
+        response = make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
             'agent_response_message': agent_message,
             'activation_id': other_data.get('activation_id', "")
         }), status_code)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 api.add_resource(VisaActivate, '/visa/activate/')
@@ -153,11 +158,13 @@ class VisaDeactivate(Resource):
     def post():
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
-        return make_response(json.dumps({
+        response = make_response(json.dumps({
             'response_status': response_status,
             'agent_response_code': agent_response_code,
             'agent_response_message': agent_message
         }), status_code)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 api.add_resource(VisaDeactivate, '/visa/deactivate/')

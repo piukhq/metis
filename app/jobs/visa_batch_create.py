@@ -6,7 +6,7 @@ import os
 import pika
 
 from app.agents.visa import Visa
-from app.card_router import ActionCode
+from app.action import ActionCode
 from app.teams import payment_card_notify
 import settings
 

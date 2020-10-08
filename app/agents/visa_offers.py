@@ -1,13 +1,13 @@
 import base64
+import hashlib
 import json
 from enum import Enum
 from uuid import uuid4
-import hashlib
 
 import requests
 
 import settings
-from app.card_router import ActionCode
+from app.action import ActionCode
 
 
 class VOPResultStatus(str, Enum):
@@ -286,6 +286,7 @@ class Visa:
             'message': response_message,
             'status_code': vop_response_status_code,
             'response_state': resp_state.value,
+            'agent_status_code': resp_mapping_status_code,
             'bink_status': self.get_bink_status(resp_mapping_status_code, status_mapping)
         }
 
