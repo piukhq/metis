@@ -1,0 +1,12 @@
+[run]
+omit = *test*
+       *templates*
+       app/agents/visa.py
+       app/jobs/visa_batch_create.py
+       app/visa_handback_file_processor.py
+       setup.py
+
+branch = True
+
+[report]
+

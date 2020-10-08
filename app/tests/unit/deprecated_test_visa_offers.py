@@ -9,9 +9,10 @@ import httpretty
 from settings import HERMES_URL
 import settings
 from app.agents.visa_offers import Visa
-from app.card_router import ActionCode
+from app.action import ActionCode
 from app.services import remove_card
 from app.tasks import add_card as t_add_card, remove_card as t_remove_card, reactivate_card as t_reactivate_card
+
 
 auth_key = 'Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL' \
            'CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU'
@@ -257,7 +258,7 @@ class TestVisaOffers(TestCase):
         )
         self.mock_status_mappings_call()
         card_info = self.card_info_add[0]
-        card_info['action_code'] = ActionCode.DELETE
+        card_info['action_code'] = ActionCode.DELETE.value
         return remove_card(card_info)
 
     def un_enrol_scenario(self, scenario):
