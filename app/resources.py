@@ -21,7 +21,8 @@ card_info_schema = Schema({
     Required('card_token'): All(str, Length(min=1)),
     Required('date'): int,
     Required('partner_slug'): All(str, Length(min=1)),
-    Optional('retry_id'): int
+    Optional('retry_id'): int,
+    Optional('activations'): dict
 })
 
 
@@ -58,13 +59,14 @@ class PaymentCard(Resource):
         req_data = json.loads(request.data.decode())
 
         action_name = {ActionCode.ADD: 'add', ActionCode.DELETE: 'delete'}[action_code]
-        logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
-
         try:
             card_info_schema(req_data)
         except MultipleInvalid:
+            logger.error(f'{arrow.now()} Received {action_name} payment card request failed '
+                         f'- invalid schema: {req_data}')
             return make_response('Request parameters not complete', 400)
 
+        logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
         if action_code == ActionCode.ADD:
             resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
             if resp.status_code != 200:
