@@ -276,10 +276,17 @@ class Visa:
         resp_transaction = resp_content.get('transaction', {})
         resp_response = resp_transaction.get('response', {})
         vop_response_status_code = resp_response.get('status', 0)
-        vop_response_body = resp_response.get('body', '{}')
+        vop_response_body_str = resp_response.get('body', '{}')
         action_code = ActionCode.ADD
-        resp_state, resp_visa_status_code, response_message, _ = self.process_vop_response(
-            json.loads(vop_response_body), vop_response_status_code, action_name, action_code)
+        try:
+            vop_response_body = json.loads(vop_response_body_str)
+            resp_state, resp_visa_status_code, response_message, _ =\
+                self.process_vop_response(vop_response_body, vop_response_status_code, action_name, action_code)
+        except json.decoder.JSONDecodeError as error:
+            resp_state = VOPResultStatus.FAILED
+            resp_visa_status_code = "0"
+            response_message = f'Illegal json returned from VOP via Spreedly {error} ' \
+                               f'- got message: {vop_response_body_str}'
 
         resp_mapping_status_code = f"{action_name}:{resp_visa_status_code}"
         return {
