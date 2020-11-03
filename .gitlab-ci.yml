@@ -1,7 +1,9 @@
 stages:
   - tests
+  - dev
+  - staging
   - build
-  - tagging
+  - preprod
   - prod
 
 tests:
@@ -34,27 +36,31 @@ flake8:
   script:
     - flake8
 
-build-develop:
-  stage: build
+build-dev:
+  stage: dev
+  environment: dev
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
-    - docker build --pull -t "$CI_REGISTRY/metis:latest" .
-    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$CI_REGISTRY/aqua-scanner:5.0" scan --local "$CI_REGISTRY/metis:latest" --host https://aqua.uksouth.bink.sh:30001/ --user scanner --password $AQUA_PASSWORD --show-negligible --policies Bink --text
-    - docker push "$CI_REGISTRY/metis:latest"
+    - docker build --pull -t "$CI_REGISTRY/metis:develop-$CI_COMMIT_SHORT_SHA" .
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$CI_REGISTRY/aqua-scanner:5.0" scan --local "$CI_REGISTRY/metis:develop-$CI_COMMIT_SHORT_SHA" --host https://aqua.uksouth.bink.sh:30001/ --user scanner --password $AQUA_PASSWORD --show-negligible --policies Bink --text
+    - docker push "$CI_REGISTRY/metis:develop-$CI_COMMIT_SHORT_SHA"
   only:
     - develop
 
-tag-develop:
-  stage: tagging
-  image: binkops.azurecr.io/tagbot:latest
-  environment: dev
+build-staging:
+  stage: staging
+  environment: staging
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
-    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:latest" --tag "develop-$CI_COMMIT_SHORT_SHA"
+    - docker build --pull -t "$CI_REGISTRY/metis:staging-$CI_COMMIT_SHORT_SHA" .
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$CI_REGISTRY/aqua-scanner:5.0" scan --local "$CI_REGISTRY/metis:staging-$CI_COMMIT_SHORT_SHA" --host https://aqua.uksouth.bink.sh:30001/ --user scanner --password $AQUA_PASSWORD --show-negligible --policies Bink --text
+    - docker push "$CI_REGISTRY/metis:staging-$CI_COMMIT_SHORT_SHA"
   only:
-    - develop
+    - staging
 
-build-master:
+build-tag:
   stage: build
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
@@ -65,19 +71,10 @@ build-master:
   only:
     - tags
 
-tag-staging:
-  stage: tagging
-  image: binkops.azurecr.io/tagbot:latest
-  environment: staging
-  script:
-    - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:$CI_COMMIT_TAG" --tag "staging-$CI_COMMIT_TAG"
-  only:
-    - tags
-
 tag-preprod:
-  stage: tagging
+  stage: preprod
   image: binkops.azurecr.io/tagbot:latest
-  environment: prod
+  environment: preprod
   script:
     - tagbot --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" --source "$CI_REGISTRY/metis:$CI_COMMIT_TAG" --tag "preprod-$CI_COMMIT_TAG"
   when: manual
