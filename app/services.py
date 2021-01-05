@@ -144,11 +144,18 @@ def add_card(card_info: dict) -> requests.Response:
     if resp.get("response_state"):
         hermes_data["response_state"] = resp["response_state"]
 
+    other_data = resp.get("other_data", {})
+    if other_data.get("agent_card_uid"):
+        hermes_data["agent_card_uid"] = other_data["agent_card_uid"]
+
     if resp.get("status_code"):
         hermes_data["response_status_code"] = resp["status_code"]
 
     if resp.get("agent_status_code"):
         hermes_data["response_status"] = resp["agent_status_code"]
+
+    if resp.get("message"):
+        hermes_data["response_message"] = resp["message"]
 
     if resp.get("message"):
         hermes_data["response_message"] = resp["message"]

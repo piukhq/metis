@@ -206,6 +206,11 @@ class Visa:
                 else:
                     other_data['activation_id'] = activation_id
                     self._log_success_response(resp_content, action_name)
+            elif action_code == ActionCode.ADD:
+                try:
+                    other_data['agent_card_uid'] = resp_content['userDetails']['cards'][0]['cardId']
+                except KeyError:
+                    pass
         else:
             self._log_error_response(resp_visa_status_code, action_name, response_message)
 
@@ -271,6 +276,7 @@ class Visa:
         :return: response dict in with keys: "message", "status_code" and if success "bink_status"
         """
         resp_content = response.json()
+        other_data = None
         if not resp_content:
             resp_content = {}
         resp_transaction = resp_content.get('transaction', {})
@@ -280,7 +286,7 @@ class Visa:
         action_code = ActionCode.ADD
         try:
             vop_response_body = json.loads(vop_response_body_str)
-            resp_state, resp_visa_status_code, response_message, _ =\
+            resp_state, resp_visa_status_code, response_message, other_data =\
                 self.process_vop_response(vop_response_body, vop_response_status_code, action_name, action_code)
         except json.decoder.JSONDecodeError as error:
             resp_state = VOPResultStatus.FAILED
@@ -294,7 +300,8 @@ class Visa:
             'status_code': vop_response_status_code,
             'response_state': resp_state.value,
             'agent_status_code': resp_mapping_status_code,
-            'bink_status': self.get_bink_status(resp_mapping_status_code, status_mapping)
+            'bink_status': self.get_bink_status(resp_mapping_status_code, status_mapping),
+            'other_data': other_data
         }
 
     def add_card_request_body(self, card_info):

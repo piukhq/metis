@@ -340,7 +340,8 @@ class VOPEnroll(unittest.TestCase):
         expected = {"status": 1, "id": 1234, "response_state": "Success", "response_status": "Add:SUCCESS",
                     "response_status_code": 200,
                     "response_message": "Request proceed successfully without error.;", "response_action": "Add",
-                    "retry_id": -1
+                    "retry_id": -1,
+                    "agent_card_uid": "bfc33c1d-d4ef-e111-8d48-001a4bcdeef4"
                     }
         actual = json.loads(request.body)
         self.assertDictEqual(expected, actual)
