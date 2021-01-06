@@ -120,9 +120,6 @@ def get_hermes_data(resp, card_id):
     if resp.get("message"):
         hermes_data["response_message"] = resp["message"]
 
-    if resp.get("message"):
-        hermes_data["response_message"] = resp["message"]
-
     return hermes_data
 
 

@@ -207,10 +207,14 @@ class Visa:
                     other_data['activation_id'] = activation_id
                     self._log_success_response(resp_content, action_name)
             elif action_code == ActionCode.ADD:
+                resp_user_details = {}
                 try:
-                    other_data['agent_card_uid'] = resp_content['userDetails']['cards'][0]['cardId']
+                    resp_user_details = resp_content.get('userDetails', {})
+                    other_data['agent_card_uid'] = resp_user_details['cards'][0]['cardId']
                 except KeyError:
-                    pass
+                    settings.logger.error(
+                        f'Could not Extract VOP CardId from success response: UserDetails: {resp_user_details}'
+                    )
         else:
             self._log_error_response(resp_visa_status_code, action_name, response_message)
 
@@ -276,7 +280,7 @@ class Visa:
         :return: response dict in with keys: "message", "status_code" and if success "bink_status"
         """
         resp_content = response.json()
-        other_data = None
+        other_data = {}
         if not resp_content:
             resp_content = {}
         resp_transaction = resp_content.get('transaction', {})
