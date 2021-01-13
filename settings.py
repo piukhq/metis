@@ -40,12 +40,12 @@ REDIS_DB = env_var('REDIS_DB', 0)
 
 
 if env_var('CELERY_BROKER_URL'):
-    BROKER_URL = env_var('CELERY_BROKER_URL')
+    broker_url = env_var('CELERY_BROKER_URL')
 else:
     if REDIS_TLS:
-        BROKER_URL = f'rediss://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=optional'
+        broker_url = f'rediss://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=optional'
     else:
-        BROKER_URL = f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+        broker_url = f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
 
 RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
@@ -117,7 +117,8 @@ TEAMS_WEBHOOK_URL = env_var('TEAMS_WEBHOOK_URL')
 
 AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "")
 VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
-CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+# Changed from CELERY_ACCEPT_CONTENT due to deprecation
+accept_content = ['pickle', 'json', 'msgpack', 'yaml']
 
 
 class Secrets:
