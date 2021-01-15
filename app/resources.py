@@ -80,7 +80,7 @@ class PaymentCard(Resource):
                 reason = "Connection failed after retry"
             except Exception as e:
                 status_code = 500
-                reason = "Exception {e}"
+                reason = f"Exception {e}"
 
             if status_code != 200:
                 logger.info(f'Retain unsuccessful: HTTP {status_code} {reason} {resp_text}'
