@@ -1,10 +1,12 @@
 import base64
 import hashlib
 import json
+import time
 from enum import Enum
 from uuid import uuid4
 
 import requests
+from requests.exceptions import Timeout, ConnectionError
 
 import settings
 from app.action import ActionCode
@@ -279,7 +281,10 @@ class Visa:
         :param status_mapping: mapping dict from Hermes which must prepend "action_name:" eg Add: or Delete:
         :return: response dict in with keys: "message", "status_code" and if success "bink_status"
         """
-        resp_content = response.json()
+        try:
+            resp_content = response.json()
+        except AttributeError:
+            resp_content = {}
         other_data = {}
         if not resp_content:
             resp_content = {}
@@ -340,7 +345,7 @@ class Visa:
         headers = {'Content-Type': 'application/json'}
         if settings.STUBBED_VOP_URL:
             settings.logger.info(f"VOP Mock request to Pelops being sent to: {url}")
-            return requests.request('POST', url, headers=headers, data=data)
+            return requests.request('POST', url, headers=headers, data=data, timeout=(5, 10))
         else:
             settings.logger.info(
                 f"VOP request being sent to {url} cert paths"
@@ -350,7 +355,7 @@ class Visa:
             return requests.request(
                 'POST', url, auth=(self.vop_user_id, self.vop_password),
                 cert=(settings.Secrets.vop_client_certificate_path, settings.Secrets.vop_client_key_path),
-                headers=headers, data=data)
+                headers=headers, data=data, timeout=(5, 10))
 
     def try_vop_and_get_status(self, data, action_name, action_code, api_endpoint, card_id_info):
         resp_state = VOPResultStatus.RETRY
@@ -375,6 +380,13 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
+            except (Timeout, ConnectionError) as error:
+                agent_message = f"Agent connection {error}"
+                settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
+                agent_status_code = 0
+                resp_state = VOPResultStatus.RETRY
+                time.sleep(10)
+
             except Exception as error:
                 agent_message = f"Agent exception {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
