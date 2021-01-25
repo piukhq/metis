@@ -68,16 +68,23 @@ class PaymentCard(Resource):
 
         logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
         if action_code == ActionCode.ADD:
-            resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
-            if resp.status_code != 200:
-                logger.info(
-                    'Retain unsuccessful: HTTP {} {} {} // Payment token: {}'.format(
-                        resp.status_code,
-                        resp.reason,
-                        resp.text,
-                        req_data['payment_token'],
-                    )
-                )
+            status_code = 500
+            resp_text = f" No reply received"
+            try:
+                resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
+                status_code = resp.status_code
+                reason = resp.reason
+                resp_text = resp.text
+            except AttributeError:
+                status_code = 504
+                reason = "Connection failed after retry"
+            except Exception as e:
+                status_code = 500
+                reason = f"Exception {e}"
+
+            if status_code != 200:
+                logger.info(f'Retain unsuccessful: HTTP {status_code} {reason} {resp_text}'
+                            f'Payment token: {req_data.get("payment_token")} partner: {req_data.get("partner_slug")}')
                 return make_response('Retain unsuccessful', 400)
 
         process_card(action_code, req_data)

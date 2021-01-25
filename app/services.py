@@ -1,14 +1,16 @@
+import time
 from copy import deepcopy
 from typing import Union, Type, TYPE_CHECKING
 
 import requests
+from requests.exceptions import Timeout, ConnectionError
 
 import settings
 from app.agents.exceptions import OAuthError
+from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
 from vault import fetch_secrets
-from app.agents.visa_offers import VOPResultStatus
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
@@ -39,21 +41,55 @@ def refresh_oauth_password() -> None:
 
 
 def send_request(
-    method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response=True
+        method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response: bool = True,
+        timeout: tuple = (5, 10)
 ) -> requests.Response:
     settings.logger.info(f"{method} Spreedly Request to URL: {url}")
-    params = {"method": method, "url": url, "headers": headers}
+    params = {"method": method, "url": url, "headers": headers, "timeout": timeout}
     if request_data:
         params["data"] = request_data
 
-    resp = requests.request(**params, auth=(USERNAME, PASSWORD))
-    if resp.status_code in [401, 403]:
-        settings.logger.info(f"Spreedly {method} status code: {resp.status_code}, reloading oauth password from Vault")
-        refresh_oauth_password()
-        resp = requests.request(**params, auth=(USERNAME, PASSWORD))
+    resp = send_retry_spreedly_request(**params, auth=(USERNAME, PASSWORD))
 
     if log_response:
-        settings.logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
+        try:
+            settings.logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
+        except AttributeError as e:
+            settings.logger.info(f"Spreedly {method} to URL: {url} failed response object error {e}")
+
+    return resp
+
+
+def send_retry_spreedly_request(**params):
+    attempts = 0
+    resp = None
+    while attempts < 4:
+        attempts += 1
+        try:
+            resp = requests.request(**params)
+        except (Timeout, ConnectionError) as e:
+            retry = True
+            resp = None
+            settings.logger.error(f"Spreedly {params['method']}, url:{params['url']},"
+                                  f" Retriable exception {e} attempt {attempts}")
+        else:
+            if resp.status_code in [401, 403]:
+                settings.logger.info(f"Spreedly {params['method']} status code: {resp.status_code}, "
+                                     f"reloading oauth password from Vault")
+                refresh_oauth_password()
+                attempts = 0
+                retry = True
+            elif resp.status_code in [500, 501, 502, 503, 504, 492]:
+                settings.logger.error(f"Spreedly {params['method']}, url:{params['url']},"
+                                      f" status code: {resp.status_code}, Retriable error attempt {attempts}")
+                retry = True
+            else:
+                retry = False
+        if retry:
+            time.sleep(3**attempts - 1)  # 4 attempts at 2s, 8s, 26s, 63s or 0s if if oauth error
+
+        else:
+            break
 
     return resp
 
@@ -144,12 +180,15 @@ def add_card(card_info: dict) -> requests.Response:
         return None
     settings.logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
 
-    resp = send_request("POST", url, header, request_data)
+    req_resp = send_request("POST", url, header, request_data)
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
 
-    resp = agent_instance.response_handler(resp, "Add", status_mapping)
+    try:
+        resp = agent_instance.response_handler(req_resp, "Add", status_mapping)
+    except AttributeError:
+        resp = {"status_code": 504, "message": "Bad or no response from Spreedly"}
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
