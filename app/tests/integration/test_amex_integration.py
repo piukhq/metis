@@ -8,7 +8,7 @@ class TestServices(unittest.TestCase):
 
     def test_amex_sync(self):
         card_info = {
-            'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+            'payment_token': 'QdjGCPSiYYDKxPMvvluYRG6zq79',
             'card_token': ' ',
             'partner_slug': 'amex'
         }
@@ -20,7 +20,7 @@ class TestServices(unittest.TestCase):
 
     def test_amex_unsync(self):
         card_info = {
-            'payment_token': '3ERtq3pUV5OiNpdTCuhhXLBmnv8',
+            'payment_token': 'QdjGCPSiYYDKxPMvvluYRG6zq79',
             'card_token': ' ',
             'partner_slug': 'amex'
         }

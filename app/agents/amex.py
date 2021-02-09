@@ -8,6 +8,7 @@ import base64
 from urllib import parse
 from lxml import etree
 
+import settings
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -23,6 +24,8 @@ class Amex:
     header = {'Content-Type': 'application/xml'}
     partnerId = 'AADP0050'
     distrChan = '9999'  # 'Amex to provide'
+    receiver_function_open = "{{#base64}}{{#bytes_hex}}{{#hmac}}sha256,"
+    receiver_function_close = "{{/hmac}}{{/bytes_hex}}{{/base64}}"
 
     def __init__(self):
         # Amex OAuth details
@@ -30,7 +33,9 @@ class Amex:
         self.client_secret = settings.Secrets.amex_client_secret
         if settings.TESTING:
             self.url = settings.STUBBED_AMEX_URL
-            self.rec_token = 'amex' + '/deliver.xml'
+            self.rec_token = 'TmOF7n6qdXkCC3lErt1ThRdXsAW' + '/deliver.xml'
+            self.client_id = 'UutHtomVzoDelGh2a6XG0mN2AHVk1xyJ'
+            self.client_secret = 'McPmGWNLy3qtZTNfozUpb2delXR4qUmq'
         else:
             # Production
             self.url = 'https://api.americanexpress.com'
@@ -140,9 +145,15 @@ class Amex:
                    '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
                    '  <headers>' + self.request_header(res_path_unsync, body) + '</headers>' \
-                   '  <body>' + self.remove_card_request_body(card_info) + '</body>' \
+                   '  <body>' + body + '</body>' \
                    '</delivery>'
         return xml_data
+
+    def remove_cdata(self, input_string):
+        output_string1 = input_string.replace("<![CDATA[", "")
+        output_string2 = output_string1.replace("]]>", "")
+        output_string3 = output_string2.replace(",", ",")
+        return output_string3
 
     def mac_api_header(self, res_path_in, req_body):
         """
@@ -162,18 +173,18 @@ class Amex:
         iv. Base 64 encoding on output raw data
         :return: mac token.
         """
-        body_hash = f"{{#hmac}}sha256,{self.client_secret},{req_body}{{/hmac}}"
-        res_path = parse.quote(res_path_in, safe='')
-        ts = int(time.time())
+        body_hash = self.remove_cdata(self.receiver_function_open + self.client_secret + "," + req_body +
+                                      self.receiver_function_close)
         millis = int(round(time.time() * 1000))
+        ts = millis
         random.seed(millis)
         post_fix = 10000000 + random.randint(0, 90000000)
         nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-        host = 'api.americanexpress.com'
-        base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path + "\n" + host + "\n" + port + "\n\n"
-        base_string_bytes = base_string.encode('utf-8')
-        mac = generate_mac(base_string_bytes, self.client_secret)
-
+        host = self.url.replace("https://", "")
+        base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path_in + "\n" + host + "\n" + port \
+                      + "\n" + body_hash + "\n"
+        mac = (self.receiver_function_open + self.client_secret + "," + base_string +
+               self.receiver_function_close)
         auth_header = f'MAC id="{self.client_id}",ts="{str(ts)}",nonce="{nonce}",bodyhash="{body_hash}",mac="{mac}"'
         return auth_header
 
