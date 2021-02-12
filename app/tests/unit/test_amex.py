@@ -1,5 +1,4 @@
-from unittest import TestCase, mock
-import httpretty
+from unittest import TestCase
 import json
 
 import settings

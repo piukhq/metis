@@ -1,11 +1,10 @@
-import random
-import settings
-import json
-import time
-import hmac
-import hashlib
 import base64
-from urllib import parse
+import hashlib
+import hmac
+import json
+import random
+import time
+
 from lxml import etree
 
 import settings
@@ -31,15 +30,12 @@ class Amex:
         # Amex OAuth details
         self.client_id = settings.Secrets.amex_client_id
         self.client_secret = settings.Secrets.amex_client_secret
+        self.rec_token = f"{settings.Secrets.spreedly_amex_receive_token}/deliver.xml"
         if settings.TESTING:
             self.url = settings.STUBBED_AMEX_URL
-            self.rec_token = 'TmOF7n6qdXkCC3lErt1ThRdXsAW' + '/deliver.xml'
-            self.client_id = 'UutHtomVzoDelGh2a6XG0mN2AHVk1xyJ'
-            self.client_secret = 'McPmGWNLy3qtZTNfozUpb2delXR4qUmq'
         else:
             # Production
             self.url = 'https://api.americanexpress.com'
-            self.rec_token = f"{settings.Secrets.spreedly_amex_receive_token}/deliver.xml"
 
     def add_url(self):
         return '{}{}'.format(self.url, res_path_sync)
