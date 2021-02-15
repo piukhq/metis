@@ -177,8 +177,7 @@ class Amex:
         post_fix = 10000000 + random.randint(0, 90000000)
         nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
         host = self.url.replace("https://", "")
-        base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path_in + "\n" + host + "\n" + port \
-                      + "\n" + body_hash + "\n"
+        base_string = f"{str(ts)}\n{nonce}\nPOST\n{res_path_in}\n{host}\n{port}\n{body_hash}\n"
         mac = (self.receiver_function_open + self.client_secret + "," + base_string +
                self.receiver_function_close)
         auth_header = f'MAC id="{self.client_id}",ts="{str(ts)}",nonce="{nonce}",bodyhash="{body_hash}",mac="{mac}"'

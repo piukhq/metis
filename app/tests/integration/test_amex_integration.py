@@ -1,8 +1,8 @@
 import unittest
-import settings
-import app.services
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
+import app.services
+import settings
 from app.agents.amex import Amex
 
 

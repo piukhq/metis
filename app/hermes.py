@@ -47,6 +47,6 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
                 settings.logger.info(f"Retry Payment Account Status Call Back for card/token: {card_id}{token}")
             elif count == max_count:
                 settings.logger.error(f"Failed Payment Account Status Call Back: {card_id}{token}, "
-                             f"given up after {max_count} attempts")
+                                      f"given up after {max_count} attempts")
 
     return resp

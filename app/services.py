@@ -46,7 +46,7 @@ def send_request(
         params["data"] = request_data
 
     resp = send_retry_spreedly_request(
-        **params, auth=(settings.Secrets.spreedly_oauth_username,settings.Secrets.spreedly_oauth_password)
+        **params, auth=(settings.Secrets.spreedly_oauth_username, settings.Secrets.spreedly_oauth_password)
                                        )
     if log_response:
         try:

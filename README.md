@@ -11,10 +11,10 @@ Running `add_card` and `remove_card` requires the celery worker to be running.
 
 First make sure you have a redis server running on `redis://localhost:6379`.
 
-Then, run this command in the root directory of the project:
+Then, run this command in the root directory of the project, setting concurrency to one for easier debugging
 
 ```bash
-$ celery -A app.tasks worker
+$ celery -A app.tasks worker --loglevel=INFO --concurrency=1
 ```
 
 For running the celery worker as a daemon, the following command is sufficient for dev:
@@ -22,6 +22,8 @@ For running the celery worker as a daemon, the following command is sufficient f
 ```bash
 $ /var/.virtualenvs/metis/bin/celery worker -A app.tasks --pidfile=/tmp/celery_metis.pid -D
 ```
+of alternatively set up Pycharm to have a run celery config using the module name celery and
+the rest of the command line as parameters.
 
 For production environments, something more robust like systemd or supervisord is recommended.
 The `config` directory contains files that can be used to set celery up as a system service.
@@ -59,6 +61,41 @@ Set the the payment_method_token with a valid token obtained by registering a ca
 ```
 <payment_method_token>WhtIyJrcpcLupNpBD4bSVx3qyY5</payment_method_token>
 ```
+### Secrets and integration testing to Agents.
+
+The policy is for all secrets to be moved to the Azure vault.  This includes lower security risk secrets used
+for integration testing to Agents test services.  Instead of hard coding them or placing in comments
+they should be placed in the Dev vault.
+
+It should be noted that doing this gives more control over access to these tokens but because developers
+need to use them they may be downloaded into code run locally. They should be discarded after use.
+Metis automatically does this by downloading the secrets at the start and apart from VOP client certificates
+only keeps them in memory.
+
+Secrets are not required to be downloaded if running with Pelops, this only applies to Integration
+testing. Usually developers will working without secrets and the azure vault url should be a blank string and 
+the stubbed amex url should be you local Pelops.
+
+Amex has been updated to align with this policy.  The following config will cause secrets to accessed
+on start up and used to talk to Amex Test environment:
+
+        settings.TESTING = True
+        settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
+        settings.AZURE_VAULT_URL = "http://127.0.0.1:8200"
+        settings.secrets_from_vault(start_delay=0) 
+        
+Note: The above is used in the test SetUp class in Amex integration tests to force the correct config. when running
+ the test 
+ 
+Before running the test ensure you have vault access by running the following system commands:
+
+    kukctx uksouth-dev0 
+    kukubectl port-forward svc/fakicorp 8200
+ 
+ 
+
+
+ 
 
 ## Docker Configuration
 
@@ -70,8 +107,8 @@ Set the the payment_method_token with a valid token obtained by registering a ca
   - `true` - Enable Application Debug Logging
   - `false` - Disable Application Debug Logging
 - `TESTING`
-  - `true` - Do not hit production Spreedly environment
-  - `false` - Use Production Spreedly environment
+  - `true` - Use stubbed URLs to talk to Pelops or test Spreedly
+  - `false` - Force Production Spreedly environment
 - `SPREEDLY_SIGNING_SECRET`
   - String Value, Secret for Spreedly
 - `SPREEDLY_BASE_URL`
