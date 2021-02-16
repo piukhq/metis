@@ -1,15 +1,13 @@
-import random
-import settings
-import json
-import time
-import hmac
-import hashlib
 import base64
-import requests
-from urllib import parse
+import hashlib
+import hmac
+import json
+import random
+import time
+
 from lxml import etree
 
-from app.agents.exceptions import OAuthError
+import settings
 
 '''E2: https://api.qa.americanexpress.com/v2/datapartnership/offers/sync
 E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
@@ -17,26 +15,27 @@ E3: https://apigateway.americanexpress.com/v2/datapartnership/offers/sync'''
 
 
 port = "443"
-res_path_sync = '/v3/smartoffers/sync'
-res_path_unsync = "/v3/smartoffers/unsync"
+res_path_sync = "/marketing/v4/smartoffers/card_accounts/cards/sync_details"
+res_path_unsync = "/marketing/v4/smartoffers/card_accounts/cards/unsync_details"
 
 
 class Amex:
     header = {'Content-Type': 'application/xml'}
     partnerId = 'AADP0050'
     distrChan = '9999'  # 'Amex to provide'
+    receiver_function_open = "{{#base64}}{{#bytes_hex}}{{#hmac}}sha256,"
+    receiver_function_close = "{{/hmac}}{{/bytes_hex}}{{/base64}}"
 
     def __init__(self):
         # Amex OAuth details
         self.client_id = settings.Secrets.amex_client_id
         self.client_secret = settings.Secrets.amex_client_secret
+        self.rec_token = f"{settings.Secrets.spreedly_amex_receive_token}/deliver.xml"
         if settings.TESTING:
             self.url = settings.STUBBED_AMEX_URL
-            self.rec_token = 'amex' + '/deliver.xml'
         else:
             # Production
             self.url = 'https://api.americanexpress.com'
-            self.rec_token = f"{settings.Secrets.spreedly_amex_receive_token}/deliver.xml"
 
     def add_url(self):
         return '{}{}'.format(self.url, res_path_sync)
@@ -47,27 +46,13 @@ class Amex:
     def receiver_token(self):
         return self.rec_token
 
-    def request_header(self, res_path):
-        header_start = '<![CDATA['
-        content_type = 'Content-Type: application/json'
-        auth_header = self.mac_auth_header()
-        oauth_resp = self.amex_oauth(auth_header)
+    def request_header(self, res_path, req_body):
+        mac_header = self.mac_api_header(res_path, req_body)
+        auth = f'Authorization: "{mac_header}"'
+        content_type = "Content-Type: application/json"
+        api_key = f"X-AMEX-API-KEY: {self.client_id}"
 
-        if 'errorCode' in oauth_resp:
-            settings.logger.error('Received failure response from Amex OAuth. Response: {}'.format(oauth_resp))
-            raise OAuthError()
-
-        access_token = oauth_resp['access_token']
-        mac_key = oauth_resp['mac_key']
-        mac_header = mac_api_header(access_token, mac_key, res_path)
-        authentication = 'Authorization: ' + "\"" + mac_header + "\""
-
-        api_key = 'X-AMEX-API-KEY: {}'.format(self.client_id)
-        access_key = 'X-AMEX-ACCESS-KEY: {}'.format(access_token)
-        header_end = ']]>'
-
-        header = "{0}{1}\n{2}\n{3}\n{4}{5}".format(header_start, content_type, authentication,
-                                                   api_key, access_key, header_end)
+        header = f"<![CDATA[{content_type}\n{auth}\n{api_key}]]>"
         return header
 
     def response_handler(self, response, action, status_mapping):
@@ -91,95 +76,82 @@ class Amex:
             message = str({'Amex {} problem processing response.'.format(action)})
             resp = {'message': message, 'status_code': 422}
             settings.logger.error(message, exc_info=1)
-
-        if amex_data["status"] == "Failure":
-            # Not a good news response.
-            message = "Amex {} unsuccessful - Token: {}, {}, {} {}".format(action,
-                                                                           payment_method_token[0].text,
-                                                                           amex_data["respDesc"],
-                                                                           "Code:",
-                                                                           amex_data["respCd"])
-            settings.logger.info(message)
-            resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
         else:
-            # could be a good response
-            message = "Amex {} successful - Token: {}, {}".format(action,
-                                                                  payment_method_token[0].text,
-                                                                  "Amex successfully processed")
-            settings.logger.info(message)
+            if amex_data["status"] == "Failure":
+                # Not a good news response.
+                message = "Amex {} unsuccessful - Token: {}, {}, {} {}".format(action,
+                                                                               payment_method_token[0].text,
+                                                                               amex_data["respDesc"],
+                                                                               "Code:",
+                                                                               amex_data["respCd"])
+                settings.logger.info(message)
+                resp = {'message': action + ' Amex fault recorded. Code: ' + amex_data["respCd"], 'status_code': 422}
+            else:
+                # could be a good response
+                message = "Amex {} successful - Token: {}, {}".format(action,
+                                                                      payment_method_token[0].text,
+                                                                      "Amex successfully processed")
+                settings.logger.info(message)
 
-            resp = {'message': message, 'status_code': 200}
+                resp = {'message': message, 'status_code': 200}
 
-        if amex_data and amex_data['respCd'] in status_mapping:
-            resp['bink_status'] = status_mapping[amex_data['respCd']]
-        else:
-            resp['bink_status'] = status_mapping['BINK_UNKNOWN']
+            if amex_data and amex_data['respCd'] in status_mapping:
+                resp['bink_status'] = status_mapping[amex_data['respCd']]
+            else:
+                resp['bink_status'] = status_mapping['BINK_UNKNOWN']
 
         return resp
 
     def add_card_request_body(self, card_id):
-        msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
-
+        msg_id = str(int(time.time()))  # 'Can this be a guid or similar?'
         data = {
-            "msgId": msgId,
+            "msgId": msg_id,
             "partnerId": self.partnerId,
             "cardNbr": "{{credit_card_number}}",
             "cmAlias1": card_id['payment_token'],
             "distrChan": self.distrChan
         }
-
-        body_data = '<![CDATA[' + json.dumps(data) + ']]>'
+        body_data = f"<![CDATA[{json.dumps(data)}]]>"
         return body_data
 
     def remove_card_request_body(self, card_id):
-        msgId = str(int(time.time()))  # 'Can this be a guid or similar?'
-
+        msg_id = str(int(time.time()))  # 'Can this be a guid or similar?'
         data = {
-            "msgId": msgId,
+            "msgId": msg_id,
             "partnerId": self.partnerId,
-            "cardNbr": "{{credit_card_number}}",
             "cmAlias1": card_id['payment_token'],
             "distrChan": self.distrChan
         }
-
-        body_data = '<![CDATA[' + json.dumps(data) + ']]>'
+        body_data = f"<![CDATA[{json.dumps(data)}]]>"
         return body_data
 
     def add_card_body(self, card_info):
+        body = self.add_card_request_body(card_info)
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.add_url() + '</url>' \
-                   '  <headers>' + self.request_header(res_path_sync) + '</headers>' \
-                   '  <body>' + self.add_card_request_body(card_info) + '</body>' \
+                   '  <headers>' + self.request_header(res_path_sync, body) + '</headers>' \
+                   '  <body>' + body + '</body>' \
                    '</delivery>'
         return xml_data
 
     def remove_card_body(self, card_info):
+        body = self.add_card_request_body(card_info)
         xml_data = '<delivery>' \
                    '  <payment_method_token>' + card_info['payment_token'] + '</payment_method_token>' \
                    '  <url>' + self.remove_url() + '</url>' \
-                   '  <headers>' + self.request_header(res_path_unsync) + '</headers>' \
-                   '  <body>' + self.remove_card_request_body(card_info) + '</body>' \
+                   '  <headers>' + self.request_header(res_path_unsync, body) + '</headers>' \
+                   '  <body>' + body + '</body>' \
                    '</delivery>'
         return xml_data
 
-    def amex_oauth(self, auth_header):
-        # Call the Amex OAuth endpoint to obtain an API request token.
-        # base_url = "https://api.americanexpress.com"
-        # base_url + "/apiplatform/v2/oauth/token/mac"
-        auth_url = '{}{}'.format(self.url, "/apiplatform/v2/oauth/token/mac")
-        payload = "grant_type=client_credentials&scope="
+    def remove_cdata(self, input_string):
+        output_string1 = input_string.replace("<![CDATA[", "")
+        output_string2 = output_string1.replace("]]>", "")
+        output_string3 = output_string2.replace(",", ",")
+        return output_string3
 
-        header = {"Content-Type": "application/x-www-form-urlencoded",
-                  "Authentication": auth_header,
-                  "X-AMEX-API-KEY": self.client_id}
-
-        resp = requests.post(auth_url, data=payload, headers=header)
-        resp_json = json.loads(resp.content.decode())
-
-        return resp_json
-
-    def mac_auth_header(self):
+    def mac_api_header(self, res_path_in, req_body):
         """
         Authentication=”MAC id=” client id value”,
         ts=”time stamp generated by client(In unix epoch time format)”,
@@ -187,57 +159,29 @@ class Amex:
         mac=”request MAC generated using HMAC SHA1 algorithm”
         i. Use HMAC SHA1 algorithm.
         ii. Base string constructed using below parameters with following order followed by newline
-            a.  client_id
-            b. ts (timestamp in unix epoch format)
-            c. nonce
-            d. grant_type
-        iii. Use client_secret as key.
+            a.  ts - timestamp
+            b. nonce = ts:BINK
+            c. HTTP Method = POST
+            d. Resource path = '/v1/apis/getme' url encoded
+            e. host = 'api.qa.americanexpress.com'
+            f. post : 443
+        iii. Use OAuth token as key.
         iv. Base 64 encoding on output raw data
         :return: mac token.
         """
-        ts = str(int(time.time()))
-        nonce = ts + ":AMEX"  # ":BINK"
-        base_string = self.client_id + "\n" + ts + "\n" + nonce + "\n" + "client_credentials" + "\n"
-        base_string_bytes = base_string.encode('utf-8')
-        mac = generate_mac(base_string_bytes, self.client_secret)
-
-        auth_header = "MAC id=\"" + self.client_id + "\",ts=\"" + ts + "\",nonce=\"" + nonce + "\",mac=\"" + mac + "\""
-
+        body_hash = self.remove_cdata(self.receiver_function_open + self.client_secret + "," + req_body +
+                                      self.receiver_function_close)
+        millis = int(round(time.time() * 1000))
+        ts = millis
+        random.seed(millis)
+        post_fix = 10000000 + random.randint(0, 90000000)
+        nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
+        host = self.url.replace("https://", "")
+        base_string = f"{str(ts)}\n{nonce}\nPOST\n{res_path_in}\n{host}\n{port}\n{body_hash}\n"
+        mac = (self.receiver_function_open + self.client_secret + "," + base_string +
+               self.receiver_function_close)
+        auth_header = f'MAC id="{self.client_id}",ts="{str(ts)}",nonce="{nonce}",bodyhash="{body_hash}",mac="{mac}"'
         return auth_header
-
-
-def mac_api_header(access_token, mac_key, res_path_in):
-    """
-    Authentication=”MAC id=” client id value”,
-    ts=”time stamp generated by client(In unix epoch time format)”,
-    nonce=”unique identifier string”,
-    mac=”request MAC generated using HMAC SHA1 algorithm”
-    i. Use HMAC SHA1 algorithm.
-    ii. Base string constructed using below parameters with following order followed by newline
-        a.  ts - timestamp
-        b. nonce = ts:BINK
-        c. HTTP Method = POST
-        d. Resource path = '/v1/apis/getme' url encoded
-        e. host = 'api.qa.americanexpress.com'
-        f. post : 443
-    iii. Use OAuth token as key.
-    iv. Base 64 encoding on output raw data
-    :return: mac token.
-    """
-    res_path = parse.quote(res_path_in, safe='')
-    ts = int(time.time())
-    millis = int(round(time.time() * 1000))
-    random.seed(millis)
-    post_fix = 10000000 + random.randint(0, 90000000)
-    nonce = str(ts + post_fix) + ":AMEX"  # ":BINK"
-    host = 'api.americanexpress.com'
-    base_string = str(ts) + "\n" + nonce + "\n" + "POST\n" + res_path + "\n" + host + "\n" + port + "\n\n"
-    base_string_bytes = base_string.encode('utf-8')
-    mac = generate_mac(base_string_bytes, mac_key)
-
-    auth_header = "MAC id=\"" + access_token + "\",ts=\"" + str(ts) + "\",nonce=\"" + nonce + "\",mac=\"" + mac + "\""
-
-    return auth_header
 
 
 def generate_mac(encoded_base_string, secret):

@@ -2,14 +2,13 @@ import time
 
 import requests
 
-
-from settings import HERMES_URL, SERVICE_API_KEY, logger
+import settings
 
 
 def get_provider_status_mappings(slug):
-    status_mapping = requests.get('{}/payment_cards/provider_status_mappings/{}'.format(HERMES_URL, slug),
+    status_mapping = requests.get('{}/payment_cards/provider_status_mappings/{}'.format(settings.HERMES_URL, slug),
                                   headers={'Content-Type': 'application/json',
-                                           'Authorization': 'Token {}'.format(SERVICE_API_KEY)}).json()
+                                           'Authorization': 'Token {}'.format(settings.SERVICE_API_KEY)}).json()
     return {x['provider_status_code']: x['bink_status_code'] for x in status_mapping}
 
 
@@ -35,9 +34,9 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
     count = 0
     max_count = 5
     while count < max_count:
-        resp = requests.put("{}/payment_cards/accounts/status".format(HERMES_URL),
+        resp = requests.put("{}/payment_cards/accounts/status".format(settings.HERMES_URL),
                             headers={'content-type': 'application/json',
-                                     'Authorization': 'Token {}'.format(SERVICE_API_KEY)},
+                                     'Authorization': 'Token {}'.format(settings.SERVICE_API_KEY)},
                             json=request_data)
         if resp.status_code < 400:
             break
@@ -45,9 +44,9 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
             time.sleep(count)
             count += 1
             if count == 1:
-                logger.info(f"Retry Payment Account Status Call Back for card/token: {card_id}{token}")
+                settings.logger.info(f"Retry Payment Account Status Call Back for card/token: {card_id}{token}")
             elif count == max_count:
-                logger.error(f"Failed Payment Account Status Call Back: {card_id}{token}, "
-                             f"given up after {max_count} attempts")
+                settings.logger.error(f"Failed Payment Account Status Call Back: {card_id}{token}, "
+                                      f"given up after {max_count} attempts")
 
     return resp

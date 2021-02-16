@@ -15,9 +15,6 @@ from vault import fetch_secrets
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
 
-# Username and password from Spreedly site - Loyalty Angels environments
-PASSWORD = settings.Secrets.spreedly_oauth_password
-USERNAME = settings.Secrets.spreedly_oauth_username
 
 XML_HEADER = {"Content-Type": "application/xml"}
 
@@ -28,16 +25,19 @@ def get_spreedly_url(partner_slug: str) -> str:
     return settings.SPREEDLY_BASE_URL
 
 
-def refresh_oauth_password() -> None:
-    global PASSWORD
-    secret_name = "spreedly_oauth_password"
-    try:
-        secret_def = settings.Secrets.SECRETS_DEF[secret_name]
-    except KeyError:
-        settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
+def refresh_oauth_credentials() -> None:
+    if settings.AZURE_VAULT_URL:
+        secret_defs = ["spreedly_oauth_password", "spreedly_oauth_username"]
+        for secret_name in secret_defs:
+            try:
+                secret_def = settings.Secrets.SECRETS_DEF[secret_name]
+            except KeyError:
+                settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
+            else:
+                fetch_secrets(secret_name, deepcopy(secret_def))
     else:
-        if fetch_secrets(secret_name, deepcopy(secret_def)) and PASSWORD != settings.Secrets.spreedly_oauth_password:
-            PASSWORD = settings.Secrets.spreedly_oauth_password
+        settings.logger.error(f"Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
+                              f" SPREEDLY_BASE_URL to your local Pelops ")
 
 
 def send_request(
@@ -49,8 +49,9 @@ def send_request(
     if request_data:
         params["data"] = request_data
 
-    resp = send_retry_spreedly_request(**params, auth=(USERNAME, PASSWORD))
-
+    resp = send_retry_spreedly_request(
+        **params, auth=(settings.Secrets.spreedly_oauth_username, settings.Secrets.spreedly_oauth_password)
+                                       )
     if log_response:
         try:
             settings.logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
@@ -62,6 +63,7 @@ def send_request(
 
 def send_retry_spreedly_request(**params):
     attempts = 0
+    get_auth_attempts = 0
     resp = None
     while attempts < 4:
         attempts += 1
@@ -76,7 +78,12 @@ def send_retry_spreedly_request(**params):
             if resp.status_code in [401, 403]:
                 settings.logger.info(f"Spreedly {params['method']} status code: {resp.status_code}, "
                                      f"reloading oauth password from Vault")
-                refresh_oauth_password()
+                refresh_oauth_credentials()
+                get_auth_attempts += 1
+                if get_auth_attempts > 3:
+                    time.sleep(2 ** get_auth_attempts - 2)
+                if get_auth_attempts > 10:
+                    break
                 attempts = 0
                 retry = True
             elif resp.status_code in [500, 501, 502, 503, 504, 492]:
