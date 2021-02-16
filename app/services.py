@@ -26,14 +26,18 @@ def get_spreedly_url(partner_slug: str) -> str:
 
 
 def refresh_oauth_credentials() -> None:
-    secret_defs = ["spreedly_oauth_password", "spreedly_oauth_username"]
-    for secret_name in secret_defs:
-        try:
-            secret_def = settings.Secrets.SECRETS_DEF[secret_name]
-        except KeyError:
-            settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
-        else:
-            fetch_secrets(secret_name, deepcopy(secret_def))
+    if settings.AZURE_VAULT_URL:
+        secret_defs = ["spreedly_oauth_password", "spreedly_oauth_username"]
+        for secret_name in secret_defs:
+            try:
+                secret_def = settings.Secrets.SECRETS_DEF[secret_name]
+            except KeyError:
+                settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
+            else:
+                fetch_secrets(secret_name, deepcopy(secret_def))
+    else:
+        settings.logger.error(f"Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
+                              f" SPREEDLY_BASE_URL to your local Pelops ")
 
 
 def send_request(
