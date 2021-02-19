@@ -35,7 +35,7 @@ class Amex:
             self.url = settings.STUBBED_AMEX_URL
         else:
             # Production
-            self.url = 'https://api.americanexpress.com'
+            self.url = 'https://apigateway2s.americanexpress.com'
 
     def add_url(self):
         return '{}{}'.format(self.url, res_path_sync)
