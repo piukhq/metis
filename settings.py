@@ -35,21 +35,14 @@ SERVICE_API_KEY = 'F616CE5C88744DD52DB628FAD8B3D'
 REDIS_HOST = env_var('REDIS_HOST', 'localhost')
 REDIS_PORT = env_var('REDIS_PORT', 6379)
 REDIS_PASS = env_var('REDIS_PASS', '')
-REDIS_TLS = env_var('REDIS_TLS', False)
 REDIS_DB = env_var('REDIS_DB', 0)
 
+broker_url = env_var('CELERY_BROKER_URL', f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
 
-if env_var('CELERY_BROKER_URL'):
-    broker_url = env_var('CELERY_BROKER_URL')
-else:
-    if REDIS_TLS:
-        broker_url = f'rediss://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=optional'
-    else:
-        broker_url = f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
-
-RABBITMQ_HOST = env_var('RABBITMQ_HOST', '192.168.1.53')
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
+RABBITMQ_HOST = env_var('RABBITMQ_HOST', '127.0.0.1')
+AMQP_URL = env_var('AMQP_URL', f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:5672/')
 
 # how many card enrolments can we fit in a single file, and how many files can we send per day?
 CARDS_PER_FILE = 80000
