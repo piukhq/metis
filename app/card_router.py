@@ -22,10 +22,7 @@ def rabbitmq_handler(action_code, card_info):
         put_account_status(card_status_code, card_id=card_info['id'])
         return
 
-    credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASS)
-    params = pika.ConnectionParameters(host=settings.RABBITMQ_HOST, port=5672, credentials=credentials)
-    connection = pika.BlockingConnection(params)
-
+    connection = pika.BlockingConnection(pika.URLParameters(settings.AMQP_URL))
     channel = connection.channel()
     queue_name = card_info['partner_slug']
     channel.queue_declare(queue_name, durable=True)
