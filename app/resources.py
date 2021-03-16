@@ -11,7 +11,9 @@ from app.agents.visa_offers import Visa
 from app.auth import authorized
 from app.card_router import process_card
 from app.services import create_prod_receiver, retain_payment_method_token
+from app.basic_services import basic_add_card, basic_remove_card
 from settings import logger
+from app.agents.exceptions import OAuthError
 
 api = Api()
 
@@ -175,3 +177,148 @@ class VisaDeactivate(Resource):
 
 
 api.add_resource(VisaDeactivate, '/visa/deactivate/')
+
+"""
+    Foundation interface is intended to be used by data correction scripts in the first instance
+    It does basic actions without any background processing and returns a json dict
+    Note it does not map the called service response code to http return codes; 200 if api call is success even if
+    the called service returns an error.  The response data has a status_code field which should be checked
+"""
+
+
+foundation_retain_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1))
+})
+
+
+foundation_add_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1)),
+    Required('card_token'): All(str, Length(min=1))
+})
+
+
+foundation_delete_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1))
+})
+
+
+def foundation_response(ret, status_code):
+    response = make_response(json.dumps(ret), status_code)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+
+def set_ret():
+    return {
+        "status_code": 0,
+        "resp_text": "",
+        "reason": "",
+        "agent_error_code": "",
+        "agent_retry_status": ""
+    }
+
+
+class InvalidParams(Exception):
+    pass
+
+
+def foundation_check_request(schema, agent, req_data, ret):
+    try:
+        schema(req_data)
+    except MultipleInvalid as e:
+        ret['reason'] = f"Invalid/Missing Request Parameters: {e}"
+        ret['agent_retry_status'] = "Failed"
+        raise InvalidParams
+    if agent not in ['visa', 'mastercard', 'amex']:
+        ret['reason'] = "Invalid Agent"
+        ret['agent_retry_status'] = "Failed"
+        raise InvalidParams
+
+
+class FoundationSpreedlyRetain(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_retain_schema, agent, req_data, ret)
+            resp = retain_payment_method_token(req_data['payment_token'], agent)
+            ret['status_code'] = resp.status_code
+            ret['resp_text'] = resp.text
+            ret['reason'] = resp.reason
+        except AttributeError:
+            ret['status_code'] = 504
+            ret['reason'] = "Connection failed after retry"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+class FoundationSpreedlyAdd(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_add_schema, agent, req_data, ret)
+            resp = basic_add_card(agent, req_data)
+            ret['status_code'] = resp['status_code']
+            ret['resp_text'] = resp['response_state']
+            ret['reason'] = resp['message']
+            ret['agent_error_code'] = resp['agent_status_code']
+            ret['agent_retry_status'] = resp['response_state']
+
+        except OAuthError:
+            ret['reason'] = f"OAuthError"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+class FoundationRemove(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_delete_schema, agent, req_data, ret)
+            response_status, api_code, agent_error_code, agent_message, _ = basic_remove_card(agent, req_data)
+            ret['status_code'] = api_code
+            ret['resp_text'] = response_status
+            ret['reason'] = agent_message
+            ret['agent_error_code'] = agent_error_code
+            ret['agent_retry_status'] = response_status
+        except OAuthError:
+            ret['reason'] = f"OAuthError"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+api.add_resource(FoundationSpreedlyRetain, '/foundation/spreedly/<agent>/retain')
+api.add_resource(FoundationSpreedlyAdd, '/foundation/spreedly/<agent>/add')
+api.add_resource(FoundationRemove, '/foundation/<agent>/remove')
