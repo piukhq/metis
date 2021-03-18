@@ -312,7 +312,7 @@ class FoundationRemove(Resource):
             ret['status_code'] = api_code
             ret['resp_text'] = ""
             ret['reason'] = agent_message
-            ret['bink_status'] = other['bink_status']
+            ret['bink_status'] = other.get('bink_status', 'unknown')
             ret['agent_response_code'] = agent_error_code
             ret['agent_retry_status'] = response_status
         except OAuthError:
