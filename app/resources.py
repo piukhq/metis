@@ -11,7 +11,9 @@ from app.agents.visa_offers import Visa
 from app.auth import authorized
 from app.card_router import process_card
 from app.services import create_prod_receiver, retain_payment_method_token
+from app.basic_services import basic_add_card, basic_remove_card, basic_reactivate_card
 from settings import logger
+from app.agents.exceptions import OAuthError
 
 api = Api()
 
@@ -175,3 +177,184 @@ class VisaDeactivate(Resource):
 
 
 api.add_resource(VisaDeactivate, '/visa/deactivate/')
+
+"""
+    Foundation interface is intended to be used by data correction scripts in the first instance
+    It does basic actions without any background processing and returns a json dict
+    Note it does not map the called service response code to http return codes; 200 if api call is success even if
+    the called service returns an error.  The response data has a status_code field which should be checked
+"""
+
+
+foundation_retain_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1))
+})
+
+
+foundation_add_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1)),
+    Required('card_token'): All(str, Length(min=1)),
+    Optional('status_map'): dict
+})
+
+
+foundation_delete_schema = Schema({
+    Required('id'): int,
+    Required('payment_token'): All(str, Length(min=1)),
+    Optional('status_map'): dict
+})
+
+
+def foundation_response(ret, status_code):
+    response = make_response(json.dumps(ret), status_code)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+
+def set_ret():
+    return {
+        "status_code": 0,
+        "resp_text": "",
+        "reason": "",
+        "bink_status": "",
+        "agent_response_code": "",
+        "agent_retry_status": ""
+    }
+
+
+class InvalidParams(Exception):
+    pass
+
+
+def foundation_check_request(schema, agent, req_data, ret):
+    try:
+        schema(req_data)
+    except MultipleInvalid as e:
+        ret['reason'] = f"Invalid/Missing Request Parameters: {e}"
+        ret['agent_retry_status'] = "Failed"
+        raise InvalidParams
+    if agent not in ['visa', 'mastercard', 'amex']:
+        ret['reason'] = "Invalid Agent"
+        ret['agent_retry_status'] = "Failed"
+        raise InvalidParams
+
+
+def map_response(resp, ret):
+    ret['status_code'] = resp['status_code']
+    ret['bink_status'] = resp.get('bink_status')
+    ret['resp_text'] = resp.get('response_state')
+    ret['reason'] = resp['message']
+    ret['agent_response_code'] = resp.get('agent_status_code')
+    ret['agent_retry_status'] = resp.get('response_state')
+
+
+class FoundationSpreedlyRetain(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_retain_schema, agent, req_data, ret)
+            resp = retain_payment_method_token(req_data['payment_token'], agent)
+            ret['status_code'] = resp.status_code
+            ret['resp_text'] = resp.text
+            ret['reason'] = resp.reason
+        except AttributeError:
+            ret['status_code'] = 504
+            ret['reason'] = "Connection failed after retry"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+class FoundationSpreedlyAdd(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_add_schema, agent, req_data, ret)
+            resp = basic_add_card(agent, req_data)
+            map_response(resp, ret)
+
+        except OAuthError:
+            ret['reason'] = f"OAuthError"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+class FoundationRemove(Resource):
+
+    @authorized
+    def post(self, agent):
+        req_data = request.json
+        ret = set_ret()
+        try:
+            foundation_check_request(foundation_delete_schema, agent, req_data, ret)
+            response_status, api_code, agent_error_code, agent_message, other = basic_remove_card(agent, req_data)
+            ret['status_code'] = api_code
+            ret['resp_text'] = ""
+            ret['reason'] = agent_message
+            ret['bink_status'] = other.get('bink_status', 'unknown')
+            ret['agent_response_code'] = agent_error_code
+            ret['agent_retry_status'] = response_status
+        except OAuthError:
+            ret['reason'] = f"OAuthError"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+class FoundationSpreedlyMCReactivate(Resource):
+
+    @authorized
+    def post(self):
+        req_data = request.json
+        ret = set_ret()
+        agent = "mastercard"
+        try:
+            foundation_check_request(foundation_add_schema, agent, req_data, ret)
+            # response_status, status_code, agent_response_code, agent_message, _
+            resp = basic_reactivate_card(agent, req_data)
+            map_response(resp, ret)
+
+        except OAuthError:
+            ret['reason'] = f"OAuthError"
+            ret['agent_retry_status'] = "Failed"
+        except InvalidParams:
+            pass
+        except Exception as e:
+            ret['status_code'] = 500
+            ret['reason'] = f"Exception {e}"
+            ret['agent_retry_status'] = "Failed"
+
+        return foundation_response(ret, 200)
+
+
+api.add_resource(FoundationSpreedlyRetain, '/foundation/spreedly/<agent>/retain')
+api.add_resource(FoundationSpreedlyAdd, '/foundation/spreedly/<agent>/add')
+api.add_resource(FoundationSpreedlyMCReactivate, '/foundation/spreedly/mastercard/reactivate')
+api.add_resource(FoundationRemove, '/foundation/<agent>/remove')
