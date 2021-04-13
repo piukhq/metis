@@ -4,7 +4,13 @@ import json
 import time
 from enum import Enum
 from uuid import uuid4
-
+from datetime import datetime
+from prometheus.metrics import (
+    STATUS_FAILED,
+    STATUS_SUCCESS,
+    vop_activations_processing_seconds_histogram,
+    vop_activations_counter,
+)
 import requests
 from requests.exceptions import Timeout, ConnectionError
 
@@ -364,27 +370,46 @@ class Visa:
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
         other_data = {}
+        activation = False
+        if action_name == "activate":
+            activation = True
 
         while retry_count:
             retry_count -= 1
             try:
+                response_start_time = datetime.now()
                 response = self._basic_vop_request(api_endpoint, json_data)
+                response_total_time = datetime.now() - response_start_time
                 settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
                                      f" {response.status_code}, {response.text}")
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
 
+                if activation:
+                    vop_activations_processing_seconds_histogram.labels(
+                        status = response.status_code
+                    ).observe(response_time_total.seconds())
+
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
+                if activation:
+                    vop_activations_counter.labels(
+                        status=STATUS_FAILED
+                    ).inc()
+
             except (Timeout, ConnectionError) as error:
                 agent_message = f"Agent connection {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
+                if activation:
+                    vop_activations_counter.labels(
+                        status=STATUS_TIMEOUT_RETRY
+                    ).inc()
                 time.sleep(10)
 
             except Exception as error:
@@ -392,9 +417,18 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
+                if activation:
+                    vop_activations_counter.labels(
+                        status=STATUS_FAILED
+                    ).inc()
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
+
+        if activation:
+            vop_activations_counter.labels(
+                status=STATUS_SUCCESS
+            ).inc()
 
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
