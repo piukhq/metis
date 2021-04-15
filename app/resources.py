@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import arrow
 from flask import request, make_response
@@ -14,6 +15,12 @@ from app.services import create_prod_receiver, retain_payment_method_token
 from app.basic_services import basic_add_card, basic_remove_card, basic_reactivate_card
 from settings import logger
 from app.agents.exceptions import OAuthError
+from prometheus.metrics import (
+    STATUS_FAILED,
+    STATUS_SUCCESS,
+    spreedly_retain_processing_seconds_histogram,
+    status_counter,
+)
 
 api = Api()
 
@@ -73,10 +80,18 @@ class PaymentCard(Resource):
             status_code = 500
             resp_text = f" No reply received"
             try:
+                response_start_time = datetime.now()
                 resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
+                response_total_time = datetime.now() - response_start_time
+
                 status_code = resp.status_code
                 reason = resp.reason
                 resp_text = resp.text
+
+                spreedly_retain_processing_seconds_histogram.labels(
+                    provider=req_data.get('partner_slug'),
+                    status=status_code
+                ).observe(response_total_time.total_seconds())
             except AttributeError:
                 status_code = 504
                 reason = "Connection failed after retry"
@@ -85,9 +100,12 @@ class PaymentCard(Resource):
                 reason = f"Exception {e}"
 
             if status_code != 200:
+                status_counter.labels(provider=req_data.get('partner_slug'), status=STATUS_FAILED).inc()
                 logger.info(f'Retain unsuccessful: HTTP {status_code} {reason} {resp_text}'
                             f'Payment token: {req_data.get("payment_token")} partner: {req_data.get("partner_slug")}')
                 return make_response('Retain unsuccessful', 400)
+
+        status_counter.labels(provider=req_data.get('partner_slug'), status=STATUS_SUCCESS).inc()
 
         process_card(action_code, req_data)
 
