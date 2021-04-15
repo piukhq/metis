@@ -385,7 +385,7 @@ class Visa:
 
                 if activation:
                     vop_activations_processing_seconds_histogram.labels(
-                        status=response.status_code
+                        response_status_code=response.status_code
                     ).observe(response_time.total_seconds())
 
                 settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
