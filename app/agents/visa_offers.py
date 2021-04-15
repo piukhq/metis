@@ -8,6 +8,7 @@ from datetime import datetime
 from prometheus.metrics import (
     STATUS_FAILED,
     STATUS_SUCCESS,
+    STATUS_TIMEOUT_RETRY,
     vop_activations_processing_seconds_histogram,
     vop_activations_counter,
 )
@@ -371,7 +372,8 @@ class Visa:
         json_data = json.dumps(data)
         other_data = {}
         activation = False
-        if action_name == "activate":
+
+        if action_name == 'Activate':
             activation = True
 
         while retry_count:
@@ -379,17 +381,18 @@ class Visa:
             try:
                 response_start_time = datetime.now()
                 response = self._basic_vop_request(api_endpoint, json_data)
-                response_total_time = datetime.now() - response_start_time
+                response_time = datetime.now() - response_start_time
+
+                if activation:
+                    vop_activations_processing_seconds_histogram.labels(
+                        status=response.status_code
+                    ).observe(response_time.total_seconds())
+
                 settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
                                      f" {response.status_code}, {response.text}")
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
-
-                if activation:
-                    vop_activations_processing_seconds_histogram.labels(
-                        status = response.status_code
-                    ).observe(response_time_total.seconds())
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
@@ -397,9 +400,7 @@ class Visa:
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
                 if activation:
-                    vop_activations_counter.labels(
-                        status=STATUS_FAILED
-                    ).inc()
+                    vop_activations_counter.labels(status=STATUS_FAILED).inc()
 
             except (Timeout, ConnectionError) as error:
                 agent_message = f"Agent connection {error}"
@@ -407,9 +408,7 @@ class Visa:
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
                 if activation:
-                    vop_activations_counter.labels(
-                        status=STATUS_TIMEOUT_RETRY
-                    ).inc()
+                    vop_activations_counter.labels(status=STATUS_TIMEOUT_RETRY).inc()
                 time.sleep(10)
 
             except Exception as error:
@@ -418,17 +417,13 @@ class Visa:
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
                 if activation:
-                    vop_activations_counter.labels(
-                        status=STATUS_FAILED
-                    ).inc()
+                    vop_activations_counter.labels(status=STATUS_FAILED).inc()
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
         if activation:
-            vop_activations_counter.labels(
-                status=STATUS_SUCCESS
-            ).inc()
+            vop_activations_counter.labels(status=STATUS_SUCCESS).inc()
 
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
@@ -481,6 +476,7 @@ class Visa:
         except KeyError:
             settings.logger.error(f"VOP Metis Activate request failed for {card_id_info} "
                                   f"due to missing payment_token or merchant slug")
+            vop_activations_counter.labels(status=STATUS_FAILED).inc()
             return VOPResultStatus.FAILED.value, 400, "", "", {'activation_id': None}
         return self.try_vop_and_get_status(
             self.activate_data(payment_token, merchant_slug),

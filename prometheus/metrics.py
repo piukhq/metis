@@ -24,16 +24,16 @@ spreedly_retain_processing_seconds_histogram = Histogram(
 )
 
 vop_activations_counter = Counter(
-    name="visa_cop_activations",
+    name="visa_vop_activations",
     documentation="Count for Visa VOP activations.",
-    labelnames=("status"),
+    labelnames=("status",),
     namespace=NAMESPACE,
 )
 
 vop_activations_processing_seconds_histogram = Histogram(
     name="vop_activation_processing_seconds_histogram",
     documentation="Response time for VOP PLL activation.",
-    labelnames=("status"),
+    labelnames=("response_status_code",),
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
     namespace=NAMESPACE,
 )
