@@ -1,8 +1,11 @@
+import os
 import time
+from datetime import datetime
 from copy import deepcopy
 from typing import Union, Type, TYPE_CHECKING
 
 import requests
+from prometheus_client import CollectorRegistry, Counter, Histogram, push_to_gateway
 from requests.exceptions import Timeout, ConnectionError
 
 import settings
@@ -10,11 +13,32 @@ from app.agents.exceptions import OAuthError
 from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
+from prometheus.metrics import NAMESPACE
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
 
+# Because this is celery task we have to set a new registry and
+# manually push metric to them because it's in a different pod.
+# https://github.com/prometheus/client_python#exporting-to-a-pushgateway
+registry = CollectorRegistry()
+payment_card_enrolment_reponse_time_histogram = Histogram(
+    name="visa_enrolment_response_time",
+    documentation="Response time for payment card enrolments.",
+    labelnames=("provider", "status", ),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+payment_card_enrolment_counter = Counter(
+    name="visa_enrolment_counter",
+    documentation="Total cards enrolled ",
+    labelnames=("provider", "status", ),
+    namespace=NAMESPACE,
+    registry=registry
+)
 
 XML_HEADER = {"Content-Type": "application/xml"}
 
@@ -187,13 +211,19 @@ def add_card(card_info: dict) -> requests.Response:
         return None
     settings.logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
 
+    request_start_time = datetime.now()
     req_resp = send_request("POST", url, header, request_data)
+    request_time_taken = datetime.now() - request_start_time
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
 
     try:
         resp = agent_instance.response_handler(req_resp, "Add", status_mapping)
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=resp.get("response_state"),
+        ).inc()
     except AttributeError:
         resp = {"status_code": 504, "message": "Bad or no response from Spreedly"}
 
@@ -218,6 +248,20 @@ def add_card(card_info: dict) -> requests.Response:
         f"Sent add request to hermes status {reply.status_code}: data "
         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}'
     )
+
+    payment_card_enrolment_reponse_time_histogram.labels(
+        provider=card_info["partner_slug"],
+        status=resp["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if not settings.PROMETHEUS_TESTING:
+        push_to_gateway(
+            settings.PROMETHEUS_PUSH_GATEWAY,
+            job=settings.PROMETHEUS_JOB,
+            registry=registry,
+            grouping_key={"pid": str(os.getpid())}
+        )
+
     # Return response effect as in task but useful for test cases
     return resp
 
