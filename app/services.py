@@ -254,12 +254,13 @@ def add_card(card_info: dict) -> requests.Response:
         status=resp["status_code"]
     ).observe(request_time_taken.total_seconds())
 
-    push_to_gateway(
-        settings.PROMETHEUS_PUSH_GATEWAY,
-        job=settings.PROMETHEUS_JOB,
-        registry=registry,
-        grouping_key={"pid": str(os.getpid())}
-    )
+    if not settings.PROMETHEUS_TESTING:
+        push_to_gateway(
+            settings.PROMETHEUS_PUSH_GATEWAY,
+            job=settings.PROMETHEUS_JOB,
+            registry=registry,
+            grouping_key={"pid": str(os.getpid())}
+        )
 
     # Return response effect as in task but useful for test cases
     return resp
