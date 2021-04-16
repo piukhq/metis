@@ -347,6 +347,21 @@ class Visa:
 
         return json.dumps(data)
 
+    @staticmethod
+    def _visa_report_vop_status(action_name, resp_state=None, resp_time=None, resp=None):
+        states = {
+            VOPResultStatus.FAILED: STATUS_FAILED,
+            VOPResultStatus.SUCCESS: STATUS_SUCCESS,
+            VOPResultStatus.RETRY: STATUS_TIMEOUT_RETRY
+        }
+        if action_name == 'Activate':
+            if resp_time:
+                vop_activations_processing_seconds_histogram.labels(
+                    response_status_code=resp.status_code
+                ).observe(resp_time.total_seconds())
+            else:
+                vop_activations_counter.labels(status=states[resp_state]).inc()
+
     def _basic_vop_request(self, api_endpoint, data):
         url = f"{self.vop_url}{api_endpoint}"
         headers = {'Content-Type': 'application/json'}
@@ -378,10 +393,7 @@ class Visa:
                 response_start_time = datetime.now()
                 response = self._basic_vop_request(api_endpoint, json_data)
                 response_time = datetime.now() - response_start_time
-                if action_name == 'Activate':
-                    vop_activations_processing_seconds_histogram.labels(
-                        response_status_code=response.status_code
-                    ).observe(response_time.total_seconds())
+                self._visa_report_vop_status(action_name, resp_time=response_time)
 
                 settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
                                      f" {response.status_code}, {response.text}")
@@ -394,16 +406,14 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
-                if action_name == 'Activate':
-                    vop_activations_counter.labels(status=STATUS_FAILED).inc()
+                self._visa_report_vop_status(action_name, resp_state=resp_state)
 
             except (Timeout, ConnectionError) as error:
                 agent_message = f"Agent connection {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
-                if action_name == 'Activate':
-                    vop_activations_counter.labels(status=STATUS_TIMEOUT_RETRY).inc()
+                self._visa_report_vop_status(action_name, resp_state=resp_state)
                 time.sleep(10)
 
             except Exception as error:
@@ -411,15 +421,12 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
-                if action_name == 'Activate':
-                    vop_activations_counter.labels(status=STATUS_FAILED).inc()
+                self._visa_report_vop_status(action_name, resp_state=resp_state)
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
-        if action_name == 'Activate':
-            vop_activations_counter.labels(status=STATUS_SUCCESS).inc()
-
+        self._visa_report_vop_status(action_name, resp_state=VOPResultStatus.SUCCESS)
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
         settings.logger.info(f"VOP {action_name} returned processed response for {card_id_info} Result: {status_code},"
@@ -471,7 +478,7 @@ class Visa:
         except KeyError:
             settings.logger.error(f"VOP Metis Activate request failed for {card_id_info} "
                                   f"due to missing payment_token or merchant slug")
-            vop_activations_counter.labels(status=STATUS_FAILED).inc()
+            self._visa_report_vop_status('Activation', resp_state=VOPResultStatus.FAILED)
             return VOPResultStatus.FAILED.value, 400, "", "", {'activation_id': None}
         return self.try_vop_and_get_status(
             self.activate_data(payment_token, merchant_slug),
