@@ -19,7 +19,7 @@ from vault import fetch_secrets
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
 
-# Because this is celery task we have to set a pushgateway and
+# Because this is celery task we have to set a new registry and
 # manually push metric to them because it's in a different pod.
 # https://github.com/prometheus/client_python#exporting-to-a-pushgateway
 registry = CollectorRegistry()
