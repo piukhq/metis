@@ -98,7 +98,7 @@ class TestServices(unittest.TestCase):
         self.assertTrue(resp['status_code'] == 202)
 
 
-def chunks(l, n):
+def chunks(ll, n):
     """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+    for i in range(0, len(ll), n):
+        yield ll[i:i + n]

@@ -78,7 +78,7 @@ class PaymentCard(Resource):
         logger.info('{} Received {} payment card request: {}'.format(arrow.now(), action_name, req_data))
         if action_code == ActionCode.ADD:
             status_code = 500
-            resp_text = f" No reply received"
+            resp_text = " No reply received"
             try:
                 response_start_time = datetime.now()
                 resp = retain_payment_method_token(req_data['payment_token'], req_data.get('partner_slug'))
@@ -306,7 +306,7 @@ class FoundationSpreedlyAdd(Resource):
             map_response(resp, ret)
 
         except OAuthError:
-            ret['reason'] = f"OAuthError"
+            ret['reason'] = "OAuthError"
             ret['agent_retry_status'] = "Failed"
         except InvalidParams:
             pass
@@ -334,7 +334,7 @@ class FoundationRemove(Resource):
             ret['agent_response_code'] = agent_error_code
             ret['agent_retry_status'] = response_status
         except OAuthError:
-            ret['reason'] = f"OAuthError"
+            ret['reason'] = "OAuthError"
             ret['agent_retry_status'] = "Failed"
         except InvalidParams:
             pass
@@ -360,7 +360,7 @@ class FoundationSpreedlyMCReactivate(Resource):
             map_response(resp, ret)
 
         except OAuthError:
-            ret['reason'] = f"OAuthError"
+            ret['reason'] = "OAuthError"
             ret['agent_retry_status'] = "Failed"
         except InvalidParams:
             pass

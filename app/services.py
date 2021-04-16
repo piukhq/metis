@@ -60,8 +60,8 @@ def refresh_oauth_credentials() -> None:
             else:
                 fetch_secrets(secret_name, deepcopy(secret_def))
     else:
-        settings.logger.error(f"Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
-                              f" SPREEDLY_BASE_URL to your local Pelops ")
+        settings.logger.error("Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
+                              " SPREEDLY_BASE_URL to your local Pelops ")
 
 
 def send_request(

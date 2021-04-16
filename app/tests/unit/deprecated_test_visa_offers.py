@@ -354,7 +354,7 @@ class TestVisaOffers(TestCase):
     def test_remove_card_success(self):
         result = self.un_enrol_remove_card_scenario(self.mock_vop_success_response)
         self.assertDictEqual(result, {'response_status': 'Success', 'status_code': 201})
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     @mock.patch('app.services.put_account_status')
@@ -362,7 +362,7 @@ class TestVisaOffers(TestCase):
         result = self.un_enrol_remove_card_scenario(self.mock_vop_fail_response)
         self.assertDictEqual(result, {'response_status': 'Failed', 'status_code': 200})
         mock_post.assert_called_with(10, card_id=1, response_status='Failed')
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     @mock.patch('app.services.put_account_status')
@@ -380,7 +380,7 @@ class TestVisaOffers(TestCase):
         mock_post.assert_called_with(10, card_id=1, response_status='Failed')
         self.assertGreaterEqual(self.visa.MAX_RETRIES, 3, f"Retries is set to {self.visa.MAX_RETRIES};"
                                                           f" Must be >2 for this test to be valid ")
-        self.assertEqual(2, self.call_count, f"Error in retry logic")
+        self.assertEqual(2, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     @mock.patch('app.services.put_account_status')
@@ -390,21 +390,21 @@ class TestVisaOffers(TestCase):
         mock_post.assert_not_called()
         self.assertGreaterEqual(self.visa.MAX_RETRIES, 3, f"Retries is set to {self.visa.MAX_RETRIES};"
                                                           f" Must be >= 3 for this test to be valid ")
-        self.assertEqual(3, self.call_count, f"Error in retry logic")
+        self.assertEqual(3, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     def test_activate_success(self):
         resp = self.activate_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 201)
         self.assertDictEqual(resp.json, {'response_status': 'Success', 'agent_response_code': 'Activate:SUCCESS'})
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     def test_activate_fail(self):
         resp = self.activate_scenario(self.mock_vop_fail_response)
         self.assertEqual(resp.status_code, 200)
         self.assertDictEqual(resp.json, {'response_status': 'Failed', 'agent_response_code': 'Activate:1000'})
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     def test_activate_retry(self):
@@ -418,14 +418,14 @@ class TestVisaOffers(TestCase):
         resp = self.deactivate_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 201)
         self.assertDictEqual(resp.json, {'response_status': 'Success', 'agent_response_code': 'Deactivate:SUCCESS'})
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     def test_deactivate_fail(self):
         resp = self.deactivate_scenario(self.mock_vop_fail_response)
         self.assertEqual(resp.status_code, 200)
         self.assertDictEqual(resp.json, {'response_status': 'Failed', 'agent_response_code': 'Deactivate:1000'})
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     def test_deactivate_retry(self):
@@ -440,7 +440,7 @@ class TestVisaOffers(TestCase):
     def test_unenrol_success(self, mock_post, _):
         resp = self.un_enrol_scenario(self.mock_vop_success_response)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     @mock.patch('app.resources.process_card', side_effect=mock_process_card)
@@ -449,7 +449,7 @@ class TestVisaOffers(TestCase):
         resp = self.un_enrol_scenario(self.mock_vop_fail_response)
         self.assertEqual(resp.status_code, 200)
         mock_post.assert_called_with(10, card_id=1, response_status='Failed')
-        self.assertEqual(1, self.call_count, f"Error in retry logic")
+        self.assertEqual(1, self.call_count, "Error in retry logic")
 
     @httpretty.activate
     @mock.patch('app.resources.process_card', side_effect=mock_process_card)
