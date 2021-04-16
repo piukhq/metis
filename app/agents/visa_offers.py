@@ -371,10 +371,6 @@ class Visa:
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
         other_data = {}
-        activation = False
-
-        if action_name == 'Activate':
-            activation = True
 
         while retry_count:
             retry_count -= 1
@@ -382,8 +378,7 @@ class Visa:
                 response_start_time = datetime.now()
                 response = self._basic_vop_request(api_endpoint, json_data)
                 response_time = datetime.now() - response_start_time
-
-                if activation:
+                if action_name == 'Activate':
                     vop_activations_processing_seconds_histogram.labels(
                         response_status_code=response.status_code
                     ).observe(response_time.total_seconds())
@@ -399,7 +394,7 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
-                if activation:
+                if action_name == 'Activate':
                     vop_activations_counter.labels(status=STATUS_FAILED).inc()
 
             except (Timeout, ConnectionError) as error:
@@ -407,7 +402,7 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
-                if activation:
+                if action_name == 'Activate':
                     vop_activations_counter.labels(status=STATUS_TIMEOUT_RETRY).inc()
                 time.sleep(10)
 
@@ -416,13 +411,13 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
-                if activation:
+                if action_name == 'Activate':
                     vop_activations_counter.labels(status=STATUS_FAILED).inc()
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
-        if activation:
+        if action_name == 'Activate':
             vop_activations_counter.labels(status=STATUS_SUCCESS).inc()
 
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
