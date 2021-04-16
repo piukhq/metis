@@ -426,7 +426,7 @@ class Visa:
 
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
-                
+
         self._visa_report_vop_status_count(action_name, VOPResultStatus.SUCCESS)
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
