@@ -348,7 +348,7 @@ class Visa:
         return json.dumps(data)
 
     @staticmethod
-    def _visa_report_vop_status(action_name, resp_state=None, resp_time=None, resp=None):
+    def _visa_report_vop_status(action_name, resp_state=None, resp_time=None, resp_status=None):
         states = {
             VOPResultStatus.FAILED: STATUS_FAILED,
             VOPResultStatus.SUCCESS: STATUS_SUCCESS,
@@ -357,7 +357,7 @@ class Visa:
         if action_name == 'Activate':
             if resp_time:
                 vop_activations_processing_seconds_histogram.labels(
-                    response_status_code=resp.status_code
+                    response_status_code=resp_status
                 ).observe(resp_time.total_seconds())
             else:
                 vop_activations_counter.labels(status=states[resp_state]).inc()
@@ -393,8 +393,7 @@ class Visa:
                 response_start_time = datetime.now()
                 response = self._basic_vop_request(api_endpoint, json_data)
                 response_time = datetime.now() - response_start_time
-                self._visa_report_vop_status(action_name, resp_time=response_time)
-
+                self._visa_report_vop_status(action_name, resp_time=response_time, resp_status=response.status_code)
                 settings.logger.info(f"VOP {action_name} response for {card_id_info}:"
                                      f" {response.status_code}, {response.text}")
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
@@ -478,7 +477,7 @@ class Visa:
         except KeyError:
             settings.logger.error(f"VOP Metis Activate request failed for {card_id_info} "
                                   f"due to missing payment_token or merchant slug")
-            self._visa_report_vop_status('Activation', resp_state=VOPResultStatus.FAILED)
+            self._visa_report_vop_status('Activate', resp_state=VOPResultStatus.FAILED)
             return VOPResultStatus.FAILED.value, 400, "", "", {'activation_id': None}
         return self.try_vop_and_get_status(
             self.activate_data(payment_token, merchant_slug),
