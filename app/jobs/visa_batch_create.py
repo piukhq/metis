@@ -11,10 +11,10 @@ from app.teams import payment_card_notify
 import settings
 
 
-def chunks(l, n):
+def chunks(ll, n):
     """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+    for i in range(0, len(ll), n):
+        yield ll[i:i + n]
 
 
 def reduce_card_data(card_info):
