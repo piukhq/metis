@@ -388,7 +388,7 @@ class Visa:
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
         other_data = {}
-        
+
         while retry_count:
             retry_count -= 1
             try:
