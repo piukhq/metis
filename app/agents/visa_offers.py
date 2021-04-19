@@ -388,7 +388,6 @@ class Visa:
         retry_count = self.MAX_RETRIES
         json_data = json.dumps(data)
         other_data = {}
-
         while retry_count:
             retry_count -= 1
             try:
@@ -427,7 +426,11 @@ class Visa:
             if resp_state != VOPResultStatus.RETRY:
                 retry_count = 0
 
-        self._visa_report_vop_status_count(action_name, VOPResultStatus.SUCCESS)
+        if resp_state == VOPResultStatus.SUCCESS:
+            self._visa_report_vop_status_count(action_name, resp_state)
+        else:
+            self._visa_report_vop_status_count(action_name, VOPResultStatus.FAILED)
+
         status_code = 201 if resp_state == VOPResultStatus.SUCCESS else 200
         full_agent_status_code = f"{action_name}:{agent_status_code}"
         settings.logger.info(f"VOP {action_name} returned processed response for {card_id_info} Result: {status_code},"
