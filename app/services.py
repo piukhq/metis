@@ -259,7 +259,7 @@ def add_card(card_info: dict) -> requests.Response:
             settings.PROMETHEUS_PUSH_GATEWAY,
             job=settings.PROMETHEUS_JOB,
             registry=registry,
-            grouping_key={"pid": str(os.getpid())}
+            grouping_key={"celery": "service.py"}
         )
 
     # Return response effect as in task but useful for test cases
