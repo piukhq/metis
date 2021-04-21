@@ -103,12 +103,12 @@ class TestVisa(TestCase):
     @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     @httpretty.activate
     @log_capture(level=logging.INFO)
-    def test_create_cards(self, l):
+    def test_create_cards(self, ll):
         self.spreedly_route()
         self.hermes_status_route()
         self.visa.create_cards(self.card_info_add)
         message = 'Visa batch successful'
-        self.assertTrue(any(message in r.msg for r in l.records))
+        self.assertTrue(any(message in r.msg for r in ll.records))
 
     @mock.patch.object(Visa, 'get_next_seq_number', mock_get_next_seq_number)
     def test_request_body_json(self):

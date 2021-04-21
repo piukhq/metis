@@ -93,8 +93,8 @@ class TestServicesToPelopsAmexMock(unittest.TestCase):
         resp = app.services.add_card(card_info)
         self.assertTrue(resp["status_code"] == 422)
         self.assertDictEqual(status_return_mock.call_args[1], {
-            f'card_id': 100, 'response_action': 'Add', 'response_status_code': 422,
-            f'response_message': f'Add Amex fault recorded. Code: XXXXXX'
+            'card_id': 100, 'response_action': 'Add', 'response_status_code': 422,
+            'response_message': 'Add Amex fault recorded. Code: XXXXXX'
         })
 
     @patch("app.services.put_account_status", autospec=True)
@@ -110,8 +110,8 @@ class TestServicesToPelopsAmexMock(unittest.TestCase):
         resp = app.services.add_card(card_info)
         self.assertTrue(resp["status_code"] == 200)
         self.assertDictEqual(status_return_mock.call_args[1], {
-            f'card_id': 100, 'response_action': 'Add', 'response_status_code': 200,
-            f'response_message': f'Amex Add successful - Token: {self.token}, Amex successfully processed'
+            'card_id': 100, 'response_action': 'Add', 'response_status_code': 200,
+            'response_message': f'Amex Add successful - Token: {self.token}, Amex successfully processed'
         })
 
     @patch("app.services.get_provider_status_mappings", autospec=True)

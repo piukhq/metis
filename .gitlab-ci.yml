@@ -7,31 +7,35 @@ stages:
 
 tests:
   stage: tests
-  image: olympus.azurecr.io/python:3.6
-  script:
-    - mkdir -p /root/.ssh
-    - echo $DEPLOY_KEY | base64 -d > /root/.ssh/id_rsa
-    - chmod 600 /root/.ssh/id_rsa
-    - ssh-keyscan git.bink.com > /root/.ssh/known_hosts
+  image: binkhq/python:3.9
+  variables:
+    POSTGRES_HOST_AUTH_METHOD: trust
+    PONTUS_DATABASE: postgres
+    PONTUS_USER: postgres
+    PONTUS_PASSWORD: ""
+    PONTUS_HOST: postgres
+    PONTUS_PORT: "5432"
+  before_script:
+    - pip install pipenv
     - pipenv install --system --deploy --dev --ignore-pipfile
-    - export PONTUS_DATABASE="${POSTGRES_NAME}"
-    - export PONTUS_USER="postgres"
-    - export PONTUS_PASSWORD=""
-    - export PONTUS_HOST="${POSTGRES_PORT_5432_TCP_ADDR}"
-    - export PONTUS_PORT="5432"
+  script:
     - pytest app/tests/unit --cov=app
   services:
-    - postgres:9.4.4
+    - postgres:11
 
 complexity:
   stage: tests
-  image: olympus.azurecr.io/python:3.6
+  image: binkhq/python:3.9
+  before_script:
+    - pip install xenon
   script:
     - xenon --max-average A --max-modules B --max-absolute B .
 
 flake8:
   stage: tests
-  image: olympus.azurecr.io/python:3.6
+  image: binkhq/python:3.9
+  before_script:
+    - pip install flake8
   script:
     - flake8
 
