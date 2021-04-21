@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import datetime
 from copy import deepcopy
@@ -38,6 +39,8 @@ payment_card_enrolment_counter = Counter(
     namespace=NAMESPACE,
     registry=registry
 )
+
+pid = os.getpid()
 
 XML_HEADER = {"Content-Type": "application/xml"}
 
@@ -258,7 +261,7 @@ def add_card(card_info: dict) -> requests.Response:
             settings.PROMETHEUS_PUSH_GATEWAY,
             job=settings.PROMETHEUS_JOB,
             registry=registry,
-            grouping_key={"celery": "service.py"}
+            grouping_key={"celery": str(pid)}
         )
 
     # Return response effect as in task but useful for test cases
