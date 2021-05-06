@@ -31,6 +31,20 @@ pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
 
 
+def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
+    unenrolment_response_time_histogram.labels(
+        provider=card_info["partner_slug"],
+        status=response["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if response["status_code"] != 200 or response.get("bink_status"):
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status="Failure").inc()
+    else:
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status="Success").inc()
+
+    push_metrics(pid)
+
+
 def get_spreedly_url(partner_slug: str) -> str:
     if partner_slug == "visa" and settings.VOP_SPREEDLY_BASE_URL and not settings.STUBBED_VOP_URL:
         return settings.VOP_SPREEDLY_BASE_URL
@@ -355,30 +369,16 @@ def remove_card(card_info: dict):
         resp = send_request("POST", url, header, request_data)
         request_time_taken = datetime.now() - request_start_time
 
-        unenrolment_response_time_histogram.labels(
-            provider=card_info["partner_slug"],
-            status=resp.status_code
-        ).observe(request_time_taken.total_seconds())
-
         # get the status mapping for this provider from hermes.
         status_mapping = get_provider_status_mappings(card_info["partner_slug"])
         resp = agent_instance.response_handler(resp, action_name, status_mapping)
+
+        # Push unenrol metrics for amex and mastercard
+        push_unenrol_metrics_non_vop(resp, card_info, request_time_taken)
+
         # @todo View this when looking at Metis re-design
         # This response does nothing as it is in an celery task.  No message is returned to Hermes.
         # getting status mapping is wrong as it is not returned nor would it be used by Hermes.
-
-        if resp["status_code"] != 200 or resp.get("bink_status"):
-            unenrolment_counter.labels(
-                provider=card_info["partner_slug"],
-                status="Failure"
-            ).inc()
-        else:
-            unenrolment_counter.labels(
-                provider=card_info["partner_slug"],
-                status="Success"
-            ).inc()
-
-        push_metrics(pid)
 
         return resp
 
