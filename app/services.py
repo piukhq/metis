@@ -17,7 +17,9 @@ from prometheus.metrics import (
     payment_card_enrolment_reponse_time_histogram,
     payment_card_enrolment_counter,
     unenrolment_counter,
-    unenrolment_response_time_histogram
+    unenrolment_response_time_histogram,
+    STATUS_FAILED,
+    STATUS_SUCCESS
 )
 from vault import fetch_secrets
 
@@ -38,9 +40,9 @@ def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
     ).observe(request_time_taken.total_seconds())
 
     if response["status_code"] != 200 or response.get("bink_status"):
-        unenrolment_counter.labels(provider=card_info["partner_slug"], status="Failure").inc()
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_FAILED).inc()
     else:
-        unenrolment_counter.labels(provider=card_info["partner_slug"], status="Success").inc()
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_SUCCESS).inc()
 
     push_metrics(pid)
 
