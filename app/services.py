@@ -13,7 +13,7 @@ from app.agents.exceptions import OAuthError
 from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
-from prometheus.metrics import NAMESPACE
+from prometheus.metrics import NAMESPACE, STATUS_FAILED, STATUS_SUCCESS
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 # https://github.com/prometheus/client_python#exporting-to-a-pushgateway
 registry = CollectorRegistry()
 payment_card_enrolment_reponse_time_histogram = Histogram(
-    name="visa_enrolment_response_time",
+    name="enrolment_response_time",
     documentation="Response time for payment card enrolments.",
     labelnames=("provider", "status", ),
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
@@ -33,7 +33,7 @@ payment_card_enrolment_reponse_time_histogram = Histogram(
 )
 
 payment_card_enrolment_counter = Counter(
-    name="visa_enrolment_counter",
+    name="enrolment_counter",
     documentation="Total cards enrolled ",
     labelnames=("provider", "status", ),
     namespace=NAMESPACE,
@@ -222,10 +222,6 @@ def add_card(card_info: dict) -> requests.Response:
 
     try:
         resp = agent_instance.response_handler(req_resp, "Add", status_mapping)
-        payment_card_enrolment_counter.labels(
-            provider=card_info["partner_slug"],
-            status=resp.get("response_state"),
-        ).inc()
     except AttributeError:
         resp = {"status_code": 504, "message": "Bad or no response from Spreedly"}
 
@@ -235,9 +231,17 @@ def add_card(card_info: dict) -> requests.Response:
         # 1 = ACTIVE
         # TODO: get this from gaia
         card_status_code = 1
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_SUCCESS,
+        ).inc()
     else:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_FAILED,
+        ).inc()
 
     hermes_data = get_hermes_data(resp, card_info["id"])
 
