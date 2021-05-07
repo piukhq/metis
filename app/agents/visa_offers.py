@@ -5,18 +5,22 @@ import time
 from enum import Enum
 from uuid import uuid4
 from datetime import datetime
+
+import requests
+from requests.exceptions import Timeout, ConnectionError
+
+import settings
+from app.action import ActionCode
 from prometheus.metrics import (
     STATUS_FAILED,
     STATUS_SUCCESS,
     STATUS_TIMEOUT_RETRY,
     vop_activations_processing_seconds_histogram,
     vop_activations_counter,
+    unenrolment_counter,
+    unenrolment_response_time_histogram,
+    push_metrics,
 )
-import requests
-from requests.exceptions import Timeout, ConnectionError
-
-import settings
-from app.action import ActionCode
 
 
 class VOPResultStatus(str, Enum):
@@ -513,7 +517,7 @@ class Visa:
             card_id_info
         )
 
-    def un_enroll(self, card_info, action_name):
+    def un_enroll(self, card_info, action_name, pid):
         card_id_info = self.get_card_id_info(card_info)
         settings.logger.info(f"VOP Metis processing unenrol request for {card_id_info}")
         try:
@@ -525,6 +529,21 @@ class Visa:
         except KeyError:
             error_msg = f"VOP Metis Unenroll request failed for {card_id_info} due to missing payment_token"
             settings.logger.error(error_msg)
+            unenrolment_counter.labels(provider=card_info["partner_slug"], status=VOPResultStatus.FAILED.value).inc()
+            push_metrics(pid)
             return VOPResultStatus.FAILED.value, 400, "", error_msg, {}
 
-        return self.try_vop_and_get_status(data, action_name, card_info["action_code"], self.vop_unenroll, card_id_info)
+        vop_start_time = datetime.now()
+        vop_unenroll = self.try_vop_and_get_status(
+            data, action_name, card_info["action_code"], self.vop_unenroll, card_id_info)
+        vop_finished_total_time = datetime.now() - vop_start_time
+
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=vop_unenroll[0]).inc()
+        unenrolment_response_time_histogram.labels(
+            provider=card_info['partner_slug'],
+            status=vop_unenroll[1]
+        ).observe(vop_finished_total_time.total_seconds())
+
+        push_metrics(pid)
+
+        return vop_unenroll

@@ -5,7 +5,6 @@ from copy import deepcopy
 from typing import Union, Type, TYPE_CHECKING
 
 import requests
-from prometheus_client import CollectorRegistry, Counter, Histogram, push_to_gateway
 from requests.exceptions import Timeout, ConnectionError
 
 import settings
@@ -13,7 +12,15 @@ from app.agents.exceptions import OAuthError
 from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
-from prometheus.metrics import NAMESPACE
+from prometheus.metrics import (
+    push_metrics,
+    payment_card_enrolment_reponse_time_histogram,
+    payment_card_enrolment_counter,
+    unenrolment_counter,
+    unenrolment_response_time_histogram,
+    STATUS_FAILED,
+    STATUS_SUCCESS
+)
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
@@ -22,27 +29,22 @@ if TYPE_CHECKING:
 # Because this is celery task we have to set a new registry and
 # manually push metric to them because it's in a different pod.
 # https://github.com/prometheus/client_python#exporting-to-a-pushgateway
-registry = CollectorRegistry()
-payment_card_enrolment_reponse_time_histogram = Histogram(
-    name="visa_enrolment_response_time",
-    documentation="Response time for payment card enrolments.",
-    labelnames=("provider", "status", ),
-    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
-    namespace=NAMESPACE,
-    registry=registry
-)
-
-payment_card_enrolment_counter = Counter(
-    name="visa_enrolment_counter",
-    documentation="Total cards enrolled ",
-    labelnames=("provider", "status", ),
-    namespace=NAMESPACE,
-    registry=registry
-)
-
 pid = os.getpid()
-
 XML_HEADER = {"Content-Type": "application/xml"}
+
+
+def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
+    unenrolment_response_time_histogram.labels(
+        provider=card_info["partner_slug"],
+        status=response["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if response["status_code"] != 200 or response.get("bink_status"):
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_FAILED).inc()
+    else:
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_SUCCESS).inc()
+
+    push_metrics(pid)
 
 
 def get_spreedly_url(partner_slug: str) -> str:
@@ -256,13 +258,7 @@ def add_card(card_info: dict) -> requests.Response:
         status=resp["status_code"]
     ).observe(request_time_taken.total_seconds())
 
-    if not settings.PROMETHEUS_TESTING:
-        push_to_gateway(
-            settings.PROMETHEUS_PUSH_GATEWAY,
-            job=settings.PROMETHEUS_JOB,
-            registry=registry,
-            grouping_key={"celery": str(pid)}
-        )
+    push_metrics(pid)
 
     # Return response effect as in task but useful for test cases
     return resp
@@ -353,7 +349,7 @@ def remove_card(card_info: dict):
         # Do hermes call back of unenroll now that there are no outstanding activations
         response_state, status_code = hermes_unenroll_call_back(card_info, action_name,
                                                                 deactivated_list, deactivate_errors,
-                                                                *agent_instance.un_enroll(card_info, action_name))
+                                                                *agent_instance.un_enroll(card_info, action_name, pid))
 
         # put_account_status sends a async response back to Hermes.
         # The return values below are not functional as this runs in a celery task.
@@ -371,13 +367,21 @@ def remove_card(card_info: dict):
             # TODO: get this from gaia
             put_account_status(5, card_id=card_info["id"])
             return None
+        request_start_time = datetime.now()
         resp = send_request("POST", url, header, request_data)
+        request_time_taken = datetime.now() - request_start_time
+
         # get the status mapping for this provider from hermes.
         status_mapping = get_provider_status_mappings(card_info["partner_slug"])
         resp = agent_instance.response_handler(resp, action_name, status_mapping)
+
+        # Push unenrol metrics for amex and mastercard
+        push_unenrol_metrics_non_vop(resp, card_info, request_time_taken)
+
         # @todo View this when looking at Metis re-design
         # This response does nothing as it is in an celery task.  No message is returned to Hermes.
         # getting status mapping is wrong as it is not returned nor would it be used by Hermes.
+
         return resp
 
 

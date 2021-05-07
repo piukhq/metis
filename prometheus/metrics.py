@@ -1,4 +1,5 @@
-from prometheus_client import Counter, CollectorRegistry, Histogram
+from prometheus_client import Counter, CollectorRegistry, Histogram, push_to_gateway
+import settings
 
 
 NAMESPACE = 'metis'
@@ -37,3 +38,49 @@ vop_activations_processing_seconds_histogram = Histogram(
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
     namespace=NAMESPACE,
 )
+
+# Celery specific metrics
+
+payment_card_enrolment_reponse_time_histogram = Histogram(
+    name="visa_enrolment_response_time",
+    documentation="Response time for payment card enrolments.",
+    labelnames=("provider", "status", ),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+payment_card_enrolment_counter = Counter(
+    name="visa_enrolment_counter",
+    documentation="Total cards enrolled ",
+    labelnames=("provider", "status", ),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+unenrolment_counter = Counter(
+    name="unenrolment_counter",
+    documentation="Count for unenrolments.",
+    labelnames=("provider", "status"),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+unenrolment_response_time_histogram = Histogram(
+    name="unenrolment_response_time",
+    documentation="Response time for payment card unenrolments.",
+    labelnames=("provider", "status", ),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+
+def push_metrics(pid):
+    if not settings.PROMETHEUS_TESTING:
+        push_to_gateway(
+            settings.PROMETHEUS_PUSH_GATEWAY,
+            job=settings.PROMETHEUS_JOB,
+            registry=registry,
+            grouping_key={"celery": str(pid)}
+        )
