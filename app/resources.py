@@ -105,7 +105,7 @@ class PaymentCard(Resource):
                             f'Payment token: {req_data.get("payment_token")} partner: {req_data.get("partner_slug")}')
                 return make_response('Retain unsuccessful', 400)
 
-        status_counter.labels(provider=req_data.get('partner_slug'), status=STATUS_SUCCESS).inc()
+            status_counter.labels(provider=req_data.get('partner_slug'), status=STATUS_SUCCESS).inc()
 
         process_card(action_code, req_data)
 
