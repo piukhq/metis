@@ -6,7 +6,6 @@ from typing import Union, Type, TYPE_CHECKING
 
 import requests
 from requests.exceptions import Timeout, ConnectionError
-from prometheus_client import CollectorRegistry
 
 import settings
 from app.agents.exceptions import OAuthError
@@ -30,7 +29,6 @@ if TYPE_CHECKING:
 # Because this is celery task we have to set a new registry and
 # manually push metric to them because it's in a different pod.
 # https://github.com/prometheus/client_python#exporting-to-a-pushgateway
-registry = CollectorRegistry()
 
 pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
