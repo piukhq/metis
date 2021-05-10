@@ -42,7 +42,7 @@ vop_activations_processing_seconds_histogram = Histogram(
 # Celery specific metrics
 
 payment_card_enrolment_reponse_time_histogram = Histogram(
-    name="visa_enrolment_response_time",
+    name="card_enrolment_response_time",
     documentation="Response time for payment card enrolments.",
     labelnames=("provider", "status", ),
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
@@ -51,7 +51,7 @@ payment_card_enrolment_reponse_time_histogram = Histogram(
 )
 
 payment_card_enrolment_counter = Counter(
-    name="visa_enrolment_counter",
+    name="card_enrolment_counter",
     documentation="Total cards enrolled ",
     labelnames=("provider", "status", ),
     namespace=NAMESPACE,
