@@ -6,7 +6,7 @@ from typing import Union, Type, TYPE_CHECKING
 
 import requests
 from requests.exceptions import Timeout, ConnectionError
-from prometheus_client import CollectorRegistry, Counter, Histogram, push_to_gateway
+from prometheus_client import CollectorRegistry
 
 import settings
 from app.agents.exceptions import OAuthError
