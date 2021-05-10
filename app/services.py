@@ -36,10 +36,10 @@ def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
         status=response["status_code"]
     ).observe(request_time_taken.total_seconds())
 
-    if response["status_code"] != 200 or response.get("bink_status"):
-        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_FAILED).inc()
-    else:
+    if response["status_code"] == 200:
         unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_SUCCESS).inc()
+    else:
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_FAILED).inc()
 
     push_metrics(pid)
 
