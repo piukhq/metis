@@ -19,16 +19,13 @@ from prometheus.metrics import (
     unenrolment_counter,
     unenrolment_response_time_histogram,
     STATUS_FAILED,
-    STATUS_SUCCESS
+    STATUS_SUCCESS,
 )
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
 
-# Because this is celery task we have to set a new registry and
-# manually push metric to them because it's in a different pod.
-# https://github.com/prometheus/client_python#exporting-to-a-pushgateway
 pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
 
@@ -224,10 +221,6 @@ def add_card(card_info: dict) -> requests.Response:
 
     try:
         resp = agent_instance.response_handler(req_resp, "Add", status_mapping)
-        payment_card_enrolment_counter.labels(
-            provider=card_info["partner_slug"],
-            status=resp.get("response_state"),
-        ).inc()
     except AttributeError:
         resp = {"status_code": 504, "message": "Bad or no response from Spreedly"}
 
@@ -237,9 +230,17 @@ def add_card(card_info: dict) -> requests.Response:
         # 1 = ACTIVE
         # TODO: get this from gaia
         card_status_code = 1
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_SUCCESS,
+        ).inc()
     else:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_FAILED,
+        ).inc()
 
     hermes_data = get_hermes_data(resp, card_info["id"])
 
