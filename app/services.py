@@ -6,6 +6,7 @@ from typing import Union, Type, TYPE_CHECKING
 
 import requests
 from requests.exceptions import Timeout, ConnectionError
+from prometheus_client import CollectorRegistry, Counter, Histogram, push_to_gateway
 
 import settings
 from app.agents.exceptions import OAuthError
@@ -20,7 +21,6 @@ from prometheus.metrics import (
     unenrolment_response_time_histogram,
     STATUS_FAILED,
     STATUS_SUCCESS,
-    NAMESPACE
 )
 from vault import fetch_secrets
 
@@ -31,22 +31,6 @@ if TYPE_CHECKING:
 # manually push metric to them because it's in a different pod.
 # https://github.com/prometheus/client_python#exporting-to-a-pushgateway
 registry = CollectorRegistry()
-payment_card_enrolment_reponse_time_histogram = Histogram(
-    name="enrolment_response_time",
-    documentation="Response time for payment card enrolments.",
-    labelnames=("provider", "status", ),
-    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
-    namespace=NAMESPACE,
-    registry=registry
-)
-
-payment_card_enrolment_counter = Counter(
-    name="enrolment_counter",
-    documentation="Total cards enrolled ",
-    labelnames=("provider", "status", ),
-    namespace=NAMESPACE,
-    registry=registry
-)
 
 pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
