@@ -412,6 +412,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
     header = agent_instance.header
     url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{agent_instance.receiver_token()}"
     request_data = agent_instance.reactivate_card_body(card_info)
+    
     request_start_time = datetime.now()
     resp = send_request("POST", url, header, request_data)
     request_total_time = datetime.now() - request_start_time
@@ -431,6 +432,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
         card_status_code = resp["bink_status"]
     put_account_status(card_status_code, card_id=card_info["id"])
     push_mastercard_reactivate_metrics(resp, card_info, request_total_time)
+
     return resp
 
 
