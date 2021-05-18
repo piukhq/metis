@@ -415,17 +415,21 @@ class Visa:
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
+                if resp_state == VOPResultStatus.RETRY:
+                    self._visa_report_vop_status_count(action_name, resp_state)
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
+                resp_state = VOPResultStatus.FAILED
                 self._visa_report_vop_status_count(action_name, resp_state)
 
             except (Timeout, ConnectionError) as error:
                 agent_message = f"Agent connection {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
+                resp_state = VOPResultStatus.RETRY
                 self._visa_report_vop_status_count(action_name, 'timeout')
                 time.sleep(10)
 
@@ -433,6 +437,7 @@ class Visa:
                 agent_message = f"Agent exception {error}"
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
+                resp_state = VOPResultStatus.FAILED
                 self._visa_report_vop_status_count(action_name, resp_state)
 
             if resp_state != VOPResultStatus.RETRY:
