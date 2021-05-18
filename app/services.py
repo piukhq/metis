@@ -18,6 +18,8 @@ from prometheus.metrics import (
     payment_card_enrolment_counter,
     unenrolment_counter,
     unenrolment_response_time_histogram,
+    mastercard_reactivate_counter,
+    mastercard_reactivate_response_time_histogram,
     STATUS_FAILED,
     STATUS_SUCCESS,
 )
@@ -28,6 +30,22 @@ if TYPE_CHECKING:
 
 pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
+
+
+def push_mastercard_reactivate_metrics(response, card_info, request_time_taken):
+    if card_info["partner_slug"] != "mastercard":
+        return
+
+    mastercard_reactivate_response_time_histogram.labels(
+            status=response["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if response["status_code"] == 200:
+        mastercard_reactivate_counter.labels(status=STATUS_SUCCESS).inc()
+    else:
+        mastercard_reactivate_counter.labels(status=STATUS_FAILED).inc()
+
+    push_metrics(pid)
 
 
 def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
@@ -394,8 +412,9 @@ def reactivate_card(card_info: dict) -> requests.Response:
     header = agent_instance.header
     url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{agent_instance.receiver_token()}"
     request_data = agent_instance.reactivate_card_body(card_info)
-
+    request_start_time = datetime.now()
     resp = send_request("POST", url, header, request_data)
+    request_total_time = datetime.now() - request_start_time
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
@@ -411,7 +430,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp["bink_status"]
     put_account_status(card_status_code, card_id=card_info["id"])
-
+    push_mastercard_reactivate_metrics(resp, card_info, request_total_time)
     return resp
 
 
