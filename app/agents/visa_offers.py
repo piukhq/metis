@@ -30,6 +30,7 @@ class VOPResultStatus(str, Enum):
     FAILED = 'Failed'
     SUCCESS = 'Success'
     RETRY = 'Retry'
+    TIMEOUT = 'Timeout'
 
 
 class Visa:
@@ -360,7 +361,7 @@ class Visa:
             VOPResultStatus.FAILED: STATUS_FAILED,
             VOPResultStatus.SUCCESS: STATUS_SUCCESS,
             VOPResultStatus.RETRY: STATUS_OTHER_RETRY,
-            'timeout': STATUS_TIMEOUT_RETRY,
+            VOPResultStatus.TIMEOUT: STATUS_TIMEOUT_RETRY,
         }
         if action_name == 'Activate':
             vop_activations_counter.labels(status=states[resp_state]).inc()
@@ -430,7 +431,7 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
-                self._visa_report_vop_status_count(action_name, 'timeout')
+                self._visa_report_vop_status_count(action_name, VOPResultStatus.TIMEOUT)
                 time.sleep(10)
 
             except Exception as error:
