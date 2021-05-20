@@ -91,6 +91,23 @@ unenrolment_response_time_histogram = Histogram(
     registry=registry
 )
 
+mastercard_reactivate_counter = Counter(
+    name="total_mastercard_spreedly_reactivations",
+    documentation="Total Mastercard Spreedly reactivations.",
+    labelnames=("status",),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+mastercard_reactivate_response_time_histogram = Histogram(
+    name="mastercard_reactivate_spreedly_response_time",
+    documentation="Mastercard reactivate Spreedly response time.",
+    labelnames=("status",),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
 
 def push_metrics(pid):
     if not settings.PROMETHEUS_TESTING:
