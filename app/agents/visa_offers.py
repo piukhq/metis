@@ -15,11 +15,14 @@ from prometheus.metrics import (
     STATUS_FAILED,
     STATUS_SUCCESS,
     STATUS_TIMEOUT_RETRY,
+    STATUS_OTHER_RETRY,
     vop_activations_processing_seconds_histogram,
     vop_activations_counter,
     unenrolment_counter,
     unenrolment_response_time_histogram,
     push_metrics,
+    vop_deactivations_counter,
+    vop_deactivations_processing_seconds_histogram
 )
 
 
@@ -27,6 +30,7 @@ class VOPResultStatus(str, Enum):
     FAILED = 'Failed'
     SUCCESS = 'Success'
     RETRY = 'Retry'
+    TIMEOUT = 'Timeout'
 
 
 class Visa:
@@ -356,15 +360,22 @@ class Visa:
         states = {
             VOPResultStatus.FAILED: STATUS_FAILED,
             VOPResultStatus.SUCCESS: STATUS_SUCCESS,
-            VOPResultStatus.RETRY: STATUS_TIMEOUT_RETRY
+            VOPResultStatus.RETRY: STATUS_OTHER_RETRY,
+            VOPResultStatus.TIMEOUT: STATUS_TIMEOUT_RETRY,
         }
         if action_name == 'Activate':
             vop_activations_counter.labels(status=states[resp_state]).inc()
+        elif action_name == 'Deactivate':
+            vop_deactivations_counter.labels(status=states[resp_state]).inc()
 
     @staticmethod
     def _visa_report_vop_status_histogram(action_name, resp_time, resp_status_code):
         if action_name == 'Activate':
             vop_activations_processing_seconds_histogram.labels(
+                response_status_code=resp_status_code
+            ).observe(resp_time.total_seconds())
+        elif action_name == 'Deactivate':
+            vop_deactivations_processing_seconds_histogram.labels(
                 response_status_code=resp_status_code
             ).observe(resp_time.total_seconds())
 
@@ -405,6 +416,8 @@ class Visa:
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
                     response.json(), response.status_code, action_name, action_code
                 )
+                if resp_state == VOPResultStatus.RETRY:
+                    self._visa_report_vop_status_count(action_name, resp_state)
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
@@ -418,7 +431,7 @@ class Visa:
                 settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
-                self._visa_report_vop_status_count(action_name, resp_state)
+                self._visa_report_vop_status_count(action_name, VOPResultStatus.TIMEOUT)
                 time.sleep(10)
 
             except Exception as error:
@@ -507,6 +520,7 @@ class Visa:
         except KeyError:
             settings.logger.error(f"VOP Metis DeActivate request failed for {card_id_info} due to missing"
                                   f" payment_token or activation_id")
+            self._visa_report_vop_status_count('Deactivate', VOPResultStatus.FAILED)
             return VOPResultStatus.FAILED.value, 400, "", "", {}
 
         return self.try_vop_and_get_status(

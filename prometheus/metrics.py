@@ -5,7 +5,8 @@ import settings
 NAMESPACE = 'metis'
 STATUS_FAILED = "Failed"
 STATUS_SUCCESS = "Success"
-STATUS_TIMEOUT_RETRY = "Timeout-Retry"
+STATUS_OTHER_RETRY = "Retry-Other"
+STATUS_TIMEOUT_RETRY = "Retry-Timeout"
 
 registry = CollectorRegistry()
 
@@ -34,6 +35,21 @@ vop_activations_counter = Counter(
 vop_activations_processing_seconds_histogram = Histogram(
     name="vop_activation_processing_seconds_histogram",
     documentation="Response time for VOP PLL activation.",
+    labelnames=("response_status_code",),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+)
+
+vop_deactivations_counter = Counter(
+    name="visa_vop_deactivations",
+    documentation="Count for Visa VOP deactivations.",
+    labelnames=("status",),
+    namespace=NAMESPACE,
+)
+
+vop_deactivations_processing_seconds_histogram = Histogram(
+    name="vop_deactivation_processing_seconds_histogram",
+    documentation="Response time for VOP PLL deactivations.",
     labelnames=("response_status_code",),
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
     namespace=NAMESPACE,
@@ -70,6 +86,23 @@ unenrolment_response_time_histogram = Histogram(
     name="unenrolment_response_time",
     documentation="Response time for payment card unenrolments.",
     labelnames=("provider", "status", ),
+    buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+mastercard_reactivate_counter = Counter(
+    name="total_mastercard_spreedly_reactivations",
+    documentation="Total Mastercard Spreedly reactivations.",
+    labelnames=("status",),
+    namespace=NAMESPACE,
+    registry=registry
+)
+
+mastercard_reactivate_response_time_histogram = Histogram(
+    name="mastercard_reactivate_spreedly_response_time",
+    documentation="Mastercard reactivate Spreedly response time.",
+    labelnames=("status",),
     buckets=(5.0, 10.0, 30.0, 300.0, 3600.0, 43200.0, 86400.0, float("inf")),
     namespace=NAMESPACE,
     registry=registry
