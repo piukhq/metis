@@ -1,3 +1,4 @@
+import sys
 import graypy
 import logging
 import os
@@ -213,3 +214,11 @@ else:
     Secrets.amex_client_secret = "test"
     Secrets.spreedly_oauth_username = "test"
     Secrets.spreedly_oauth_password = "test"
+
+# Prometheus settings
+PROMETHEUS_LOG_LEVEL = getattr(logging, env_var("LOG_LEVEL", "INFO").upper(), logging.INFO)
+PUSH_PROMETHEUS_METRICS = env_var('PUSH_PROMETHEUS_METRICS', True)
+PROMETHEUS_PUSH_GATEWAY = 'http://localhost:9100'
+PROMETHEUS_JOB = 'metis'
+
+PROMETHEUS_TESTING = any("test" in arg for arg in sys.argv)

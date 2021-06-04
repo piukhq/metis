@@ -8,7 +8,7 @@ ENV LANG C.UTF-8
 ENV TZ=UTC
 
 RUN apt-get update && apt-get -y install libxslt-dev zlib1g-dev gcc curl && \
-    pip install --no-cache-dir pipenv==2018.11.26 gunicorn && \
+    pip install --no-cache-dir pipenv gunicorn && \
     pipenv install --system --deploy --ignore-pipfile && \
     apt-get -y autoremove gcc && rm -rf /var/lib/apt/lists/*
 

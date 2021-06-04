@@ -48,7 +48,9 @@ class MasterCard:
 
             message = 'Problem connecting to PSP. Action: MasterCard {}. Error:{}'.format(action, psp_message)
             settings.logger.error(message)
-            return {'message': message, 'status_code': response.status_code}
+            return {'message': message,
+                    'status_code': response.status_code,
+                    'bink_status': status_mapping['BINK_UNKNOWN']}
 
         try:
             xml_doc = etree.fromstring(response.text)

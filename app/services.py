@@ -1,4 +1,6 @@
+import os
 import time
+from datetime import datetime
 from copy import deepcopy
 from typing import Union, Type, TYPE_CHECKING
 
@@ -10,13 +12,54 @@ from app.agents.exceptions import OAuthError
 from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
+from prometheus.metrics import (
+    push_metrics,
+    payment_card_enrolment_reponse_time_histogram,
+    payment_card_enrolment_counter,
+    unenrolment_counter,
+    unenrolment_response_time_histogram,
+    mastercard_reactivate_counter,
+    mastercard_reactivate_response_time_histogram,
+    STATUS_FAILED,
+    STATUS_SUCCESS,
+)
 from vault import fetch_secrets
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
 
-
+pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
+
+
+def push_mastercard_reactivate_metrics(response, card_info, request_time_taken):
+    if card_info["partner_slug"] != "mastercard":
+        return
+
+    mastercard_reactivate_response_time_histogram.labels(
+            status=response["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if response["status_code"] == 200:
+        mastercard_reactivate_counter.labels(status=STATUS_SUCCESS).inc()
+    else:
+        mastercard_reactivate_counter.labels(status=STATUS_FAILED).inc()
+
+    push_metrics(pid)
+
+
+def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
+    unenrolment_response_time_histogram.labels(
+        provider=card_info["partner_slug"],
+        status=response["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    if response["status_code"] == 200:
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_SUCCESS).inc()
+    else:
+        unenrolment_counter.labels(provider=card_info["partner_slug"], status=STATUS_FAILED).inc()
+
+    push_metrics(pid)
 
 
 def get_spreedly_url(partner_slug: str) -> str:
@@ -36,8 +79,8 @@ def refresh_oauth_credentials() -> None:
             else:
                 fetch_secrets(secret_name, deepcopy(secret_def))
     else:
-        settings.logger.error(f"Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
-                              f" SPREEDLY_BASE_URL to your local Pelops ")
+        settings.logger.error("Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
+                              " SPREEDLY_BASE_URL to your local Pelops ")
 
 
 def send_request(
@@ -187,7 +230,9 @@ def add_card(card_info: dict) -> requests.Response:
         return None
     settings.logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
 
+    request_start_time = datetime.now()
     req_resp = send_request("POST", url, header, request_data)
+    request_time_taken = datetime.now() - request_start_time
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
@@ -203,9 +248,17 @@ def add_card(card_info: dict) -> requests.Response:
         # 1 = ACTIVE
         # TODO: get this from gaia
         card_status_code = 1
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_SUCCESS,
+        ).inc()
     else:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
+        payment_card_enrolment_counter.labels(
+            provider=card_info["partner_slug"],
+            status=STATUS_FAILED,
+        ).inc()
 
     hermes_data = get_hermes_data(resp, card_info["id"])
 
@@ -218,6 +271,14 @@ def add_card(card_info: dict) -> requests.Response:
         f"Sent add request to hermes status {reply.status_code}: data "
         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}'
     )
+
+    payment_card_enrolment_reponse_time_histogram.labels(
+        provider=card_info["partner_slug"],
+        status=resp["status_code"]
+    ).observe(request_time_taken.total_seconds())
+
+    push_metrics(pid)
+
     # Return response effect as in task but useful for test cases
     return resp
 
@@ -307,7 +368,7 @@ def remove_card(card_info: dict):
         # Do hermes call back of unenroll now that there are no outstanding activations
         response_state, status_code = hermes_unenroll_call_back(card_info, action_name,
                                                                 deactivated_list, deactivate_errors,
-                                                                *agent_instance.un_enroll(card_info, action_name))
+                                                                *agent_instance.un_enroll(card_info, action_name, pid))
 
         # put_account_status sends a async response back to Hermes.
         # The return values below are not functional as this runs in a celery task.
@@ -325,13 +386,21 @@ def remove_card(card_info: dict):
             # TODO: get this from gaia
             put_account_status(5, card_id=card_info["id"])
             return None
+        request_start_time = datetime.now()
         resp = send_request("POST", url, header, request_data)
+        request_time_taken = datetime.now() - request_start_time
+
         # get the status mapping for this provider from hermes.
         status_mapping = get_provider_status_mappings(card_info["partner_slug"])
         resp = agent_instance.response_handler(resp, action_name, status_mapping)
+
+        # Push unenrol metrics for amex and mastercard
+        push_unenrol_metrics_non_vop(resp, card_info, request_time_taken)
+
         # @todo View this when looking at Metis re-design
         # This response does nothing as it is in an celery task.  No message is returned to Hermes.
         # getting status mapping is wrong as it is not returned nor would it be used by Hermes.
+
         return resp
 
 
@@ -344,7 +413,9 @@ def reactivate_card(card_info: dict) -> requests.Response:
     url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{agent_instance.receiver_token()}"
     request_data = agent_instance.reactivate_card_body(card_info)
 
+    request_start_time = datetime.now()
     resp = send_request("POST", url, header, request_data)
+    request_total_time = datetime.now() - request_start_time
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
@@ -360,6 +431,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
         settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp["bink_status"]
     put_account_status(card_status_code, card_id=card_info["id"])
+    push_mastercard_reactivate_metrics(resp, card_info, request_total_time)
 
     return resp
 
