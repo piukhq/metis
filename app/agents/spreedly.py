@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import settings
-from handylib.factory import create_factory
+from app.factory import create_factory
 from app.teams import payment_card_notify
 
 

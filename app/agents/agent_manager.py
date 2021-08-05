@@ -1,4 +1,4 @@
-from handylib.factory import find_factory
+from app.factory import find_factory
 
 
 class AgentManager(object):
