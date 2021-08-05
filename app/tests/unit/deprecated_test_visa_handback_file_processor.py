@@ -44,7 +44,7 @@ class TestVisaHandback(fake_filesystem_unittest.TestCase):
         with open(self.touched_file, 'a'):
             os.utime(self.touched_file, None)
 
-    @patch('app.visa_handback_file_processor.scandir')
+    @patch('app.visa_handback_file_processor.os.scandir')
     def test_get_dir_contents(self, mock_scandir):
         mock_scandir.side_effect = self.fs.ScanDir
         '''Test visa_handback_file_processor.dir_exists()'''
