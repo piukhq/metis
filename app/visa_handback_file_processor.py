@@ -2,8 +2,6 @@ import os
 import shutil
 import subprocess
 
-from scandir import scandir
-
 from app.hermes import get_provider_status_mappings, put_account_status
 import settings
 
@@ -125,7 +123,7 @@ class VisaHandback(object):
 def get_dir_contents(src_dir):
     files = []
     file_dir = os.path.join(settings.APP_DIR, src_dir)
-    for entry in scandir(file_dir):
+    for entry in os.scandir(file_dir):
         if entry.is_file(follow_symlinks=False):
             files.append(entry.path)
 

@@ -1,5 +1,4 @@
 import sys
-import graypy
 import logging
 import os
 import sentry_sdk
@@ -38,7 +37,9 @@ REDIS_PORT = env_var('REDIS_PORT', 6379)
 REDIS_PASS = env_var('REDIS_PASS', '')
 REDIS_DB = env_var('REDIS_DB', 0)
 
+# Celery
 broker_url = env_var('CELERY_BROKER_URL', f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
+worker_enable_remote_control = False
 
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
@@ -68,20 +69,10 @@ CASSANDRA_CLUSTER = ('192.168.1.60', '192.168.1.61',  '192.168.1.62')
 CASSANDRA_TRANSACTION_KEYSPACE = 'lakeyspace'
 
 # Logging settings
-# Use Graylog when setup, temporarily use local log files.
 logging.basicConfig(format='%(process)s %(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger('metis_logger')
 logger.setLevel(logging.DEBUG)
-tmp_logger = False
 
-GRAYLOG_HOST = env_var('GRAYLOG_HOST')
-if GRAYLOG_HOST:
-    GRAYLOG_PORT = int(env_var('GRAYLOG_PORT'))
-    handler = graypy.GELFHandler(GRAYLOG_HOST, GRAYLOG_PORT)
-    logger.addHandler(handler)
-elif tmp_logger:
-    handler_loc = logging.FileHandler('/var/tmp/metis_tmp.log')
-    logger.addHandler(handler_loc)
 
 SENTRY_DSN = env_var("SENTRY_DSN", None)
 SENTRY_ENV = env_var("SENTRY_ENV", None)
