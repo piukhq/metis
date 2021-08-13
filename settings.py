@@ -37,7 +37,9 @@ REDIS_PORT = env_var('REDIS_PORT', 6379)
 REDIS_PASS = env_var('REDIS_PASS', '')
 REDIS_DB = env_var('REDIS_DB', 0)
 
+# Celery
 broker_url = env_var('CELERY_BROKER_URL', f'redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
+worker_enable_remote_control = False
 
 RABBITMQ_USER = env_var('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = env_var('RABBITMQ_PASS', 'guest')
