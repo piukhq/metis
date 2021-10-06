@@ -202,11 +202,7 @@ MFqkPdKpeZh2bO269TO8fMy82gx6ltzMtms2NrRL3NOWj6suLke7s8K8++JC
     def get_next_seq_number(self):
         # Visa have a sequence number limit of 99 per day.
         # Re-zero when the day changes
-        with psycopg2.connect(database=settings.PONTUS_DATABASE,
-                              user=settings.PONTUS_USER,
-                              password=settings.PONTUS_PASSWORD,
-                              host=settings.PONTUS_HOST,
-                              port=settings.PONTUS_PORT) as conn:
+        with psycopg2.connect(settings.POSTGRES_URI) as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT next_seq_number, sequence_date "
                             "FROM sequence_numbers "
