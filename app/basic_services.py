@@ -21,7 +21,7 @@ def basic_add_card(agent: str, card_info: dict) -> dict:
     request_data = agent_instance.add_card_body(card_info)
     settings.logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
     req_resp = send_request("POST", url, header, request_data)
-    resp = agent_instance.response_handler(req_resp, "Add", card_info.get('status_map', {"BINK_UNKNOWN": "unknown"}))
+    resp = agent_instance.response_handler(req_resp, "Add", card_info.get("status_map", {"BINK_UNKNOWN": "unknown"}))
     return resp
 
 
@@ -42,10 +42,11 @@ def basic_remove_card(agent: str, card_info: dict) -> tuple:
         request_data = agent_instance.remove_card_body(card_info)
 
         req_resp = send_request("POST", url, header, request_data)
-        resp = agent_instance.response_handler(req_resp, action_name,
-                                               card_info.get('status_map', {"BINK_UNKNOWN": "unknown"}))
+        resp = agent_instance.response_handler(
+            req_resp, action_name, card_info.get("status_map", {"BINK_UNKNOWN": "unknown"})
+        )
 
-        return "n/a", resp['status_code'], "", resp['message'], {'bink_status': resp['bink_status']}
+        return "n/a", resp["status_code"], "", resp["message"], {"bink_status": resp["bink_status"]}
 
 
 def basic_reactivate_card(agent: str, card_info: dict) -> dict:
@@ -55,6 +56,7 @@ def basic_reactivate_card(agent: str, card_info: dict) -> dict:
     url = f"{get_spreedly_url(agent)}/receivers/{agent_instance.receiver_token()}"
     request_data = agent_instance.reactivate_card_body(card_info)
     req_resp = send_request("POST", url, header, request_data)
-    resp = agent_instance.response_handler(req_resp, "Reactivate",
-                                           card_info.get('status_map', {"BINK_UNKNOWN": "unknown"}))
+    resp = agent_instance.response_handler(
+        req_resp, "Reactivate", card_info.get("status_map", {"BINK_UNKNOWN": "unknown"})
+    )
     return resp

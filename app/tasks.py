@@ -1,5 +1,5 @@
-from app.celery import celery
 from app import services
+from app.celery import celery
 
 
 @celery.task

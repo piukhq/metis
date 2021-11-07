@@ -1,11 +1,11 @@
 import os
 import time
-from datetime import datetime
 from copy import deepcopy
-from typing import Union, Type, TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Type, Union
 
 import requests
-from requests.exceptions import Timeout, ConnectionError
+from requests.exceptions import ConnectionError, Timeout
 
 import settings
 from app.agents.exceptions import OAuthError
@@ -13,15 +13,15 @@ from app.agents.visa_offers import VOPResultStatus
 from app.hermes import get_provider_status_mappings, put_account_status
 from app.utils import resolve_agent
 from prometheus.metrics import (
-    push_metrics,
-    payment_card_enrolment_reponse_time_histogram,
-    payment_card_enrolment_counter,
-    unenrolment_counter,
-    unenrolment_response_time_histogram,
-    mastercard_reactivate_counter,
-    mastercard_reactivate_response_time_histogram,
     STATUS_FAILED,
     STATUS_SUCCESS,
+    mastercard_reactivate_counter,
+    mastercard_reactivate_response_time_histogram,
+    payment_card_enrolment_counter,
+    payment_card_enrolment_reponse_time_histogram,
+    push_metrics,
+    unenrolment_counter,
+    unenrolment_response_time_histogram,
 )
 from vault import fetch_secrets
 
@@ -36,9 +36,9 @@ def push_mastercard_reactivate_metrics(response, card_info, request_time_taken):
     if card_info["partner_slug"] != "mastercard":
         return
 
-    mastercard_reactivate_response_time_histogram.labels(
-            status=response["status_code"]
-    ).observe(request_time_taken.total_seconds())
+    mastercard_reactivate_response_time_histogram.labels(status=response["status_code"]).observe(
+        request_time_taken.total_seconds()
+    )
 
     if response["status_code"] == 200:
         mastercard_reactivate_counter.labels(status=STATUS_SUCCESS).inc()
@@ -50,8 +50,7 @@ def push_mastercard_reactivate_metrics(response, card_info, request_time_taken):
 
 def push_unenrol_metrics_non_vop(response, card_info, request_time_taken):
     unenrolment_response_time_histogram.labels(
-        provider=card_info["partner_slug"],
-        status=response["status_code"]
+        provider=card_info["partner_slug"], status=response["status_code"]
     ).observe(request_time_taken.total_seconds())
 
     if response["status_code"] == 200:
@@ -79,13 +78,19 @@ def refresh_oauth_credentials() -> None:
             else:
                 fetch_secrets(secret_name, deepcopy(secret_def))
     else:
-        settings.logger.error("Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
-                              " SPREEDLY_BASE_URL to your local Pelops ")
+        settings.logger.error(
+            "Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
+            " SPREEDLY_BASE_URL to your local Pelops "
+        )
 
 
 def send_request(
-        method: str, url: str, headers: dict, request_data: Union[dict, str] = None, log_response: bool = True,
-        timeout: tuple = (5, 10)
+    method: str,
+    url: str,
+    headers: dict,
+    request_data: Union[dict, str] = None,
+    log_response: bool = True,
+    timeout: tuple = (5, 10),
 ) -> requests.Response:
     settings.logger.info(f"{method} Spreedly Request to URL: {url}")
     params = {"method": method, "url": url, "headers": headers, "timeout": timeout}
@@ -94,7 +99,7 @@ def send_request(
 
     resp = send_retry_spreedly_request(
         **params, auth=(settings.Secrets.spreedly_oauth_username, settings.Secrets.spreedly_oauth_password)
-                                       )
+    )
     if log_response:
         try:
             settings.logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
@@ -115,12 +120,15 @@ def send_retry_spreedly_request(**params):
         except (Timeout, ConnectionError) as e:
             retry = True
             resp = None
-            settings.logger.error(f"Spreedly {params['method']}, url:{params['url']},"
-                                  f" Retriable exception {e} attempt {attempts}")
+            settings.logger.error(
+                f"Spreedly {params['method']}, url:{params['url']}," f" Retriable exception {e} attempt {attempts}"
+            )
         else:
             if resp.status_code in [401, 403]:
-                settings.logger.info(f"Spreedly {params['method']} status code: {resp.status_code}, "
-                                     f"reloading oauth password from Vault")
+                settings.logger.info(
+                    f"Spreedly {params['method']} status code: {resp.status_code}, "
+                    f"reloading oauth password from Vault"
+                )
                 refresh_oauth_credentials()
                 get_auth_attempts += 1
                 if get_auth_attempts > 3:
@@ -130,13 +138,15 @@ def send_retry_spreedly_request(**params):
                 attempts = 0
                 retry = True
             elif resp.status_code in [500, 501, 502, 503, 504, 492]:
-                settings.logger.error(f"Spreedly {params['method']}, url:{params['url']},"
-                                      f" status code: {resp.status_code}, Retriable error attempt {attempts}")
+                settings.logger.error(
+                    f"Spreedly {params['method']}, url:{params['url']},"
+                    f" status code: {resp.status_code}, Retriable error attempt {attempts}"
+                )
                 retry = True
             else:
                 retry = False
         if retry:
-            time.sleep(3**attempts - 1)  # 4 attempts at 2s, 8s, 26s, 63s or 0s if if oauth error
+            time.sleep(3 ** attempts - 1)  # 4 attempts at 2s, 8s, 26s, 63s or 0s if if oauth error
 
         else:
             break
@@ -273,8 +283,7 @@ def add_card(card_info: dict) -> requests.Response:
     )
 
     payment_card_enrolment_reponse_time_histogram.labels(
-        provider=card_info["partner_slug"],
-        status=resp["status_code"]
+        provider=card_info["partner_slug"], status=resp["status_code"]
     ).observe(request_time_taken.total_seconds())
 
     push_metrics(pid)
@@ -283,14 +292,24 @@ def add_card(card_info: dict) -> requests.Response:
     return resp
 
 
-def hermes_unenroll_call_back(card_info, action, deactivated_list, deactivate_errors,
-                              response_state, status_code, agent_status_code, agent_message, _):
+def hermes_unenroll_call_back(
+    card_info,
+    action,
+    deactivated_list,
+    deactivate_errors,
+    response_state,
+    status_code,
+    agent_status_code,
+    agent_message,
+    _,
+):
     # Set card_payment status in hermes using 'id' HERMES_URL
     if status_code != 201:
-        settings.logger.info(f"Error in unenrol call back to Hermes VOP Card id: {card_info['id']} "
-                             f"{action} unsuccessful.  Response state {response_state}"
-                             f" {status_code}, {agent_status_code}, {agent_message}"
-                             )
+        settings.logger.info(
+            f"Error in unenrol call back to Hermes VOP Card id: {card_info['id']} "
+            f"{action} unsuccessful.  Response state {response_state}"
+            f" {status_code}, {agent_status_code}, {agent_message}"
+        )
     hermes_status_data = {
         "card_id": card_info["id"],
         "response_state": response_state,
@@ -298,7 +317,7 @@ def hermes_unenroll_call_back(card_info, action, deactivated_list, deactivate_er
         "response_message": agent_message,
         "response_action": action,
         "deactivated_list": deactivated_list,
-        "deactivate_errors": deactivate_errors
+        "deactivate_errors": deactivate_errors,
     }
     if card_info.get("retry_id"):
         hermes_status_data["retry_id"] = card_info["retry_id"]
@@ -331,44 +350,59 @@ def remove_card(card_info: dict):
         # We will retry this call until all de-activations are done then unenrol.  We call back after each deactivation
         # so that if we retry only the remaining activations will be sent to this service
 
-        activations = card_info.get('activations')
+        activations = card_info.get("activations")
         deactivated_list = []
         deactivate_errors = {}
         if activations:
             all_deactivated = True
             for activation_index, deactivation_card_info in activations.items():
                 settings.logger.info(f"VOP Metis Unenrol Request - deactivating {activation_index}")
-                deactivation_card_info['payment_token'] = card_info['payment_token']
-                deactivation_card_info['id'] = card_info['id']
-                response_status, status_code, agent_response_code, agent_message, _ \
-                    = agent_instance.deactivate_card(deactivation_card_info)
+                deactivation_card_info["payment_token"] = card_info["payment_token"]
+                deactivation_card_info["id"] = card_info["id"]
+                response_status, status_code, agent_response_code, agent_message, _ = agent_instance.deactivate_card(
+                    deactivation_card_info
+                )
                 if response_status == VOPResultStatus.SUCCESS.value:
                     deactivated_list.append(activation_index)
                 else:
                     deactivate_errors[activation_index] = {
-                        'response_status': response_status,
-                        'agent_response_code': agent_response_code,
-                        'agent_response_message': agent_message
+                        "response_status": response_status,
+                        "agent_response_code": agent_response_code,
+                        "agent_response_message": agent_message,
                     }
                     if response_status == VOPResultStatus.RETRY.value:
                         all_deactivated = False
                         # Only if you can retry the deactivation will we allow it to block the unenroll
                     elif response_status == VOPResultStatus.FAILED.value:
-                        settings.logger.error(f"VOP Metis Unenrol Request for {card_info['id']}"
-                                              f"- permanent deactivation fail {activation_index}")
+                        settings.logger.error(
+                            f"VOP Metis Unenrol Request for {card_info['id']}"
+                            f"- permanent deactivation fail {activation_index}"
+                        )
             if not all_deactivated:
                 message = "Cannot unenrol some Activations still active and can be retried"
                 settings.logger.info(f"VOP Unenroll fail for {card_info['id']} {message}")
 
-                status_code, response_state = \
-                    hermes_unenroll_call_back(card_info, action_name, deactivated_list, deactivate_errors,
-                                              VOPResultStatus.RETRY.value, "", "", message, "")
+                status_code, response_state = hermes_unenroll_call_back(
+                    card_info,
+                    action_name,
+                    deactivated_list,
+                    deactivate_errors,
+                    VOPResultStatus.RETRY.value,
+                    "",
+                    "",
+                    message,
+                    "",
+                )
                 return {"response_status": response_state, "status_code": status_code}
 
         # Do hermes call back of unenroll now that there are no outstanding activations
-        response_state, status_code = hermes_unenroll_call_back(card_info, action_name,
-                                                                deactivated_list, deactivate_errors,
-                                                                *agent_instance.un_enroll(card_info, action_name, pid))
+        response_state, status_code = hermes_unenroll_call_back(
+            card_info,
+            action_name,
+            deactivated_list,
+            deactivate_errors,
+            *agent_instance.un_enroll(card_info, action_name, pid),
+        )
 
         # put_account_status sends a async response back to Hermes.
         # The return values below are not functional as this runs in a celery task.

@@ -1,4 +1,5 @@
 import celery as c
+
 import settings
 
 celery = c.Celery()

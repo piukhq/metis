@@ -1,9 +1,10 @@
-import settings
 import jwt
 from flask import jsonify
 from flask_restful import abort, request
 
-HTTP_HEADER_ENCODING = 'iso-8859-1'
+import settings
+
+HTTP_HEADER_ENCODING = "iso-8859-1"
 
 
 def parse_token(auth_header):
@@ -11,7 +12,7 @@ def parse_token(auth_header):
     Verifies that an access-token is valid and meant for this app.
     """
     auth = auth_header.encode(HTTP_HEADER_ENCODING).split()
-    if not auth or auth[0].lower() != b'token':
+    if not auth or auth[0].lower() != b"token":
         return None
 
     token = auth[1].decode()
@@ -30,21 +31,22 @@ def authorized(fn):
     """
 
     def _wrap(*args, **kwargs):
-        if 'Authorization' not in request.headers:
+        if "Authorization" not in request.headers:
             # Unauthorized
             abort(401)
             return None
 
         try:
-            parse_token(request.headers['Authorization'])
+            parse_token(request.headers["Authorization"])
         except jwt.DecodeError:
-            response = jsonify(message='Token is invalid')
+            response = jsonify(message="Token is invalid")
             response.status_code = 401
             return response
         except jwt.ExpiredSignature:
-            response = jsonify(message='Token has expired')
+            response = jsonify(message="Token has expired")
             response.status_code = 401
             return response
 
         return fn(*args, **kwargs)
+
     return _wrap

@@ -1,4 +1,5 @@
 import requests
+
 from settings import TEAMS_WEBHOOK_URL
 
 
@@ -19,6 +20,6 @@ def payment_card_notify(message):
                 ],
                 "markdown": False,
             }
-        ]
+        ],
     }
     return requests.post(TEAMS_WEBHOOK_URL, json=template)
