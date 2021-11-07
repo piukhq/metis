@@ -1,4 +1,5 @@
 import unittest
+
 import settings
 from app.action import ActionCode
 from app.agents.visa import Visa
@@ -12,74 +13,82 @@ class TestServices(unittest.TestCase):
     add or delete a card. Amex and MasterCard agents are called through the services module.
     So, to test Visa here we pass all the parameters, including action_code, in the card_info.
     """
+
     def test_visa_add_card(self):
-        card_info = [{
-            'id': 1,
-            'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
-            'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa',
-            'date': 1475920002,
-            'action_code': ActionCode.ADD
-        }]
+        card_info = [
+            {
+                "id": 1,
+                "payment_token": "LyWyubSnJzQZtAxLvN8RYOYnSKv",
+                "card_token": "1111111111111111111111112",
+                "partner_slug": "visa",
+                "date": 1475920002,
+                "action_code": ActionCode.ADD,
+            }
+        ]
 
         visa = Visa()
         settings.TESTING = True
 
         resp = visa.create_cards(card_info)
 
-        self.assertTrue(resp['status_code'] == 202)
+        self.assertTrue(resp["status_code"] == 202)
 
     def test_visa_add_multi_cards(self):
-        card_info = [{
-            'id': 1,
-            'action_code': ActionCode.ADD,
-            'date': 1475920002,
-            'payment_token': 'ZWFirX98PzNjZFoJTuLZ9KK5qrt',
-            'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa'
-        },
+        card_info = [
             {
-                'id': 2,
-                'action_code': ActionCode.ADD,
-                'date': 1475920002,
-                'payment_token': 'I78VlnwUL0gBgp8aBNA9Q3gKpja',
-                'card_token': '1111111111111111111111113',
-                'partner_slug': 'visa'
-            }
+                "id": 1,
+                "action_code": ActionCode.ADD,
+                "date": 1475920002,
+                "payment_token": "ZWFirX98PzNjZFoJTuLZ9KK5qrt",
+                "card_token": "1111111111111111111111112",
+                "partner_slug": "visa",
+            },
+            {
+                "id": 2,
+                "action_code": ActionCode.ADD,
+                "date": 1475920002,
+                "payment_token": "I78VlnwUL0gBgp8aBNA9Q3gKpja",
+                "card_token": "1111111111111111111111113",
+                "partner_slug": "visa",
+            },
         ]
 
         settings.TESTING = True
         visa = Visa()
         resp = visa.create_cards(card_info)
 
-        self.assertTrue(resp['status_code'] == 202)
+        self.assertTrue(resp["status_code"] == 202)
 
     def test_visa_add_card_wrong_token(self):
-        card_info = [{
-            'id': 1,
-            'payment_token': 'teWyubSnJzQZtAxLvN8RYOYnS11',
-            'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa',
-            'date': 1475920002,
-            'action_code': ActionCode.ADD
-        }]
+        card_info = [
+            {
+                "id": 1,
+                "payment_token": "teWyubSnJzQZtAxLvN8RYOYnS11",
+                "card_token": "1111111111111111111111112",
+                "partner_slug": "visa",
+                "date": 1475920002,
+                "action_code": ActionCode.ADD,
+            }
+        ]
 
         visa = Visa()
         settings.TESTING = True
 
         resp = visa.create_cards(card_info)
 
-        self.assertTrue(resp['status_code'] == 404)
+        self.assertTrue(resp["status_code"] == 404)
 
     def test_visa_remove_card(self):
-        card_info = [{
-            'id': 1,
-            'payment_token': 'LyWyubSnJzQZtAxLvN8RYOYnSKv',
-            'card_token': '1111111111111111111111112',
-            'partner_slug': 'visa',
-            'date': 1475920002,
-            'action_code': ActionCode.DELETE
-        }]
+        card_info = [
+            {
+                "id": 1,
+                "payment_token": "LyWyubSnJzQZtAxLvN8RYOYnSKv",
+                "card_token": "1111111111111111111111112",
+                "partner_slug": "visa",
+                "date": 1475920002,
+                "action_code": ActionCode.DELETE,
+            }
+        ]
         visa = Visa()
         settings.TESTING = True
 
@@ -92,13 +101,13 @@ class TestServices(unittest.TestCase):
         # load list and chunk
         for card_info in chunks(real_list, 100):
             for card in card_info:
-                card['action_code'] = ActionCode.ADD
+                card["action_code"] = ActionCode.ADD
             resp = visa.create_cards(card_info)
 
-        self.assertTrue(resp['status_code'] == 202)
+        self.assertTrue(resp["status_code"] == 202)
 
 
 def chunks(ll, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(ll), n):
-        yield ll[i:i + n]
+        yield ll[i : i + n]

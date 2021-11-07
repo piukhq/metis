@@ -5,7 +5,7 @@ class Factory(object):
 
     _members = {}
     _default = None
-    _name = ''
+    _name = ""
 
     @classmethod
     def register(cls, name, what):
@@ -36,11 +36,9 @@ class Factory(object):
 
 def create_factory(name):
     me = sys.modules[__name__]
-    name = f'{name}Factory'
+    name = f"{name}Factory"
     if not hasattr(me, name):
-        setattr(sys.modules[__name__],
-                name,
-                type(name, (Factory, ), {'_name': name, '_members': {}, '_default': None}))
+        setattr(sys.modules[__name__], name, type(name, (Factory,), {"_name": name, "_members": {}, "_default": None}))
     return getattr(me, name)
 
 
