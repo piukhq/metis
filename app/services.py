@@ -1,6 +1,5 @@
 import os
 import time
-from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Type, Union
 
@@ -23,7 +22,7 @@ from prometheus.metrics import (
     unenrolment_counter,
     unenrolment_response_time_histogram,
 )
-from vault import fetch_secrets
+from vault import secrets_from_vault
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
@@ -70,17 +69,12 @@ def get_spreedly_url(partner_slug: str) -> str:
 def refresh_oauth_credentials() -> None:
     if settings.AZURE_VAULT_URL:
         secret_defs = ["spreedly_oauth_password", "spreedly_oauth_username"]
-        for secret_name in secret_defs:
-            try:
-                secret_def = settings.Secrets.SECRETS_DEF[secret_name]
-            except KeyError:
-                settings.logger.error(f"Can not find {secret_name} in Secrets.SECRETS_DEF")
-            else:
-                fetch_secrets(secret_name, deepcopy(secret_def))
+        secrets_from_vault(secret_defs)
+
     else:
         settings.logger.error(
             "Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
-            " SPREEDLY_BASE_URL to your local Pelops "
+            " SPREEDLY_BASE_URL to your local Pelops?"
         )
 
 
