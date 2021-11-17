@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Type, Union
+from copy import deepcopy
 
 import requests
 from requests.exceptions import ConnectionError, Timeout
@@ -74,11 +75,11 @@ def refresh_oauth_credentials() -> None:
 
         try:
             for secret_name in secret_defs:
-                secret_def = settings.Secrets.SECRETS_DEF['secret']
+                secret_def = deepcopy(settings.Secrets.SECRETS_DEF)[secret_name]
                 fetch_and_set_secret(client, secret_name, secret_def)
                 settings.logger.info(f"{secret_name} refreshed from Vault.")
-        except Exception:
-            settings.logger.error(f"Failed to get {secret_name} from Vault.")
+        except Exception as e:
+            settings.logger.error(f"Failed to get {secret_name} from Vault. Exception: {e}")
 
     else:
         settings.logger.error(
