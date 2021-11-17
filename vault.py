@@ -43,30 +43,14 @@ def fetch_and_set_secret(client: SecretClient, secret_name: str, secret_def: dic
         setattr(settings.Secrets, secret_name, secret_value)
 
 
-def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5, secrets_to_fetch: list = None):
+def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
 
-    if secrets_to_fetch:
-        secrets_dict = deepcopy(settings.Secrets.SECRETS_DEF)
-
-        try:
-            secrets_to_fetch = {name: secrets_dict[name] for name in secrets_to_fetch}
-        except KeyError as e:
-            raise SecretError(message=f"Secret name not found in definition dictionary. Exception: {e}")
-
-    else:
-        secrets_to_fetch = deepcopy(settings.Secrets.SECRETS_DEF)
+    secrets_to_fetch = deepcopy(settings.Secrets.SECRETS_DEF)
 
     time_delay = start_delay
     loops = 0
 
-    azure_credential = DefaultAzureCredential(
-            exclude_environment_credential=True,
-            exclude_shared_token_cache_credential=True,
-            exclude_visual_studio_code_credential=True,
-            exclude_interactive_browser_credential=True,
-    )
-
-    client = SecretClient(vault_url=settings.AZURE_VAULT_URL, credential=azure_credential)
+    client = get_azure_client()
 
     while secrets_to_fetch:
         sleep(time_delay)
@@ -87,3 +71,16 @@ def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5, secrets_to_f
 
         if loops == max_retries:
             raise SecretError("Max retries reached whilst trying to fetch and set secrets")
+
+
+def get_azure_client() -> SecretClient:
+    azure_credential = DefaultAzureCredential(
+        exclude_environment_credential=True,
+        exclude_shared_token_cache_credential=True,
+        exclude_visual_studio_code_credential=True,
+        exclude_interactive_browser_credential=True,
+    )
+
+    client = SecretClient(vault_url=settings.AZURE_VAULT_URL, credential=azure_credential)
+
+    return client
