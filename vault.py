@@ -45,20 +45,20 @@ def fetch_and_set_secret(client: SecretClient, secret_name: str, secret_def: dic
 
 def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
 
-    secrets_to_fetch = deepcopy(settings.Secrets.SECRETS_DEF)
+    secrets_to_load = deepcopy(settings.Secrets.SECRETS_DEF)
 
     time_delay = start_delay
     loops = 0
 
     client = get_azure_client()
 
-    while secrets_to_fetch:
+    while secrets_to_load:
         sleep(time_delay)
 
-        for secret_name, secret_def in secrets_to_fetch.items():
+        for secret_name, secret_def in secrets_to_load.items():
             try:
                 fetch_and_set_secret(client, secret_name, secret_def)
-                del secrets_to_fetch[secret_name]
+                del secrets_to_load[secret_name]
                 settings.logger.info(f"Successfully set secret: {secret_name}")
             except Exception as e:
                 settings.logger.error(f"Error fetching and setting {secret_name} from Vault. {e}")

@@ -1,6 +1,5 @@
 import os
 import time
-from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Type, Union
 
@@ -75,7 +74,7 @@ def refresh_oauth_credentials() -> None:
 
         for secret_name in secret_defs:
             try:
-                secret_def = deepcopy(settings.Secrets.SECRETS_DEF)[secret_name]
+                secret_def = settings.Secrets.SECRETS_DEF[secret_name]
                 fetch_and_set_secret(client, secret_name, secret_def)
                 settings.logger.info(f"{secret_name} refreshed from Vault.")
             except Exception as e:
