@@ -1,8 +1,8 @@
 import os
 import time
+from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Type, Union
-from copy import deepcopy
 
 import requests
 from requests.exceptions import ConnectionError, Timeout

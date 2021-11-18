@@ -1,12 +1,12 @@
+import json
 from copy import deepcopy
 from time import sleep
+from typing import Optional
+
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-import json
 
 import settings
-
-from typing import Optional
 
 
 class SecretError(Exception):
@@ -62,9 +62,7 @@ def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
                 del secrets_to_fetch[secret_name]
                 settings.logger.info(f"Successfully set secret: {secret_name}")
             except Exception as e:
-                settings.logger.error(
-                    f"Error fetching and setting {secret_name} from Vault. {e}"
-                )
+                settings.logger.error(f"Error fetching and setting {secret_name} from Vault. {e}")
 
         time_delay = loop_delay
         loops += 1
