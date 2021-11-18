@@ -73,13 +73,13 @@ def refresh_oauth_credentials() -> None:
 
         client = get_azure_client()
 
-        try:
-            for secret_name in secret_defs:
+        for secret_name in secret_defs:
+            try:
                 secret_def = deepcopy(settings.Secrets.SECRETS_DEF)[secret_name]
                 fetch_and_set_secret(client, secret_name, secret_def)
                 settings.logger.info(f"{secret_name} refreshed from Vault.")
-        except Exception as e:
-            settings.logger.error(f"Failed to get {secret_name} from Vault. Exception: {e}")
+            except Exception as e:
+                settings.logger.error(f"Failed to get {secret_name} from Vault. Exception: {e}")
 
     else:
         settings.logger.error(
