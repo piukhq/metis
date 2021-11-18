@@ -101,7 +101,6 @@ VISA_ENCRYPTED_FILE_EXTENSION = env_var("VISA_ENCRYPTED_FILE_EXTENSION", "pgp")
 TEAMS_WEBHOOK_URL = env_var("TEAMS_WEBHOOK_URL")
 
 AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "")
-VAULT_SECRETS_PATH = env_var("VAULT_SECRETS_PATH", "/v1/secret")
 # Changed from CELERY_ACCEPT_CONTENT due to deprecation
 accept_content = ["pickle", "json", "msgpack", "yaml"]
 
@@ -130,28 +129,28 @@ class Secrets:
     # unless file path is declared in which case the secret is saved to the file and the attribute set to the file path
     SECRETS_DEF = {
         "vop_client_certificate_path": {
-            "vault_name": "/vop/clientCert",
+            "vault_name": "vop-clientCert",
             "file_path": "/tmp/vop_client_certificate.pem",
         },
         "vop_client_key_path": {
-            "vault_name": "/vop/clientKey",
+            "vault_name": "vop-clientKey",
             "file_path": "/tmp/vop_client_key.pem",
         },
-        "spreedly_visa_receive_token": {"vault_name": "/spreedly/visaReceiveToken"},
-        "spreedly_amex_receive_token": {"vault_name": "/spreedly/amexReceiveToken"},
-        "spreedly_mastercard_receive_token": {"vault_name": "/spreedly/mastercardReceiveToken"},
-        "vop_community_code": {"vault_name": "/vop/communityCode"},
-        "vop_spreedly_community_code": {"vault_name": "/vop/spreedlyCommunityCode"},
-        "vop_offerid": {"vault_name": "/vop/offerId"},
-        "vop_user_id": {"vault_name": "/vop/authUserId"},
-        "vop_password": {"vault_name": "/vop/authPassword"},
-        "spreedly_vop_user_id": {"vault_name": "/spreedly/vopAuthUserId"},
-        "spreedly_vop_password": {"vault_name": "/spreedly/vopAuthPassword"},
-        "vop_merchant_group": {"vault_name": "/vop/merchantGroup"},
-        "amex_client_id": {"vault_name": "/amex/clientId"},
-        "amex_client_secret": {"vault_name": "/amex/clientSecret"},
-        "spreedly_oauth_username": {"vault_name": "/spreedly/oAuthUsername"},
-        "spreedly_oauth_password": {"vault_name": "/spreedly/oAuthPassword"},
+        "spreedly_visa_receive_token": {"vault_name": "spreedly-visaReceiveToken"},
+        "spreedly_amex_receive_token": {"vault_name": "spreedly-amexReceiveToken"},
+        "spreedly_mastercard_receive_token": {"vault_name": "spreedly-mastercardReceiveToken"},
+        "vop_community_code": {"vault_name": "vop-communityCode"},
+        "vop_spreedly_community_code": {"vault_name": "vop-spreedlyCommunityCode"},
+        "vop_offerid": {"vault_name": "vop-offerId"},
+        "vop_user_id": {"vault_name": "vop-authUserId"},
+        "vop_password": {"vault_name": "vop-authPassword"},
+        "spreedly_vop_user_id": {"vault_name": "spreedly-vopAuthUserId"},
+        "spreedly_vop_password": {"vault_name": "spreedly-vopAuthPassword"},
+        "vop_merchant_group": {"vault_name": "vop-merchantGroup"},
+        "amex_client_id": {"vault_name": "amex-clientId"},
+        "amex_client_secret": {"vault_name": "amex-clientSecret"},
+        "spreedly_oauth_username": {"vault_name": "spreedly-oAuthUsername"},
+        "spreedly_oauth_password": {"vault_name": "spreedly-oAuthPassword"},
     }
 
 
