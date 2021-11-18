@@ -54,9 +54,8 @@ def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
 
     while secrets_to_fetch:
         sleep(time_delay)
-        to_load = deepcopy(secrets_to_fetch)
 
-        for secret_name, secret_def in to_load.items():
+        for secret_name, secret_def in secrets_to_fetch.items():
             try:
                 fetch_and_set_secret(client, secret_name, secret_def)
                 del secrets_to_fetch[secret_name]
