@@ -57,13 +57,13 @@ the Spreedly website.
 Set the receiver token to a valid master card Spreedly receiver.
 Receiver token used for MTF doEcho: `XsXRs91pxREDW7TAFbUc1TgosxU`.
 
-Set the the payment_method_token with a valid token obtained by registering a card with Spreedly.
+Set the payment_method_token with a valid token obtained by registering a card with Spreedly.
 ```
 <payment_method_token>WhtIyJrcpcLupNpBD4bSVx3qyY5</payment_method_token>
 ```
 ### Secrets and integration testing to Agents.
 
-The policy is for all secrets to be moved to the Azure vault.  This includes lower security risk secrets used
+All secrets are found in the Azure keyvault.  This includes lower security risk secrets used
 for integration testing to Agents test services.  Instead of hard coding them or placing in comments
 they should be placed in the Dev vault.
 
@@ -73,29 +73,26 @@ Metis automatically does this by downloading the secrets at the start and apart 
 only keeps them in memory.
 
 Secrets are not required to be downloaded if running with Pelops, this only applies to Integration
-testing. Usually developers will working without secrets and the azure vault url should be a blank string and 
-the stubbed amex url should be you local Pelops.
+testing. Usually developers will work without secrets; for this, the AZURE_VAULT_URL envvar should be a blank string, 
+and the stubbed amex url should be your local Pelops.
 
 Amex has been updated to align with this policy.  The following config will cause secrets to accessed
 on start up and used to talk to Amex Test environment:
 
         settings.TESTING = True
         settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
-        settings.AZURE_VAULT_URL = "http://127.0.0.1:8200"
+        settings.AZURE_VAULT_URL = "https://bink-uksouth-dev-com.vault.azure.net/"
         settings.secrets_from_vault(start_delay=0) 
         
 Note: The above is used in the test SetUp class in Amex integration tests to force the correct config. when running
  the test 
  
-Before running the test ensure you have vault access by running the following system commands:
+Before running the test ensure you have vault access by running:
 
-    kukctx uksouth-dev0 
-    kukubectl port-forward svc/fakicorp 8200
- 
- 
+        brew install azure-cli
+        az login
 
 
- 
 
 ## Docker Configuration
 
@@ -109,6 +106,8 @@ Before running the test ensure you have vault access by running the following sy
 - `TESTING`
   - `true` - Use stubbed URLs to talk to Pelops or test Spreedly
   - `false` - Force Production Spreedly environment
+- `AZURE_VAULT_URL`
+  - String Value, URL from which to fetch secrets. If set to "", local dummy secrets are used for dev purposes.
 - `SPREEDLY_SIGNING_SECRET`
   - String Value, Secret for Spreedly
 - `SPREEDLY_BASE_URL`

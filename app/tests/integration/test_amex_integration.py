@@ -9,17 +9,16 @@ from app.agents.amex import Amex
 
 class TestServicesToAmexDev2s(unittest.TestCase):
     """
-    To run this test you must have port forward to dev vault using:
-        kubectl port-forward svc/fakicorp 8200
+    To run this test you must have enabled access to the Azure Vault. Please see readme for more details on this.
 
-    Tests must run in correct order since sync will error on a already sync card and visa vers for unsync
+    Tests must run in correct order since sync will error on a already sync'ed card and vice-versa for unsync'ed card.
     """
 
     @classmethod
     def setUpClass(cls):
         settings.TESTING = True
         settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
-        settings.AZURE_VAULT_URL = "http://127.0.0.1:8200"
+        settings.AZURE_VAULT_URL = "https://bink-uksouth-dev-com.vault.azure.net/"
         settings.secrets_from_vault(start_delay=0)
 
     def setUp(self):
@@ -60,7 +59,7 @@ class TestServicesToAmexDev2s(unittest.TestCase):
 
 class TestServicesToPelopsAmexMock(unittest.TestCase):
     """
-    To run this test you must have a local Pelops Copy running on local host 5050
+    To run this test you must have a local Pelops instance running on local host 5050
 
     """
 
