@@ -55,13 +55,18 @@ def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
     while secrets_to_load:
         sleep(time_delay)
 
+        secrets_loaded = []
+
         for secret_name, secret_def in secrets_to_load.items():
             try:
                 fetch_and_set_secret(client, secret_name, secret_def)
-                del secrets_to_load[secret_name]
+                secrets_loaded.append(secret_name)
                 settings.logger.info(f"Successfully set secret: {secret_name}")
             except Exception as e:
                 settings.logger.error(f"Error fetching and setting {secret_name} from Vault. {e}")
+
+        for secret_name in secrets_loaded:
+            del secrets_to_load[secret_name]
 
         time_delay = loop_delay
         loops += 1
