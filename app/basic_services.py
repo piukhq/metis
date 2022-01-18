@@ -1,6 +1,6 @@
+import os
 from typing import TYPE_CHECKING
 
-import os
 import settings
 from app.action import ActionCode
 from app.services import get_agent, get_spreedly_url, send_request

@@ -227,10 +227,12 @@ foundation_add_schema = Schema(
 
 
 foundation_delete_schema = Schema(
-    {Required("id"): int,
-     Required("payment_token"): All(str, Length(min=1)),
-     Required("partner_slug"): All(str, Length(min=1)),
-     Optional("status_map"): dict}
+    {
+        Required("id"): int,
+        Required("payment_token"): All(str, Length(min=1)),
+        Required("partner_slug"): All(str, Length(min=1)),
+        Optional("status_map"): dict,
+    }
 )
 
 
