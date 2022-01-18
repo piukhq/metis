@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING
 
 import settings
@@ -6,6 +7,8 @@ from app.services import get_agent, get_spreedly_url, send_request
 
 if TYPE_CHECKING:
     from app.agents.agent_base import AgentBase  # noqa
+
+pid = os.getpid()
 
 
 def basic_add_card(agent: str, card_info: dict) -> dict:
@@ -33,7 +36,7 @@ def basic_remove_card(agent: str, card_info: dict) -> tuple:
     action_name = "Delete"
 
     if agent == "visa":
-        return agent_instance.un_enroll(card_info, action_name)
+        return agent_instance.un_enroll(card_info, action_name, pid)
     else:
         # Older call used with Agents prior to VOP which proxy through Spreedly
         # 'https://core.spreedly.com/v1/receivers/' + agent_instance.receiver_token()
