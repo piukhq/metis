@@ -126,9 +126,12 @@ mastercard_reactivate_response_time_histogram = Histogram(
 
 def push_metrics(pid):
     if not settings.PROMETHEUS_TESTING:
-        push_to_gateway(
-            settings.PROMETHEUS_PUSH_GATEWAY,
-            job=settings.PROMETHEUS_JOB,
-            registry=registry,
-            grouping_key={"celery": str(pid)},
-        )
+        try:
+            push_to_gateway(
+                settings.PROMETHEUS_PUSH_GATEWAY,
+                job=settings.PROMETHEUS_JOB,
+                registry=registry,
+                grouping_key={"celery": str(pid)},
+            )
+        except Exception as e:
+            print(e)
