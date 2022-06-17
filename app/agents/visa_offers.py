@@ -443,8 +443,11 @@ class Visa:
                 self._visa_report_vop_status_count(action_name, resp_state)
 
             except (Timeout, ConnectionError) as error:
-                agent_message = f"Agent connection {error}"
-                settings.logger.error(f"VOP {action_name} request for {card_id_info} {agent_message}")
+                agent_message = f"Agent connection error: {error}"
+                if retry_count == 0:
+                    settings.logger.error(f"VOP {action_name} request for {card_id_info} - {agent_message}")
+                else:
+                    settings.logger.debug(f"VOP {action_name} request for {card_id_info} - {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
                 self._visa_report_vop_status_count(action_name, VOPResultStatus.TIMEOUT)
