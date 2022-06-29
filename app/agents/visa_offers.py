@@ -172,7 +172,7 @@ class Visa:
         ).decode("ascii")
 
         # Override  settings if stubbed
-        if settings.STUBBED_VOP_URL:
+        if settings.TESTING and settings.STUBBED_VOP_URL:
             self.vop_url = settings.STUBBED_VOP_URL
 
     def receiver_token(self):
@@ -391,7 +391,7 @@ class Visa:
     def _basic_vop_request(self, api_endpoint, data):
         url = f"{self.vop_url}{api_endpoint}"
         headers = {"Content-Type": "application/json"}
-        if settings.STUBBED_VOP_URL:
+        if settings.TESTING and settings.STUBBED_VOP_URL:
             settings.logger.info(f"VOP Mock request to Pelops being sent to: {url}")
             return requests.request("POST", url, headers=headers, data=data, timeout=(5, 10))
         else:
