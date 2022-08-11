@@ -92,6 +92,8 @@ else:
     PONTUS_PORT = env_var("PONTUS_PORT", "5432")
     POSTGRES_URI = f"postgresql://{PONTUS_USER}:{PONTUS_PASSWORD}@{PONTUS_HOST}:{PONTUS_PORT}/{PONTUS_DATABASE}"
 
+POSTGRES_CONNECT_ARGS = {"application_name", "metis"}
+
 # Store VISA private key separately from other keys
 VISA_SOURCE_FILES_DIR = env_var("VISA_SOURCE_FILES_DIR", "../visa_handback_files")
 VISA_KEYRING_DIR = env_var("VISA_KEYRING_DIR", "~/.gnupg")
