@@ -20,7 +20,7 @@ def parse_token(auth_header):
     if token == settings.SERVICE_API_KEY:
         return True
 
-    token_contents = jwt.decode(token, settings.TOKEN_SECRET)
+    token_contents = jwt.decode(token, settings.TOKEN_SECRET, algorithms=["HS256"])
 
     return token_contents
 

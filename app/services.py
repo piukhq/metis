@@ -135,7 +135,7 @@ def send_retry_spreedly_request(**params):
                 refresh_oauth_credentials()
                 get_auth_attempts += 1
                 if get_auth_attempts > 3:
-                    time.sleep(2 ** get_auth_attempts - 2)
+                    time.sleep(2**get_auth_attempts - 2)
                 if get_auth_attempts > 10:
                     break
                 attempts = 0
@@ -149,7 +149,7 @@ def send_retry_spreedly_request(**params):
             else:
                 retry = False
         if retry:
-            time.sleep(3 ** attempts - 1)  # 4 attempts at 2s, 8s, 26s, 63s or 0s if if oauth error
+            time.sleep(3**attempts - 1)  # 4 attempts at 2s, 8s, 26s, 63s or 0s if if oauth error
 
         else:
             break

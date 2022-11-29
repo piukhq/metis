@@ -58,19 +58,6 @@ SPREEDLY_SEND_DELAY = 30
 
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
-# -------------------------------------------------------------------------------
-# Cassandra cluster
-# -------------------------------------------------------------------------------
-
-# dev machine
-CASSANDRA_CLUSTER = ("192.168.1.60", "192.168.1.61", "192.168.1.62")
-# local machine
-# CASSANDRA_CLUSTER = ('127.0.0.1', '127.0.0.2', '127.0.0.3')
-# aws deployment
-# CASSANDRA_CLUSTER=(['unknown', 'unknown', 'unknown')
-
-CASSANDRA_TRANSACTION_KEYSPACE = "lakeyspace"
-
 # Logging settings
 logging.basicConfig(format="%(process)s %(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("metis_logger")
