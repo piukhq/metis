@@ -10,7 +10,7 @@ from vault import secrets_from_vault
 
 SECRET_KEY = b"\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N["
 ALLOWED_LOG_LEVELS = Choices(("NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"))
-ROOT_LOG_LEVEL = config("LOG_LEVEL", default="DEBUG", cast=ALLOWED_LOG_LEVELS)
+ROOT_LOG_LEVEL = config("LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
 JSON_LOGGING = config("JSON_LOGGING", default=True, cast=bool)
 
 SPREEDLY_SIGNING_SECRET = config(
