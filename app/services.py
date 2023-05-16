@@ -106,7 +106,8 @@ def send_request(
     )
     if log_response:
         try:
-            logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
+            logger.info(f"Spreedly {method} status code: {resp.status_code}")
+            logger.debug(f"Response content:\n{resp.text}")
         except AttributeError as e:
             logger.info(f"Spreedly {method} to URL: {url} failed response object error {e}")
 
