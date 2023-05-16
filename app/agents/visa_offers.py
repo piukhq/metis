@@ -7,6 +7,7 @@ from enum import Enum
 from uuid import uuid4
 
 import requests
+from loguru import logger
 from requests.exceptions import ConnectionError, Timeout
 
 import settings
@@ -192,7 +193,7 @@ class Visa:
         message = f"Visa VOP {action_name} successful, Visa successfully processed"
         if resp_token:
             message = f"{message}; token {resp_token}"
-        settings.logger.info(message)
+        logger.info(message)
         return message
 
     @staticmethod
@@ -202,7 +203,7 @@ class Visa:
 
         psp_message_list = [f"VOP_status_code: {resp_visa_status_code}", add_message]
         message = f'Problem with PSP call: Action: Visa {action_name}. Error:{" ".join(psp_message_list)}'
-        settings.logger.error(message)
+        logger.error(message)
         return message
 
     def check_success(
@@ -234,7 +235,7 @@ class Visa:
                     resp_user_details = resp_content.get("userDetails", {})
                     other_data["agent_card_uid"] = resp_user_details["cards"][0]["cardId"]
                 except KeyError:
-                    settings.logger.error(
+                    logger.error(
                         f"Could not Extract VOP CardId from success response: UserDetails: {resp_user_details}"
                     )
         else:
@@ -392,10 +393,10 @@ class Visa:
         url = f"{self.vop_url}{api_endpoint}"
         headers = {"Content-Type": "application/json"}
         if settings.TESTING and settings.STUBBED_VOP_URL:
-            settings.logger.info(f"VOP Mock request to Pelops being sent to: {url}")
+            logger.info(f"VOP Mock request to Pelops being sent to: {url}")
             return requests.request("POST", url, headers=headers, data=data, timeout=(5, 10))
         else:
-            settings.logger.info(
+            logger.info(
                 f"VOP request being sent to {url} cert paths"
                 f" {settings.Secrets.vop_client_certificate_path} and "
                 f" {settings.Secrets.vop_client_key_path}"
@@ -426,7 +427,7 @@ class Visa:
                 response = self._basic_vop_request(api_endpoint, json_data)
                 response_time = datetime.now() - response_start_time
                 self._visa_report_vop_status_histogram(action_name, response_time, response.status_code)
-                settings.logger.info(
+                logger.info(
                     f"VOP {action_name} response for {card_id_info}:" f" {response.status_code}, {response.text}"
                 )
                 resp_state, agent_status_code, agent_message, other_data = self.process_vop_response(
@@ -437,7 +438,7 @@ class Visa:
 
             except json.decoder.JSONDecodeError as error:
                 agent_message = f"Agent response was not valid JSON Error: {error}"
-                settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
+                logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
                 self._visa_report_vop_status_count(action_name, resp_state)
@@ -445,9 +446,9 @@ class Visa:
             except (Timeout, ConnectionError) as error:
                 agent_message = f"Agent connection error: {error}"
                 if retry_count == 0:
-                    settings.logger.error(f"VOP {action_name} request for {card_id_info} - {agent_message}")
+                    logger.error(f"VOP {action_name} request for {card_id_info} - {agent_message}")
                 else:
-                    settings.logger.debug(f"VOP {action_name} request for {card_id_info} - {agent_message}")
+                    logger.debug(f"VOP {action_name} request for {card_id_info} - {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.RETRY
                 self._visa_report_vop_status_count(action_name, VOPResultStatus.TIMEOUT)
@@ -455,7 +456,7 @@ class Visa:
 
             except Exception as error:
                 agent_message = f"Agent exception {error}"
-                settings.logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
+                logger.error(f"VOP {action_name} request for {card_id_info} exception error {agent_message}")
                 agent_status_code = 0
                 resp_state = VOPResultStatus.FAILED
                 self._visa_report_vop_status_count(action_name, resp_state)
@@ -471,7 +472,7 @@ class Visa:
             status_code = 200
 
         full_agent_status_code = f"{action_name}:{agent_status_code}"
-        settings.logger.info(
+        logger.info(
             f"VOP {action_name} returned processed response for {card_id_info} Result: {status_code},"
             f"{resp_state}, code: {full_agent_status_code}, message: {agent_message}"
         )
@@ -512,9 +513,9 @@ class Visa:
         try:
             payment_token = card_info["payment_token"]
             merchant_slug = card_info["merchant_slug"]
-            settings.logger.info(f"VOP Metis Processing Activate request for merchant {merchant_slug}, {card_id_info}")
+            logger.info(f"VOP Metis Processing Activate request for merchant {merchant_slug}, {card_id_info}")
         except KeyError:
-            settings.logger.error(
+            logger.error(
                 f"VOP Metis Activate request failed for {card_id_info} "
                 f"due to missing payment_token or merchant slug"
             )
@@ -533,9 +534,9 @@ class Visa:
         try:
             payment_token = card_info["payment_token"]
             activation_id = card_info["activation_id"]
-            settings.logger.info(f"VOP Metis Processing DeActivate request for {card_id_info}")
+            logger.info(f"VOP Metis Processing DeActivate request for {card_id_info}")
         except KeyError:
-            settings.logger.error(
+            logger.error(
                 f"VOP Metis DeActivate request failed for {card_id_info} due to missing"
                 f" payment_token or activation_id"
             )
@@ -552,7 +553,7 @@ class Visa:
 
     def un_enroll(self, card_info, action_name, pid):
         card_id_info = self.get_card_id_info(card_info)
-        settings.logger.info(f"VOP Metis processing unenrol request for {card_id_info}")
+        logger.info(f"VOP Metis processing unenrol request for {card_id_info}")
         try:
             data = {
                 "correlationId": str(uuid4()),
@@ -561,7 +562,7 @@ class Visa:
             }
         except KeyError:
             error_msg = f"VOP Metis Unenroll request failed for {card_id_info} due to missing payment_token"
-            settings.logger.error(error_msg)
+            logger.error(error_msg)
             unenrolment_counter.labels(provider=card_info["partner_slug"], status=VOPResultStatus.FAILED.value).inc()
             push_metrics(pid)
             return VOPResultStatus.FAILED.value, 400, "", error_msg, {}

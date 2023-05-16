@@ -1,6 +1,7 @@
 import os
 
 import jinja2
+from loguru import logger
 from lxml import etree
 
 import settings
@@ -41,7 +42,7 @@ class MasterCard:
 
     def response_handler(self, response, action, status_mapping):
         if response.status_code >= 300:
-            settings.logger.warning("Mastercard {} response: {}, body: {}".format(action, response, response.text))
+            logger.warning("Mastercard {} response: {}, body: {}".format(action, response, response.text))
             try:
                 resp_content = response.json()
                 psp_message = resp_content["errors"][0]["message"]
@@ -49,7 +50,7 @@ class MasterCard:
                 psp_message = "Could not access the PSP receiver"
 
             message = "Problem connecting to PSP. Action: MasterCard {}. Error:{}".format(action, psp_message)
-            settings.logger.error(message)
+            logger.error(message)
             return {
                 "message": message,
                 "status_code": response.status_code,
@@ -75,21 +76,21 @@ class MasterCard:
         except Exception:
             message = str("MasterCard {} problem processing response.".format(action))
             resp = {"message": message, "status_code": 422}
-            settings.logger.error(message, exc_info=1)
+            logger.error(message, exc_info=1)
 
         if fault:
             # Not a good response, log the MasterCard error message and code, respond with 422 status
             message = "MasterCard {} unsuccessful - Token: {}, {}, {} {}".format(
                 action, payment_method_token[0].text, fault[0].text, "Code:", fault_code
             )
-            settings.logger.info(message)
+            logger.info(message)
             resp = {"message": "{} MasterCard Fault recorded. Code: {}".format(action, fault_code), "status_code": 422}
         else:
             # could be a good response
             message = "MasterCard {} successful - Token: {}, {}".format(
                 action, payment_method_token[0].text, "MasterCard successfully processed"
             )
-            settings.logger.info(message)
+            logger.info(message)
             resp = {"message": message, "status_code": response.status_code}
 
         if fault_code and fault_code in status_mapping:

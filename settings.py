@@ -1,53 +1,49 @@
-import logging
 import os
 import sys
 
 import sentry_sdk
+from decouple import Choices, config
+from loguru import logger
 from sentry_sdk.integrations.celery import CeleryIntegration
 
-from environment import env_var, read_env
 from vault import secrets_from_vault
 
 SECRET_KEY = b"\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N["
+ALLOWED_LOG_LEVELS = Choices(("NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"))
+ROOT_LOG_LEVEL = config("LOG_LEVEL", default="DEBUG", cast=ALLOWED_LOG_LEVELS)
+JSON_LOGGING = config("JSON_LOGGING", default=True, cast=bool)
 
-read_env()
-
-SPREEDLY_SIGNING_SECRET = env_var(
-    "SPREEDLY_SIGNING_SECRET", "4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa"
+SPREEDLY_SIGNING_SECRET = config(
+    "SPREEDLY_SIGNING_SECRET", default="4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa"
 )
-SPREEDLY_BASE_URL = env_var("SPREEDLY_BASE_URL", "https://core.spreedly.com/v1")
+SPREEDLY_BASE_URL = config("SPREEDLY_BASE_URL", default="https://core.spreedly.com/v1")
 
-VOP_SPREEDLY_BASE_URL = env_var("VOP_SPREEDLY_BASE_URL", "https://core.spreedly.com/v1")
+VOP_SPREEDLY_BASE_URL = config("VOP_SPREEDLY_BASE_URL", default="https://core.spreedly.com/v1")
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-DEBUG = env_var("METIS_DEBUG", False)
+DEBUG = config("METIS_DEBUG", False)
 
-DEV_HOST = env_var("DEV_HOST", "0.0.0.0")
-DEV_PORT = env_var("DEV_PORT", "5050")
+DEV_HOST = config("DEV_HOST", default="0.0.0.0")
+DEV_PORT = config("DEV_PORT", default="5050", cast=int)
 
-TESTING = env_var("METIS_TESTING", False)
-PRE_PRODUCTION = env_var("METIS_PRE_PRODUCTION", False)
+TESTING = config("METIS_TESTING", default=False, cast=bool)
+PRE_PRODUCTION = config("METIS_PRE_PRODUCTION", default=False, cast=bool)
 
-STUBBED_AMEX_URL = env_var("STUBBED_AMEX_URL", "http://pelops")
-STUBBED_VOP_URL = env_var("STUBBED_VOP_URL", "http://pelops")
+STUBBED_AMEX_URL = config("STUBBED_AMEX_URL", default="http://pelops")
+STUBBED_VOP_URL = config("STUBBED_VOP_URL", default="http://pelops")
 
-HERMES_URL = env_var("HERMES_URL", "http://127.0.0.1:5010")
+HERMES_URL = config("HERMES_URL", default="http://127.0.0.1:5010")
 SERVICE_API_KEY = "F616CE5C88744DD52DB628FAD8B3D"
 
-REDIS_HOST = env_var("REDIS_HOST", "localhost")
-REDIS_PORT = env_var("REDIS_PORT", 6379)
-REDIS_PASS = env_var("REDIS_PASS", "")
-REDIS_DB = env_var("REDIS_DB", 0)
-
 # Celery
-broker_url = env_var("CELERY_BROKER_URL", f"redis://:{REDIS_PASS}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+broker_url = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 worker_enable_remote_control = False
 
-RABBITMQ_USER = env_var("RABBITMQ_USER", "guest")
-RABBITMQ_PASS = env_var("RABBITMQ_PASS", "guest")
-RABBITMQ_HOST = env_var("RABBITMQ_HOST", "127.0.0.1")
-AMQP_URL = env_var("AMQP_URL", f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:5672/")
+RABBITMQ_USER = config("RABBITMQ_USER", default="guest")
+RABBITMQ_PASS = config("RABBITMQ_PASS", default="guest")
+RABBITMQ_HOST = config("RABBITMQ_HOST", default="127.0.0.1")
+AMQP_URL = config("AMQP_URL", default=f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:5672/")
 
 # how many card enrolments can we fit in a single file, and how many files can we send per day?
 CARDS_PER_FILE = 80000
@@ -58,38 +54,32 @@ SPREEDLY_SEND_DELAY = 30
 
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
-# Logging settings
-logging.basicConfig(format="%(process)s %(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("metis_logger")
-logger.setLevel(logging.DEBUG)
-
-
-SENTRY_DSN = env_var("SENTRY_DSN", None)
-SENTRY_ENV = env_var("SENTRY_ENV", None)
+SENTRY_DSN = config("SENTRY_DSN", default=None)
+SENTRY_ENV = config("SENTRY_ENV", default=None)
 if SENTRY_DSN:
     sentry_sdk.init(dsn=SENTRY_DSN, environment=SENTRY_ENV, integrations=[CeleryIntegration()])
 
-if env_var("PONTUS_DATABASE_URI"):
-    POSTGRES_URI = env_var("PONTUS_DATABASE_URI")
+if pontus_url := config("PONTUS_DATABASE_URI", default=None):
+    POSTGRES_URI = pontus_url
 else:
-    PONTUS_DATABASE = env_var("PONTUS_DATABASE", "pontus")
-    PONTUS_USER = env_var("PONTUS_USER", "laadmin")
-    PONTUS_PASSWORD = env_var("PONTUS_PASSWORD", "!^LoyaltyDev2015")
-    PONTUS_HOST = env_var("PONTUS_HOST", "192.168.1.53")
-    PONTUS_PORT = env_var("PONTUS_PORT", "5432")
+    PONTUS_DATABASE = config("PONTUS_DATABASE", default="pontus")
+    PONTUS_USER = config("PONTUS_USER", default="laadmin")
+    PONTUS_PASSWORD = config("PONTUS_PASSWORD", default="!^LoyaltyDev2015")
+    PONTUS_HOST = config("PONTUS_HOST", default="192.168.1.53")
+    PONTUS_PORT = config("PONTUS_PORT", default="5432", cast=int)
     POSTGRES_URI = f"postgresql://{PONTUS_USER}:{PONTUS_PASSWORD}@{PONTUS_HOST}:{PONTUS_PORT}/{PONTUS_DATABASE}"
 
 POSTGRES_CONNECT_ARGS = {"application_name", "metis"}
 
 # Store VISA private key separately from other keys
-VISA_SOURCE_FILES_DIR = env_var("VISA_SOURCE_FILES_DIR", "../visa_handback_files")
-VISA_KEYRING_DIR = env_var("VISA_KEYRING_DIR", "~/.gnupg")
-VISA_ARCHIVE_DIR = env_var("VISA_ARCHIVE_DIR", "/tmp/archive/visa")
-VISA_ENCRYPTED_FILE_EXTENSION = env_var("VISA_ENCRYPTED_FILE_EXTENSION", "pgp")
+VISA_SOURCE_FILES_DIR = config("VISA_SOURCE_FILES_DIR", default="../visa_handback_files")
+VISA_KEYRING_DIR = config("VISA_KEYRING_DIR", default="~/.gnupg")
+VISA_ARCHIVE_DIR = config("VISA_ARCHIVE_DIR", default="/tmp/archive/visa")
+VISA_ENCRYPTED_FILE_EXTENSION = config("VISA_ENCRYPTED_FILE_EXTENSION", default="pgp")
 
-TEAMS_WEBHOOK_URL = env_var("TEAMS_WEBHOOK_URL")
+TEAMS_WEBHOOK_URL = config("TEAMS_WEBHOOK_URL", default=None)
 
-AZURE_VAULT_URL = env_var("AZURE_VAULT_URL", "")
+AZURE_VAULT_URL = config("AZURE_VAULT_URL", default="")
 # Changed from CELERY_ACCEPT_CONTENT due to deprecation
 accept_content = ["pickle", "json", "msgpack", "yaml"]
 
@@ -143,6 +133,30 @@ class Secrets:
     }
 
 
+# Prometheus settings
+PROMETHEUS_LOG_LEVEL = config("PROMETHEUS_LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
+PUSH_PROMETHEUS_METRICS = config("PUSH_PROMETHEUS_METRICS", default=True)
+PROMETHEUS_PUSH_GATEWAY = "http://localhost:9100"
+PROMETHEUS_JOB = "metis"
+
+PROMETHEUS_TESTING = any("test" in arg for arg in sys.argv)
+
+
+sink_config = {
+    "sink": sys.stderr,
+    "serialize": JSON_LOGGING,
+    "colorize": not JSON_LOGGING,
+    "format": (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <yellow>pid: {process}</yellow> | <level>{level}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+    ),
+}
+
+logger.remove(0)
+logger.add(**sink_config, level=ROOT_LOG_LEVEL, filter={"prometheus": False})
+logger.add(**sink_config, level=PROMETHEUS_LOG_LEVEL, filter="prometheus")
+
+
 if AZURE_VAULT_URL:
     secrets_from_vault()
 else:
@@ -163,11 +177,3 @@ else:
     Secrets.amex_client_secret = "test"
     Secrets.spreedly_oauth_username = "test"
     Secrets.spreedly_oauth_password = "test"
-
-# Prometheus settings
-PROMETHEUS_LOG_LEVEL = getattr(logging, env_var("LOG_LEVEL", "INFO").upper(), logging.INFO)
-PUSH_PROMETHEUS_METRICS = env_var("PUSH_PROMETHEUS_METRICS", True)
-PROMETHEUS_PUSH_GATEWAY = "http://localhost:9100"
-PROMETHEUS_JOB = "metis"
-
-PROMETHEUS_TESTING = any("test" in arg for arg in sys.argv)
