@@ -1,11 +1,19 @@
-FROM ghcr.io/binkhq/python:3.11-pipenv
-
-WORKDIR /app
+FROM ghcr.io/binkhq/python:3.11-poetry as build
+WORKDIR /src
 ADD . .
+RUN poetry build
 
-RUN pipenv install --system --deploy --ignore-pipfile
+FROM ghcr.io/binkhq/python:3.11 as main
+WORKDIR /app
+COPY --from=build /src/dist/*.whl .
+COPY --from=build /src/wsgi.py .
+COPY --from=build /src/visa_handback_files ./visa_handback_files
+
+RUN export wheel=$(find -type f -name "*.whl") && \
+    pip install "$wheel" && \
+    rm $wheel
 
 ENTRYPOINT [ "linkerd-await", "--" ]
 CMD [ "gunicorn", "--error-logfile=-", "--access-logfile=-", \
-                  "--logger-class=app.reporting.CustomGunicornLogger", \
+                  "--logger-class=metis.reporting.CustomGunicornLogger", \
                   "--bind=0.0.0.0:9000", "wsgi:app" ]

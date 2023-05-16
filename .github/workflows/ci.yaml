@@ -35,13 +35,15 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
           severity: HIGH,CRITICAL
-      - run: pip install pipenv
-      - run: pipenv install --dev --system --deploy --ignore-pipfile
+      - run: pip install poetry
+      - run: poetry config virtualenvs.create false
+      - run: poetry install
       - run: xenon --no-assert --max-average A --max-modules B --max-absolute B .
-      - run: pytest --verbose --cov=app --cov-report=xml --junitxml=report.xml app/tests/unit
-      - run: flake8
       - run: black --check .
       - run: isort --check .
+      - run: ruff metis tests wsgi.py
+      - run: refurb metis tests wsgi.py
+      - run: pytest --verbose --cov=metis --cov-report=xml --junitxml=report.xml tests/unit
 
   release_dev:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
