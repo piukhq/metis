@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import os
+import sys
 
-import settings
+from loguru import logger
+
+from metis import settings
 from wsgi import app
 
 try:
@@ -9,11 +12,11 @@ try:
     import pytest
     from typer import Typer
 except Exception:
-    print(
-        "These command are meant to be used in a dev environment and requires the dev packages to be intalled. \n"
-        "Please run pipenv sync --dev to install the required libraries."
+    logger.warning(
+        "These commands are meant to be used in a dev environment and require the dev packages to be installed. \n"
+        "Please run poetry install --sync to install the required libraries."
     )
-    exit(-1)
+    sys.exit(-1)
 
 
 app.config.SWAGGER_UI_DOC_EXPANSION = "list"
@@ -33,16 +36,19 @@ def runserver() -> None:
 def shell() -> None:
     """Run an ipython shell with Flask App context"""
     context = app.make_shell_context()
-    IPython.embed(header=f"user namespace initialised with {context}", user_ns=context, colors="neutral")
+    IPython.embed(header=f"User namespace initialised with {context}\n", user_ns=context, colors="neutral")
 
 
 @cli.command()
 def test() -> int:
     """Run the tests in app/tests/unit/."""
-    HERE = os.path.abspath(os.path.dirname(__file__))
-    UNIT_TEST_PATH = os.path.join(HERE, "app", "tests", "unit")
 
-    return pytest.main([UNIT_TEST_PATH, "--verbose"])
+    return pytest.main(
+        [
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), "tests", "unit"),
+            "--verbose",
+        ]
+    )
 
 
 if __name__ == "__main__":
