@@ -2,7 +2,6 @@ import sys
 
 
 class Factory(object):
-
     _members = {}
     _default = None
     _name = ""

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Type, Union
 
 import requests
+from loguru import logger
 from requests.exceptions import ConnectionError, Timeout
 
 import settings
@@ -76,12 +77,12 @@ def refresh_oauth_credentials() -> None:
             try:
                 secret_def = settings.Secrets.SECRETS_DEF[secret_name]
                 fetch_and_set_secret(client, secret_name, secret_def)
-                settings.logger.info(f"{secret_name} refreshed from Vault.")
+                logger.info(f"{secret_name} refreshed from Vault.")
             except Exception as e:
-                settings.logger.error(f"Failed to get {secret_name} from Vault. Exception: {e}")
+                logger.error(f"Failed to get {secret_name} from Vault. Exception: {e}")
 
     else:
-        settings.logger.error(
+        logger.error(
             "Vault retry attempt due to Oauth error when AZURE_VAULT_URL not set. Have you set the"
             " SPREEDLY_BASE_URL to your local Pelops?"
         )
@@ -95,7 +96,7 @@ def send_request(
     log_response: bool = True,
     timeout: tuple = (5, 10),
 ) -> requests.Response:
-    settings.logger.info(f"{method} Spreedly Request to URL: {url}")
+    logger.info(f"{method} Spreedly Request to URL: {url}")
     params = {"method": method, "url": url, "headers": headers, "timeout": timeout}
     if request_data:
         params["data"] = request_data
@@ -105,9 +106,9 @@ def send_request(
     )
     if log_response:
         try:
-            settings.logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
+            logger.info(f"Spreedly {method} status code: {resp.status_code} response: {resp.text}")
         except AttributeError as e:
-            settings.logger.info(f"Spreedly {method} to URL: {url} failed response object error {e}")
+            logger.info(f"Spreedly {method} to URL: {url} failed response object error {e}")
 
     return resp
 
@@ -123,12 +124,12 @@ def send_retry_spreedly_request(**params):
         except (Timeout, ConnectionError) as e:
             retry = True
             resp = None
-            settings.logger.error(
+            logger.error(
                 f"Spreedly {params['method']}, url:{params['url']}," f" Retriable exception {e} attempt {attempts}"
             )
         else:
             if resp.status_code in [401, 403]:
-                settings.logger.info(
+                logger.info(
                     f"Spreedly {params['method']} status code: {resp.status_code}, "
                     f"reloading oauth password from Vault"
                 )
@@ -141,7 +142,7 @@ def send_retry_spreedly_request(**params):
                 attempts = 0
                 retry = True
             elif resp.status_code in [500, 501, 502, 503, 504, 492]:
-                settings.logger.error(
+                logger.error(
                     f"Spreedly {params['method']}, url:{params['url']},"
                     f" status code: {resp.status_code}, Retriable error attempt {attempts}"
                 )
@@ -227,13 +228,13 @@ def add_card(card_info: dict) -> requests.Response:
     Once the receiver has been created and token sent back, we can pass in card details, without PAN.
     Receiver_tokens kept in settings.py.
     """
-    settings.logger.info(f"Start Add card for {card_info['partner_slug']}")
+    logger.info(f"Start Add card for {card_info['partner_slug']}")
 
     agent_instance = get_agent(card_info["partner_slug"])
     header = agent_instance.header
     url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{agent_instance.receiver_token()}"
 
-    settings.logger.info(f"Create request data {card_info}")
+    logger.info(f"Create request data {card_info}")
     try:
         request_data = agent_instance.add_card_body(card_info)
     except OAuthError:
@@ -241,7 +242,7 @@ def add_card(card_info: dict) -> requests.Response:
         # TODO: get this from gaia
         put_account_status(5, card_id=card_info["id"])
         return None
-    settings.logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
+    logger.info(f"POST URL {url}, header: {header} *-* {request_data}")
 
     request_start_time = datetime.now()
     req_resp = send_request("POST", url, header, request_data)
@@ -257,7 +258,7 @@ def add_card(card_info: dict) -> requests.Response:
 
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
-        settings.logger.info("Card added successfully, calling Hermes to activate card.")
+        logger.info("Card added successfully, calling Hermes to activate card.")
         # 1 = ACTIVE
         # TODO: get this from gaia
         card_status_code = 1
@@ -266,7 +267,7 @@ def add_card(card_info: dict) -> requests.Response:
             status=STATUS_SUCCESS,
         ).inc()
     else:
-        settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
+        logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp.get("bink_status", 0)  # Defaults to pending
         payment_card_enrolment_counter.labels(
             provider=card_info["partner_slug"],
@@ -280,7 +281,7 @@ def add_card(card_info: dict) -> requests.Response:
 
     reply = put_account_status(card_status_code, **hermes_data)
 
-    settings.logger.info(
+    logger.info(
         f"Sent add request to hermes status {reply.status_code}: data "
         f'{" ".join([":".join([x, str(y)]) for x, y in hermes_data.items()])}'
     )
@@ -308,7 +309,7 @@ def hermes_unenroll_call_back(
 ):
     # Set card_payment status in hermes using 'id' HERMES_URL
     if status_code != 201:
-        settings.logger.info(
+        logger.info(
             f"Error in unenrol call back to Hermes VOP Card id: {card_info['id']} "
             f"{action} unsuccessful.  Response state {response_state}"
             f" {status_code}, {agent_status_code}, {agent_message}"
@@ -331,7 +332,7 @@ def hermes_unenroll_call_back(
 
 
 def remove_card(card_info: dict):
-    settings.logger.info(f"Start Remove card for {card_info['partner_slug']}")
+    logger.info(f"Start Remove card for {card_info['partner_slug']}")
 
     agent_instance = get_agent(card_info["partner_slug"])
     header = agent_instance.header
@@ -359,7 +360,7 @@ def remove_card(card_info: dict):
         if activations:
             all_deactivated = True
             for activation_index, deactivation_card_info in activations.items():
-                settings.logger.info(f"VOP Metis Unenrol Request - deactivating {activation_index}")
+                logger.info(f"VOP Metis Unenrol Request - deactivating {activation_index}")
                 deactivation_card_info["payment_token"] = card_info["payment_token"]
                 deactivation_card_info["id"] = card_info["id"]
                 response_status, status_code, agent_response_code, agent_message, _ = agent_instance.deactivate_card(
@@ -377,13 +378,13 @@ def remove_card(card_info: dict):
                         all_deactivated = False
                         # Only if you can retry the deactivation will we allow it to block the unenroll
                     elif response_status == VOPResultStatus.FAILED.value:
-                        settings.logger.error(
+                        logger.error(
                             f"VOP Metis Unenrol Request for {card_info['id']}"
                             f"- permanent deactivation fail {activation_index}"
                         )
             if not all_deactivated:
                 message = "Cannot unenrol some Activations still active and can be retried"
-                settings.logger.info(f"VOP Unenroll fail for {card_info['id']} {message}")
+                logger.info(f"VOP Unenroll fail for {card_info['id']} {message}")
 
                 status_code, response_state = hermes_unenroll_call_back(
                     card_info,
@@ -442,7 +443,7 @@ def remove_card(card_info: dict):
 
 
 def reactivate_card(card_info: dict) -> requests.Response:
-    settings.logger.info(f"Start reactivate card for {card_info['partner_slug']}")
+    logger.info(f"Start reactivate card for {card_info['partner_slug']}")
 
     agent_instance = get_agent(card_info["partner_slug"])
 
@@ -460,12 +461,12 @@ def reactivate_card(card_info: dict) -> requests.Response:
     resp = agent_instance.response_handler(resp, "Reactivate", status_mapping)
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
-        settings.logger.info("Card added successfully, calling Hermes to activate card.")
+        logger.info("Card added successfully, calling Hermes to activate card.")
         # 1 = ACTIVE
         # TODO: get this from gaia
         card_status_code = 1
     else:
-        settings.logger.info("Card add unsuccessful, calling Hermes to set card status.")
+        logger.info("Card add unsuccessful, calling Hermes to set card status.")
         card_status_code = resp["bink_status"]
     put_account_status(card_status_code, card_id=card_info["id"])
     push_mastercard_reactivate_metrics(resp, card_info, request_total_time)

@@ -4,6 +4,7 @@ from datetime import datetime
 import arrow
 from flask import make_response, request
 from flask_restful import Api, Resource
+from loguru import logger
 from voluptuous import All, Length, MultipleInvalid, Optional, Required, Schema
 
 from app.action import ActionCode
@@ -20,7 +21,6 @@ from prometheus.metrics import (
     spreedly_retain_processing_seconds_histogram,
     status_counter,
 )
-from settings import logger
 
 api = Api()
 

@@ -18,7 +18,7 @@ class TestServicesToAmexDev2s(unittest.TestCase):
     def setUpClass(cls):
         settings.TESTING = True
         settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
-        settings.AZURE_VAULT_URL = "https://bink-uksouth-dev-com.vault.azure.net/"
+        settings.AZURE_VAULT_URL = "https://uksouth-dev-2p5g.vault.azure.net/"
         settings.secrets_from_vault(start_delay=0)
 
     def setUp(self):

@@ -4,6 +4,7 @@ from io import StringIO
 
 import arrow
 import psycopg2
+from loguru import logger
 
 import settings
 from app.action import ActionCode
@@ -33,7 +34,7 @@ class Visa(AgentBase):
                 psp_message = "Could not access the PSP receiver."
 
             message = "Problem connecting to PSP. Action: Visa {}. Error:{}".format("batch", psp_message)
-            settings.logger.error(message)
+            logger.error(message)
             return
 
         try:
@@ -41,7 +42,7 @@ class Visa(AgentBase):
             visa_data = psp_json["transaction"]
         except Exception:
             message = "Visa batch problem processing response."
-            settings.logger.error(message, exc_info=1)
+            logger.error(message, exc_info=1)
             return
 
         if visa_data["state"] in ["pending", "succeeded"]:
@@ -51,7 +52,7 @@ class Visa(AgentBase):
             # Not a good news response.
             message = "Visa {} unsuccessful - Transaction Token: {}".format("batch", visa_data["token"])
 
-        settings.logger.info(message)
+        logger.info(message)
 
     def request_body(self, card_info):
         recipient_id = "nawes@visa.com"
@@ -96,7 +97,7 @@ class Visa(AgentBase):
     def create_cards(self, card_info):
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
-        settings.logger.info("Start batch card process for Visa")
+        logger.info("Start batch card process for Visa")
         card_log = []
 
         for card in card_info:
@@ -104,12 +105,12 @@ class Visa(AgentBase):
             card_log.append(card["payment_token"])
 
         if len(card_log) > 0:
-            settings.logger.info(str(card_log))
+            logger.info(str(card_log))
 
         url = "{}{}{}".format(settings.SPREEDLY_BASE_URL, "/receivers/", self.receiver_token())
-        settings.logger.info("Create request data {}".format(card_info))
+        logger.info("Create request data {}".format(card_info))
         request_data, file_name = self.request_body(card_info)
-        settings.logger.info("POST URL {}, header: {}".format(url, self.header))
+        logger.info("POST URL {}, header: {}".format(url, self.header))
 
         resp = self.post_request(url, self.header, request_data)
         self.response_handler(resp)

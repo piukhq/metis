@@ -39,9 +39,9 @@ jobs:
       - run: pipenv install --dev --system --deploy --ignore-pipfile
       - run: xenon --no-assert --max-average A --max-modules B --max-absolute B .
       - run: pytest --verbose --cov=app --cov-report=xml --junitxml=report.xml app/tests/unit
-      - run: flake8 .
-      - run: black --line-length=120 --check .
-      - run: isort --check --line-length 120 --profile black .
+      - run: flake8
+      - run: black --check .
+      - run: isort --check .
 
   release_dev:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'

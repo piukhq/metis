@@ -5,6 +5,7 @@ import json
 import random
 import time
 
+from loguru import logger
 from lxml import etree
 
 import settings
@@ -64,7 +65,7 @@ class Amex:
                 psp_message = "Could not access the PSP receiver."
 
             message = "Problem connecting to PSP. Action: Amex {}. Error:{}".format(action, psp_message)
-            settings.logger.error(message)
+            logger.error(message)
             return {"message": message, "status_code": response.status_code}
 
         try:
@@ -75,21 +76,21 @@ class Amex:
         except Exception:
             message = str({"Amex {} problem processing response.".format(action)})
             resp = {"message": message, "status_code": 422}
-            settings.logger.error(message, exc_info=1)
+            logger.error(message, exc_info=1)
         else:
             if amex_data["status"] == "Failure":
                 # Not a good news response.
                 message = "Amex {} unsuccessful - Token: {}, {}, {} {}".format(
                     action, payment_method_token[0].text, amex_data["respDesc"], "Code:", amex_data["respCd"]
                 )
-                settings.logger.info(message)
+                logger.info(message)
                 resp = {"message": action + " Amex fault recorded. Code: " + amex_data["respCd"], "status_code": 422}
             else:
                 # could be a good response
                 message = "Amex {} successful - Token: {}, {}".format(
                     action, payment_method_token[0].text, "Amex successfully processed"
                 )
-                settings.logger.info(message)
+                logger.info(message)
 
                 resp = {"message": message, "status_code": 200}
 

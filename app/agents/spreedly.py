@@ -1,13 +1,13 @@
 import hashlib
 import hmac
 
-import settings
+from loguru import logger
+
 from app.factory import create_factory
 from app.teams import payment_card_notify
 
 
 class Spreedly(object):
-
     provider = "spreedly"
 
     def __init__(self, provider):
@@ -18,21 +18,20 @@ class Spreedly(object):
         for transaction in data["transactions"]:
             exclusions = transaction["payment_methods_excluded"]
             if exclusions:
-                settings.logger.warning(
+                logger.warning(
                     "transaction {}: the following payment methods were excluded:\n{}".format(
                         transaction["token"], exclusions
                     )
                 )
             else:
-                settings.logger.info("transaction {} was processed successfully.".format(transaction["token"]))
-            settings.logger.info("a transaction file was created at {}".format(transaction["url"]))
+                logger.info("transaction {} was processed successfully.".format(transaction["token"]))
+            logger.info("a transaction file was created at {}".format(transaction["url"]))
 
             # TODO(cl): get this transaction file exported to Visa.
         payment_card_notify("Received notify request from Spreedly.")
 
 
 def signature_for(root, secret, xml):
-
     for signed in root.findall("transaction/signed"):
         hash = {
             "MD5": hashlib.md5,

@@ -1,16 +1,15 @@
-import logging
 import os
 import threading
 import time
 import urllib.error
 
+from loguru import logger
 from prometheus_client import push_to_gateway
 from prometheus_client.registry import REGISTRY
 
 import settings
 
-logger = logging.getLogger("prometheus")
-logger.setLevel(settings.PROMETHEUS_LOG_LEVEL)
+metrics_logger = logger.bind(metrics_logger=True)
 
 
 class PrometheusPushThread(threading.Thread):
@@ -35,11 +34,11 @@ class PrometheusPushThread(threading.Thread):
                     grouping_key=self.grouping_key,
                     timeout=self.PUSH_TIMEOUT,
                 )
-                logger.debug("Pushed metrics to gateway")
+                metrics_logger.debug("Pushed metrics to gateway")
             except (ConnectionRefusedError, urllib.error.URLError):
-                logger.warning("Failed to push metrics, connection refused")
+                metrics_logger.warning("Failed to push metrics, connection refused")
             except Exception as err:
-                logger.exception("Caught exception whilst posting metrics", exc_info=err)
+                metrics_logger.exception("Caught exception whilst posting metrics", exc_info=err)
 
             remaining = self.SLEEP_INTERVAL - (time.time() - now)
             if remaining > 0:
@@ -48,11 +47,11 @@ class PrometheusPushThread(threading.Thread):
 
 def init_metrics_collection():
     if not settings.PROMETHEUS_TESTING:
-        logger.info("Configuring prometheus metrics pusher")
+        metrics_logger.info("Configuring prometheus metrics pusher")
         process_id = str(os.getpid())
         thread = PrometheusPushThread(process_id)
         thread.daemon = True
         thread.start()
-        logger.info("Prometheus push thread started")
+        metrics_logger.info("Prometheus push thread started")
     else:
-        logger.info("Prometheus push thread not initialised as this is a test")
+        metrics_logger.info("Prometheus push thread not initialised as this is a test")

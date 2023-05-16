@@ -5,6 +5,7 @@ from typing import Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
+from loguru import logger
 
 import settings
 
@@ -27,7 +28,7 @@ def _get_secret_value(client, vault_name):
 def _save_secret_to_file(secret_name, secret, file_path):
     with open(file_path, "w") as file:
         file.write(secret)
-    settings.logger.info(f"Success {secret_name} correctly installed in {file_path}")
+    logger.info(f"Success {secret_name} correctly installed in {file_path}")
     setattr(settings.Secrets, secret_name, file_path)
     return True
 
@@ -44,7 +45,6 @@ def fetch_and_set_secret(client: SecretClient, secret_name: str, secret_def: dic
 
 
 def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
-
     secrets_to_load = deepcopy(settings.Secrets.SECRETS_DEF)
 
     time_delay = start_delay
@@ -61,9 +61,9 @@ def secrets_from_vault(start_delay=10, loop_delay=5, max_retries=5):
             try:
                 fetch_and_set_secret(client, secret_name, secret_def)
                 secrets_loaded.append(secret_name)
-                settings.logger.info(f"Successfully set secret: {secret_name}")
+                logger.info(f"Successfully set secret: {secret_name}")
             except Exception as e:
-                settings.logger.error(f"Error fetching and setting {secret_name} from Vault. {e}")
+                logger.error(f"Error fetching and setting {secret_name} from Vault. {e}")
 
         for secret_name in secrets_loaded:
             del secrets_to_load[secret_name]

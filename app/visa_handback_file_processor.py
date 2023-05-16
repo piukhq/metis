@@ -2,13 +2,14 @@ import os
 import shutil
 import subprocess
 
+from loguru import logger
+
 import settings
 from app.hermes import get_provider_status_mappings, put_account_status
 
 
 class VisaHandback(object):
     def __init__(self):
-
         self.keyring = settings.VISA_KEYRING_DIR
         self.archive_dir = settings.VISA_ARCHIVE_DIR
         self.gpg_file_ext = settings.VISA_ENCRYPTED_FILE_EXTENSION
@@ -58,11 +59,9 @@ class VisaHandback(object):
 
                     bink_rows += 1
                     put_account_status(bink_status, token=token)
-                    settings.logger.info("{} {} {}".format(token, return_code, return_description))
+                    logger.info("{} {} {}".format(token, return_code, return_description))
 
-                settings.logger.info(
-                    "Filename: {}, Number of rows requiring action by " "Bink: {}".format(txt_file, bink_rows)
-                )
+                logger.info("Filename: {}, Number of rows requiring action by " "Bink: {}".format(txt_file, bink_rows))
                 self.archive_files(txt_file)
 
     def file_list(self, payment_files):
@@ -112,7 +111,7 @@ class VisaHandback(object):
             return output_file_name
         except (subprocess.SubprocessError, OSError, ValueError) as gpg_error:
             error_msg = "Error decrypting Visa File using GPG {}".format(str(gpg_error))
-            settings.logger.error(error_msg)
+            logger.error(error_msg)
             raise
 
 

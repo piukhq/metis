@@ -20,7 +20,7 @@ def chunks(ll, n):
 
 def reduce_card_data(card_info):
     totals = defaultdict(int)
-    for (ci, delivery_tag) in card_info:
+    for ci, delivery_tag in card_info:
         payment_token = ci["payment_token"]
         action = ci["action_code"]
         delta = 1 if action is ActionCode.ADD else -1
