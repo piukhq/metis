@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import os
 
-from typer import Typer
-
 import settings
 from wsgi import app
 
 try:
     import IPython
     import pytest
+    from typer import Typer
 except Exception:
     print(
         "These command are meant to be used in a dev environment and requires the dev packages to be intalled. \n"
@@ -32,8 +31,9 @@ def runserver() -> None:
 
 @cli.command()
 def shell() -> None:
-    """opens an ipython shell"""
-    IPython.embed()
+    """Run an ipython shell with Flask App context"""
+    context = app.make_shell_context()
+    IPython.embed(header=f"user namespace initialised with {context}", user_ns=context, colors="neutral")
 
 
 @cli.command()
