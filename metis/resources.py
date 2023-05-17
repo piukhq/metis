@@ -14,6 +14,7 @@ from metis.agents.visa_offers import Visa
 from metis.auth import authorized
 from metis.basic_services import basic_add_card, basic_reactivate_card, basic_remove_card
 from metis.card_router import process_card
+from metis.celery import celery
 from metis.prometheus.metrics import (
     STATUS_FAILED,
     STATUS_SUCCESS,
@@ -39,10 +40,32 @@ card_info_schema = Schema(
 
 class Healthz(Resource):
     def get(self):
-        return ""
+        return {}
 
 
 api.add_resource(Healthz, "/healthz")
+
+
+class Livez(Resource):
+    def get(self):
+        return {}
+
+
+api.add_resource(Livez, "/livez")
+
+
+class Readyz(Resource):
+    def get(self):
+        try:
+            celery.control.inspect().ping()
+        except Exception as ex:
+            logger.exception("failed to connect to celery broker")
+            return {"celery": f"failed to connect to celery broker due to error: {ex!r}"}, 500
+
+        return {}
+
+
+api.add_resource(Readyz, "/readyz")
 
 
 class CreateReceiver(Resource):
