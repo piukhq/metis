@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -5,7 +6,9 @@ import sentry_sdk
 from decouple import Choices, config
 from loguru import logger
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.loguru import LoguruIntegration
 
+from metis.reporting import InterceptHandler
 from metis.vault import secrets_from_vault
 
 SECRET_KEY = b"\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N["
@@ -57,7 +60,14 @@ TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 SENTRY_DSN = config("SENTRY_DSN", default=None)
 SENTRY_ENV = config("SENTRY_ENV", default=None)
 if SENTRY_DSN:
-    sentry_sdk.init(dsn=SENTRY_DSN, environment=SENTRY_ENV, integrations=[CeleryIntegration()])
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENV,
+        integrations=[
+            CeleryIntegration(),
+            LoguruIntegration(),
+        ],
+    )
 
 if pontus_url := config("PONTUS_DATABASE_URI", default=None):
     POSTGRES_URI = pontus_url
@@ -155,7 +165,8 @@ sink_config = {
 logger.remove(0)
 logger.add(**sink_config, level=ROOT_LOG_LEVEL, filter={"prometheus": False})
 logger.add(**sink_config, level=PROMETHEUS_LOG_LEVEL, filter="prometheus")
-
+# funnel all loggers into loguru for messages of level WARNING or up.
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.WARNING)
 
 if AZURE_VAULT_URL:
     secrets_from_vault()

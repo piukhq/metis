@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from gunicorn.glogging import Logger as GLogger
 from loguru import logger
@@ -34,8 +34,17 @@ class InterceptHandler(logging.Handler):
 
 
 # Intercept glogger into loguru
+class GunicornAccessFiltering(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:  # noqa: A003
+        if request_info := cast(str, record.args.get("r")):
+            return not any(endpoint in request_info for endpoint in ("/healthz", "/livez", "/readyz", "/metrics"))
+
+        return True
+
+
 class CustomGunicornLogger(GLogger):
-    def __init__(self, cfg: "Config"):
-        super().__init__(cfg)
-        logging.getLogger("gunicorn.error").handlers = [InterceptHandler()]
-        logging.getLogger("gunicorn.access").handlers = [InterceptHandler()]
+    def setup(self, cfg: "Config") -> None:
+        super().setup(cfg)
+        self.error_log.handlers = [InterceptHandler()]
+        self.access_log.handlers = [InterceptHandler()]
+        self.access_log.addFilter(GunicornAccessFiltering())
