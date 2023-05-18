@@ -274,6 +274,8 @@ def add_card(card_info: dict) -> requests.Response:
         ).inc()
 
     hermes_data = get_hermes_data(resp, card_info["id"])
+    if resp["status_code"] == 422:  # Ensure that 422 responses get retried WAL-2992
+        hermes_data["response_state"] = "Retry"
 
     if card_info.get("retry_id"):
         hermes_data["retry_id"] = card_info["retry_id"]
