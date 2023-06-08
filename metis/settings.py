@@ -39,14 +39,10 @@ STUBBED_VOP_URL = config("STUBBED_VOP_URL", default="http://pelops")
 HERMES_URL = config("HERMES_URL", default="http://127.0.0.1:5010")
 SERVICE_API_KEY = "F616CE5C88744DD52DB628FAD8B3D"
 
-# Celery
-broker_url = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+AMQP_URL = config("AMQP_URL", default=f"amqp://guest:guest@localhost:5672/")
+broker_url = AMQP_URL
 worker_enable_remote_control = False
 
-RABBITMQ_USER = config("RABBITMQ_USER", default="guest")
-RABBITMQ_PASS = config("RABBITMQ_PASS", default="guest")
-RABBITMQ_HOST = config("RABBITMQ_HOST", default="127.0.0.1")
-AMQP_URL = config("AMQP_URL", default=f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:5672/")
 
 # how many card enrolments can we fit in a single file, and how many files can we send per day?
 CARDS_PER_FILE = 80000
