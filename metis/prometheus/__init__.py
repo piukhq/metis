@@ -1,15 +1,15 @@
+import logging
 import os
 import threading
 import time
 import urllib.error
 
-from loguru import logger
 from prometheus_client import push_to_gateway
 from prometheus_client.registry import REGISTRY
 
 from metis import settings
 
-metrics_logger = logger.bind(metrics_logger=True)
+metrics_logger = logging.getLogger("prometheus")
 
 
 class PrometheusPushThread(threading.Thread):
