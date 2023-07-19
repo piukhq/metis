@@ -3,8 +3,8 @@ import os
 import sys
 
 import sentry_sdk
+from bink_logging_utils import init_loguru_root_sink
 from decouple import Choices, config
-from loguru import logger
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.loguru import LoguruIntegration
 
@@ -15,6 +15,8 @@ SECRET_KEY = b"\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08
 ALLOWED_LOG_LEVELS = Choices(("NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"))
 ROOT_LOG_LEVEL = config("LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
 JSON_LOGGING = config("JSON_LOGGING", default=True, cast=bool)
+
+init_loguru_root_sink(json_logging=JSON_LOGGING, sink_log_level=ROOT_LOG_LEVEL, show_pid=True)
 
 SPREEDLY_SIGNING_SECRET = config(
     "SPREEDLY_SIGNING_SECRET", default="4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa"
@@ -151,22 +153,10 @@ PROMETHEUS_JOB = "metis"
 
 PROMETHEUS_TESTING = any("test" in arg for arg in sys.argv)
 
-
-sink_config = {
-    "sink": sys.stderr,
-    "serialize": JSON_LOGGING,
-    "colorize": not JSON_LOGGING,
-    "format": (
-        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <yellow>pid: {process}</yellow> | <level>{level}</level> | "
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    ),
-}
-
-logger.remove(0)
-logger.add(**sink_config, level=ROOT_LOG_LEVEL, filter={"prometheus": False})
-logger.add(**sink_config, level=PROMETHEUS_LOG_LEVEL, filter="prometheus")
-# funnel all loggers into loguru for messages of level WARNING or up.
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.WARNING)
+# Configure log level for prometheus logger
+logging.getLogger("prometheus").setLevel(level=PROMETHEUS_LOG_LEVEL)
+# funnel all loggers into loguru.
+logging.basicConfig(handlers=[InterceptHandler()])
 
 if AZURE_VAULT_URL:
     secrets_from_vault()
