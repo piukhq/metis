@@ -1,4 +1,3 @@
-import logging
 import os
 import threading
 import time
@@ -8,8 +7,7 @@ from prometheus_client import push_to_gateway
 from prometheus_client.registry import REGISTRY
 
 from metis import settings
-
-metrics_logger = logging.getLogger("prometheus")
+from metis.prometheus.logging import metrics_logger
 
 
 class PrometheusPushThread(threading.Thread):

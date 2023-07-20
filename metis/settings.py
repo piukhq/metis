@@ -8,6 +8,7 @@ from decouple import Choices, config
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.loguru import LoguruIntegration
 
+from metis.prometheus.logging import metrics_logger
 from metis.reporting import InterceptHandler
 from metis.vault import secrets_from_vault
 
@@ -154,7 +155,7 @@ PROMETHEUS_JOB = "metis"
 PROMETHEUS_TESTING = any("test" in arg for arg in sys.argv)
 
 # Configure log level for prometheus logger
-logging.getLogger("prometheus").setLevel(level=PROMETHEUS_LOG_LEVEL)
+metrics_logger.setLevel(level=PROMETHEUS_LOG_LEVEL)
 # funnel all loggers into loguru.
 logging.basicConfig(handlers=[InterceptHandler()])
 
