@@ -4,12 +4,20 @@ import requests
 from loguru import logger
 
 from metis import settings
+from metis.utils import ctx
+
+
+def _add_x_azure_ref_header(headers: dict) -> None:
+    if ctx.x_azure_ref:
+        headers |= {"x-azure-ref": ctx.x_azure_ref}
 
 
 def get_provider_status_mappings(slug):
+    headers = {"Content-Type": "application/json", "Authorization": f"Token {settings.SERVICE_API_KEY}"}
+    _add_x_azure_ref_header(headers)
     status_mapping = requests.get(
         f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/{slug}",
-        headers={"Content-Type": "application/json", "Authorization": f"Token {settings.SERVICE_API_KEY}"},
+        headers=headers,
     ).json()
     return {x["provider_status_code"]: x["bink_status_code"] for x in status_mapping}
 
@@ -32,10 +40,14 @@ def put_account_status(status_code, card_id=None, token=None, **kwargs):
 
     count = 0
     max_count = 5
+
+    headers = {"content-type": "application/json", "Authorization": f"Token {settings.SERVICE_API_KEY}"}
+    _add_x_azure_ref_header(headers)
+
     while count < max_count:
         resp = requests.put(
             f"{settings.HERMES_URL}/payment_cards/accounts/status",
-            headers={"content-type": "application/json", "Authorization": f"Token {settings.SERVICE_API_KEY}"},
+            headers=headers,
             json=request_data,
         )
         if resp.status_code < 400:

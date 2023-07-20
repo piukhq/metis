@@ -10,6 +10,7 @@ from sentry_sdk.integrations.loguru import LoguruIntegration
 
 from metis.prometheus.logging import metrics_logger
 from metis.reporting import InterceptHandler
+from metis.utils import ctx
 from metis.vault import secrets_from_vault
 
 SECRET_KEY = b"\x00\x8d\xab\x02\x88\\\xc2\x96&\x0b<2n0n\xc9\x19\xec8\xab\xc5\x08N["
@@ -17,7 +18,15 @@ ALLOWED_LOG_LEVELS = Choices(("NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CR
 ROOT_LOG_LEVEL = config("LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
 JSON_LOGGING = config("JSON_LOGGING", default=True, cast=bool)
 
-init_loguru_root_sink(json_logging=JSON_LOGGING, sink_log_level=ROOT_LOG_LEVEL, show_pid=True)
+
+def azure_ref_patcher(record: logging.LogRecord):
+    if ctx.x_azure_ref:
+        record["extra"].update({"x-azure-ref": ctx.x_azure_ref})
+
+
+init_loguru_root_sink(
+    json_logging=JSON_LOGGING, sink_log_level=ROOT_LOG_LEVEL, show_pid=True, custom_patcher=azure_ref_patcher
+)
 
 SPREEDLY_SIGNING_SECRET = config(
     "SPREEDLY_SIGNING_SECRET", default="4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa"

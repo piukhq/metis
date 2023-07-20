@@ -8,11 +8,11 @@ from metis.hermes import put_account_status
 from metis.tasks import add_card, reactivate_card, remove_card
 
 
-def celery_handler(action_code, card_info):
+def celery_handler(action_code, card_info, x_azure_ref: str | None = None):
     {
-        ActionCode.ADD: lambda: add_card.delay(card_info),
-        ActionCode.DELETE: lambda: remove_card.delay(card_info),
-        ActionCode.REACTIVATE: lambda: reactivate_card.delay(card_info),
+        ActionCode.ADD: lambda: add_card.delay(card_info, x_azure_ref=x_azure_ref),
+        ActionCode.DELETE: lambda: remove_card.delay(card_info, x_azure_ref=x_azure_ref),
+        ActionCode.REACTIVATE: lambda: reactivate_card.delay(card_info, x_azure_ref=x_azure_ref),
     }[action_code]()
 
 
@@ -43,6 +43,6 @@ handlers = {
 }
 
 
-def process_card(action_code, card_info):
+def process_card(action_code, card_info, x_azure_ref: str | None = None):
     card_info["action_code"] = action_code
-    handlers[card_info["partner_slug"]](action_code, card_info)
+    handlers[card_info["partner_slug"]](action_code, card_info, x_azure_ref=x_azure_ref)

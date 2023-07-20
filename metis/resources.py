@@ -22,6 +22,7 @@ from metis.prometheus.metrics import (
     status_counter,
 )
 from metis.services import create_prod_receiver, retain_payment_method_token
+from metis.utils import ctx
 
 api = Api()
 
@@ -71,6 +72,7 @@ api.add_resource(Readyz, "/readyz")
 class CreateReceiver(Resource):
     @authorized
     def post(self):
+        ctx.x_azure_ref = request.headers.get("x-azure-ref")
         req_data = json.loads(request.data.decode())
         if req_data is not None and len(req_data) > 0:
             result = create_prod_receiver(req_data["receiver_type"])
@@ -88,6 +90,7 @@ api.add_resource(CreateReceiver, "/payment_service/create_receiver")
 
 class PaymentCard(Resource):
     def action(self, action_code):
+        ctx.x_azure_ref = request.headers.get("x-azure-ref")
         req_data = json.loads(request.data.decode())
 
         action_name = {ActionCode.ADD: "add", ActionCode.DELETE: "delete"}[action_code]
@@ -132,7 +135,7 @@ class PaymentCard(Resource):
 
             status_counter.labels(provider=req_data.get("partner_slug"), status=STATUS_SUCCESS).inc()
 
-        process_card(action_code, req_data)
+        process_card(action_code, req_data, x_azure_ref=ctx.x_azure_ref)
 
         return make_response("Success", 200)
 
@@ -152,6 +155,7 @@ class PaymentCardUpdate(Resource):
     @authorized
     def post(self):
         req_data = json.loads(request.data.decode())
+        ctx.x_azure_ref = request.headers.get("x-azure-ref")
 
         logger.info(f"{arrow.now()} Received reactivate payment card request: {req_data}")
 
@@ -160,7 +164,7 @@ class PaymentCardUpdate(Resource):
         except MultipleInvalid:
             return make_response("Request parameters not complete", 400)
 
-        process_card(ActionCode.REACTIVATE, req_data)
+        process_card(ActionCode.REACTIVATE, req_data, x_azure_ref=ctx.x_azure_ref)
 
         return make_response("Success", 200)
 
@@ -187,6 +191,7 @@ api.add_resource(Notify, "/payment_service/notify/<string:provider_slug>")
 class VisaActivate(Resource):
     @staticmethod
     def post():
+        ctx.x_azure_ref = request.headers.get("x-azure-ref")
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, other_data = visa.activate_card(request.json)
         response = make_response(
@@ -210,6 +215,7 @@ api.add_resource(VisaActivate, "/visa/activate/")
 class VisaDeactivate(Resource):
     @staticmethod
     def post():
+        ctx.x_azure_ref = request.headers.get("x-azure-ref")
         visa = Visa()
         response_status, status_code, agent_response_code, agent_message, _ = visa.deactivate_card(request.json)
         response = make_response(

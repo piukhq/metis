@@ -80,11 +80,11 @@ class TestMetisResources(TestCase):
         self.end_site_receiver_route()
         resp = self.client.post(
             "/payment_service/payment_card",
-            headers={"content-type": "application/json", "Authorization": auth_key},
+            headers={"content-type": "application/json", "Authorization": auth_key, "X-Azure-Ref": "azure-ref"},
             data=json.dumps(test_card),
         )
         self.assertEqual(resp.status_code, 200)
-        mock_process_card.assert_called_with(ActionCode.ADD, test_card)
+        mock_process_card.assert_called_with(ActionCode.ADD, test_card, x_azure_ref="azure-ref")
 
     @patch("metis.auth.parse_token")
     @httpretty.activate
