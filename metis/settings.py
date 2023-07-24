@@ -157,7 +157,7 @@ class Secrets:
 
 # Prometheus settings
 PROMETHEUS_LOG_LEVEL = config("PROMETHEUS_LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
-PUSH_PROMETHEUS_METRICS = config("PUSH_PROMETHEUS_METRICS", default=True)
+PUSH_PROMETHEUS_METRICS = config("PUSH_PROMETHEUS_METRICS", default=True, cast=bool)
 PROMETHEUS_PUSH_GATEWAY = "http://localhost:9100"
 PROMETHEUS_JOB = "metis"
 
