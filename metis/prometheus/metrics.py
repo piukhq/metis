@@ -126,7 +126,7 @@ mastercard_reactivate_response_time_histogram = Histogram(
 
 
 def push_metrics(pid):
-    if not settings.PROMETHEUS_TESTING:
+    if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:
         try:
             push_to_gateway(
                 settings.PROMETHEUS_PUSH_GATEWAY,

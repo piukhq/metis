@@ -4,7 +4,7 @@ from metis.middlware import AzureRefMiddleware
 from metis.prometheus import init_metrics_collection
 
 
-def create_app(config_name="settings"):
+def create_app(config_name="metis.settings"):
     from metis.resources import api
 
     app = Flask("core")

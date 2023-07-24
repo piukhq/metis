@@ -44,7 +44,7 @@ class PrometheusPushThread(threading.Thread):
 
 
 def init_metrics_collection():
-    if not settings.PROMETHEUS_TESTING:
+    if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:
         metrics_logger.info("Configuring prometheus metrics pusher")
         process_id = str(os.getpid())
         thread = PrometheusPushThread(process_id)
@@ -52,4 +52,6 @@ def init_metrics_collection():
         thread.start()
         metrics_logger.info("Prometheus push thread started")
     else:
-        metrics_logger.info("Prometheus push thread not initialised as this is a test")
+        metrics_logger.info(
+            "Prometheus push thread not initialised as this is a test or PUSH_PROMETHEUS_METRICS is False"
+        )
