@@ -19,7 +19,7 @@ ROOT_LOG_LEVEL = config("LOG_LEVEL", default="INFO", cast=ALLOWED_LOG_LEVELS)
 JSON_LOGGING = config("JSON_LOGGING", default=True, cast=bool)
 
 
-def azure_ref_patcher(record: logging.LogRecord):
+def azure_ref_patcher(record: dict):
     if ctx.x_azure_ref:
         record["extra"].update({"x-azure-ref": ctx.x_azure_ref})
 
