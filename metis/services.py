@@ -126,7 +126,7 @@ def send_retry_spreedly_request(**params):
             retry = True
             resp = None
             logger.error(
-                f"Spreedly {params['method']}, url:{params['url']}," f" Retriable exception {e} attempt {attempts}"
+                f"Spreedly {params['method']}, url:{params['url']}," f" Retryable exception {e} attempt {attempts}"
             )
         else:
             if resp.status_code in (401, 403):
@@ -142,10 +142,10 @@ def send_retry_spreedly_request(**params):
                     break
                 attempts = 0
                 retry = True
-            elif resp.status_code in (500, 501, 502, 503, 504, 492):
+            elif resp.status_code in (500, 501, 502, 503, 504, 492, 422, 408):
                 logger.error(
                     f"Spreedly {params['method']}, url:{params['url']},"
-                    f" status code: {resp.status_code}, Retriable error attempt {attempts}"
+                    f" status code: {resp.status_code}, Retryable error attempt {attempts}"
                 )
                 retry = True
             else:
@@ -274,7 +274,8 @@ def add_card(card_info: dict) -> requests.Response:
         ).inc()
 
     hermes_data = get_hermes_data(resp, card_info["id"])
-    if resp["status_code"] == 422:  # Ensure that 422 responses get retried WAL-2992
+    # Ensure that Spreedly 422/408 responses get retried WAL-2992/WAL-3118
+    if req_resp.status_code in (422, 408):
         hermes_data["response_state"] = "Retry"
 
     if card_info.get("retry_id"):

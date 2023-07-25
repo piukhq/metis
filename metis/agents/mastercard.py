@@ -55,6 +55,7 @@ class MasterCard:
                 "bink_status": status_mapping["BINK_UNKNOWN"],
             }
 
+        fault = None
         try:
             xml_doc = etree.fromstring(response.text)
             string_elem = xml_doc.xpath("//body")[0].text
@@ -70,7 +71,6 @@ class MasterCard:
             fault_code = fault_code_el[0].text if fault_code_el else None
         except Exception:
             message = str(f"MasterCard {action} problem processing response.")
-            resp = {"message": message, "status_code": 422}
             logger.error(message, exc_info=1)
 
         if fault:

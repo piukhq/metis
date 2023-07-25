@@ -162,6 +162,7 @@ class Visa:
         if settings.TESTING:
             # Staging
             self.vop_url = "https://cert.api.visa.com"
+            self.spreedly_receive_token = "visa"
 
         elif settings.PRE_PRODUCTION:
             # PRE-PRODUCTION
