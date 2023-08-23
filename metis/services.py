@@ -142,7 +142,7 @@ def send_retry_spreedly_request(**params):
                     break
                 attempts = 0
                 retry = True
-            elif resp.status_code in (500, 501, 502, 503, 504, 492, 422, 408):
+            elif resp.status_code in (500, 501, 502, 503, 504, 492):
                 logger.error(
                     f"Spreedly {params['method']}, url:{params['url']},"
                     f" status code: {resp.status_code}, Retryable error attempt {attempts}"
