@@ -1,5 +1,4 @@
 import base64
-import hashlib
 import json
 import time
 from contextlib import suppress
@@ -402,7 +401,6 @@ class Visa:
                 f"VOP request being sent to {url} cert paths"
                 f" {settings.Secrets.vop_client_certificate_path} and "
                 f" {settings.Secrets.vop_client_key_path}"
-                f" auth {hashlib.sha256((self.vop_user_id + self.vop_password).encode('utf8')).hexdigest()}"
             )
             return requests.request(
                 "POST",
