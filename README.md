@@ -9,7 +9,7 @@ This can be set in the `.env` file.
 
 Running `add_card` and `remove_card` requires the celery worker to be running.
 
-First make sure you have a redis server running on `redis://localhost:6379`.
+First make sure you have a RabbitMQ server running on port 5672.
 
 Then, run this command in the root directory of the project, setting concurrency to one for easier debugging
 
@@ -73,7 +73,7 @@ Metis automatically does this by downloading the secrets at the start and apart 
 only keeps them in memory.
 
 Secrets are not required to be downloaded if running with Pelops, this only applies to Integration
-testing. Usually developers will work without secrets; for this, the AZURE_VAULT_URL envvar should be a blank string, 
+testing. Usually developers will work without secrets; for this, the AZURE_VAULT_URL envvar should be a blank string,
 and the stubbed amex url should be your local Pelops.
 
 Amex has been updated to align with this policy.  The following config will cause secrets to accessed
@@ -82,19 +82,15 @@ on start up and used to talk to Amex Test environment:
         settings.TESTING = True
         settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
         settings.AZURE_VAULT_URL = "https://bink-uksouth-dev-com.vault.azure.net/"
-        settings.secrets_from_vault(start_delay=0) 
-        
+        settings.secrets_from_vault(start_delay=0)
+
 Note: The above is used in the test SetUp class in Amex integration tests to force the correct config. when running
- the test 
- 
+ the test
+
 Before running the test ensure you have vault access by running:
 
         brew install azure-cli
         az login
-
-
-
-## Docker Configuration
 
 ### Environment Variables
 
@@ -108,35 +104,9 @@ Before running the test ensure you have vault access by running:
   - `false` - Force Production Spreedly environment
 - `AZURE_VAULT_URL`
   - String Value, URL from which to fetch secrets. If set to "", local dummy secrets are used for dev purposes.
-- `SPREEDLY_SIGNING_SECRET`
-  - String Value, Secret for Spreedly
 - `SPREEDLY_BASE_URL`
   - String Value, URL for Spreedly, either `https://core.spreedly.com/v1` or Pelops endpoint
 - `SENTRY_DSN`
   - String Value, DSN to Sentry
-- `REDIS_PASSWORD`
-  -  String Value, Password for Redis
-- `REDIS_IP`
-  - String Value, IP Address or FQDN of Redis Server
-- `REDIS_PORT`
-  - String Value, Port of Redis Server
-- `PONTUS_DATABASE`
-  - String Value, name of Pontus Database
-- `PONTUS_USER`
-  - String Value, name of Postgres Pontus User
-- `PONTUS_PASSWORD`
-  - String Value, Postgres Pontus User Password
-- `PONTUS_HOST`
-  - String Value, IP Address of Postgres Server
-- `PONTUS_PORT`
-  - String Value, Port of Postgres Server
-- `RABBITMQ_HOST`
-  - String Value, IP Address of RabbitMQ Server
-- `RABBITMQ_USER`
-  - String Value, Username for RabbitMQ
-- `RABBITMQ_PASS`
-  - String Value, Password for RabbitMQ
-- `GRAYLOG_HOST`
-  - String Value, Graylog IP Address
-- `GRAYLOG_PORT`
-  - String Value, Graylog Port
+- `AMQP_URL`
+  - URL for RabbitMQ/AMQP

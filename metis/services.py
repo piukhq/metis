@@ -1,7 +1,6 @@
 import os
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 import requests
 from loguru import logger
@@ -24,9 +23,6 @@ from metis.prometheus.metrics import (
 )
 from metis.utils import resolve_agent
 from metis.vault import fetch_and_set_secret, get_azure_client
-
-if TYPE_CHECKING:
-    from metis.agents.agent_base import AgentBase
 
 pid = os.getpid()
 XML_HEADER = {"Content-Type": "application/xml"}
@@ -259,7 +255,6 @@ def add_card(card_info: dict) -> requests.Response:
     # Set card_payment status in hermes using 'id' HERMES_URL
     if resp["status_code"] == 200:
         logger.info("Card added successfully, calling Hermes to activate card.")
-        # TODO: get this from gaia
         card_status_code = 1
         payment_card_enrolment_counter.labels(
             provider=card_info["partner_slug"],
@@ -473,7 +468,7 @@ def reactivate_card(card_info: dict) -> requests.Response:
     return resp
 
 
-def get_agent(partner_slug: str) -> type["AgentBase()"]:
+def get_agent(partner_slug: str):
     agent_class = resolve_agent(partner_slug)
     return agent_class()
 
