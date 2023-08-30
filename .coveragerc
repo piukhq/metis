@@ -1,10 +1,8 @@
 [run]
 omit = *test*
        *templates*
-       app/agents/visa.py
-       app/jobs/visa_batch_create.py
-       app/visa_handback_file_processor.py
-       setup.py
+       metis/version.py
+       metis/prometheus/*
 
 branch = True
 

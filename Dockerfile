@@ -8,7 +8,6 @@ ARG PIP_INDEX_URL=https://269fdc63-af3d-4eca-8101-8bddc22d6f14:b694b5b1-f97e-49e
 WORKDIR /app
 COPY --from=build /src/dist/*.whl .
 COPY --from=build /src/wsgi.py .
-COPY --from=build /src/visa_handback_files ./visa_handback_files
 
 RUN export wheel=$(find -type f -name "*.whl") && \
     pip install "$wheel" && \

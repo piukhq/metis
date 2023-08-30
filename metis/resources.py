@@ -8,12 +8,10 @@ from loguru import logger
 from voluptuous import All, Length, MultipleInvalid, Optional, Required, Schema
 
 from metis.action import ActionCode
-from metis.agents.agent_manager import AgentManager
 from metis.agents.exceptions import OAuthError
 from metis.agents.visa_offers import Visa
 from metis.auth import authorized
 from metis.basic_services import basic_add_card, basic_reactivate_card, basic_remove_card
-from metis.card_router import process_card
 from metis.celery import celery
 from metis.prometheus.metrics import (
     STATUS_FAILED,
@@ -22,9 +20,20 @@ from metis.prometheus.metrics import (
     status_counter,
 )
 from metis.services import create_prod_receiver, retain_payment_method_token
+from metis.tasks import add_card, reactivate_card, remove_card
 from metis.utils import ctx
 
 api = Api()
+
+
+def process_card(action_code, card_info, x_azure_ref: str | None = None):
+    card_info["action_code"] = action_code
+    {
+        ActionCode.ADD: lambda: add_card.delay(card_info, x_azure_ref=x_azure_ref),
+        ActionCode.DELETE: lambda: remove_card.delay(card_info, x_azure_ref=x_azure_ref),
+        ActionCode.REACTIVATE: lambda: reactivate_card.delay(card_info, x_azure_ref=x_azure_ref),
+    }[action_code]()
+
 
 card_info_schema = Schema(
     {
@@ -70,6 +79,9 @@ api.add_resource(Readyz, "/readyz")
 
 
 class CreateReceiver(Resource):
+    # FIXME: This endpoint is only ever used to set up a new spreedly environment
+    # It is not used in normal journeys and so should probably live in a different
+    # module
     @authorized
     def post(self):
         ctx.x_azure_ref = request.headers.get("x-azure-ref")
@@ -170,22 +182,6 @@ class PaymentCardUpdate(Resource):
 
 
 api.add_resource(PaymentCardUpdate, "/payment_service/payment_card/update")
-
-
-class Notify(Resource):
-    # This callback needs to respond within 5 seconds of receiving a request from Spreedly.
-    # Therefore setup async. call to save data, and return 200 response to Spreedly.
-
-    def post(self, provider_slug):
-        req_data = request.json
-
-        agent_instance = AgentManager.get_agent(provider_slug)
-        agent_instance.save(req_data)
-
-        return make_response("OK", 200)
-
-
-api.add_resource(Notify, "/payment_service/notify/<string:provider_slug>")
 
 
 class VisaActivate(Resource):

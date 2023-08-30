@@ -1,14 +1,10 @@
 import os
-from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from metis import settings
 from metis.action import ActionCode
 from metis.services import get_agent, get_spreedly_url, send_request
-
-if TYPE_CHECKING:
-    from metis.agents.agent_base import AgentBase  # noqa
 
 pid = os.getpid()
 

@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 
 import sentry_sdk
@@ -28,15 +27,10 @@ init_loguru_root_sink(
     json_logging=JSON_LOGGING, sink_log_level=ROOT_LOG_LEVEL, show_pid=True, custom_patcher=azure_ref_patcher
 )
 
-SPREEDLY_SIGNING_SECRET = config(
-    "SPREEDLY_SIGNING_SECRET", default="4UWSUEtjUaANznj9mtCz0OCqduHj1iyiQeYTz4q6XIgkRkYTHXiu2xT0k72awYCa"
-)
 SPREEDLY_BASE_URL = config("SPREEDLY_BASE_URL", default="https://core.spreedly.com/v1")
 
 VOP_SPREEDLY_BASE_URL = config("VOP_SPREEDLY_BASE_URL", default="https://core.spreedly.com/v1")
 
-APP_DIR = os.path.abspath(os.path.dirname(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
 DEBUG = config("METIS_DEBUG", False)
 
 DEV_HOST = config("DEV_HOST", default="0.0.0.0")
@@ -51,21 +45,9 @@ STUBBED_VOP_URL = config("STUBBED_VOP_URL", default="http://pelops")
 HERMES_URL = config("HERMES_URL", default="http://127.0.0.1:5010")
 SERVICE_API_KEY = "F616CE5C88744DD52DB628FAD8B3D"
 
-# Celery
-broker_url = config("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+AMQP_URL = config("AMQP_URL", default="amqp://guest:guest@localhost:5672/")
+broker_url = AMQP_URL
 worker_enable_remote_control = False
-
-RABBITMQ_USER = config("RABBITMQ_USER", default="guest")
-RABBITMQ_PASS = config("RABBITMQ_PASS", default="guest")
-RABBITMQ_HOST = config("RABBITMQ_HOST", default="127.0.0.1")
-AMQP_URL = config("AMQP_URL", default=f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:5672/")
-
-# how many card enrolments can we fit in a single file, and how many files can we send per day?
-CARDS_PER_FILE = 80000
-FILES_PER_DAY = 99
-
-# how long to wait in between each file transfer to spreedly
-SPREEDLY_SEND_DELAY = 30
 
 TOKEN_SECRET = "8vA/fjVA83(n05LWh7R4'$3dWmVCU"
 
@@ -81,25 +63,7 @@ if SENTRY_DSN:
         ],
     )
 
-if pontus_url := config("PONTUS_DATABASE_URI", default=None):
-    POSTGRES_URI = pontus_url
-else:
-    PONTUS_DATABASE = config("PONTUS_DATABASE", default="pontus")
-    PONTUS_USER = config("PONTUS_USER", default="laadmin")
-    PONTUS_PASSWORD = config("PONTUS_PASSWORD", default="!^LoyaltyDev2015")
-    PONTUS_HOST = config("PONTUS_HOST", default="192.168.1.53")
-    PONTUS_PORT = config("PONTUS_PORT", default="5432", cast=int)
-    POSTGRES_URI = f"postgresql://{PONTUS_USER}:{PONTUS_PASSWORD}@{PONTUS_HOST}:{PONTUS_PORT}/{PONTUS_DATABASE}"
-
 POSTGRES_CONNECT_ARGS = {"application_name", "metis"}
-
-# Store VISA private key separately from other keys
-VISA_SOURCE_FILES_DIR = config("VISA_SOURCE_FILES_DIR", default="../visa_handback_files")
-VISA_KEYRING_DIR = config("VISA_KEYRING_DIR", default="~/.gnupg")
-VISA_ARCHIVE_DIR = config("VISA_ARCHIVE_DIR", default="/tmp/archive/visa")
-VISA_ENCRYPTED_FILE_EXTENSION = config("VISA_ENCRYPTED_FILE_EXTENSION", default="pgp")
-
-TEAMS_WEBHOOK_URL = config("TEAMS_WEBHOOK_URL", default=None)
 
 AZURE_VAULT_URL = config("AZURE_VAULT_URL", default="")
 # Changed from CELERY_ACCEPT_CONTENT due to deprecation

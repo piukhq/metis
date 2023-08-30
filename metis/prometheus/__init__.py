@@ -10,7 +10,7 @@ from metis import settings
 from metis.prometheus.logging import metrics_logger
 
 
-class PrometheusPushThread(threading.Thread):
+class PrometheusPushThread(threading.Thread):  # pragma: no cover
     SLEEP_INTERVAL = 30
     PUSH_TIMEOUT = 3  # PushGateway should be running in the same pod
 
@@ -44,7 +44,7 @@ class PrometheusPushThread(threading.Thread):
 
 
 def init_metrics_collection():
-    if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:
+    if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:  # pragma: no cover
         metrics_logger.info("Configuring prometheus metrics pusher")
         process_id = str(os.getpid())
         thread = PrometheusPushThread(process_id)

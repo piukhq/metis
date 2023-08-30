@@ -1,11 +1,11 @@
 import importlib
 import threading
 
-from metis.active import AGENTS
+ACTIVE_AGENTS = {"mastercard": "mastercard.MasterCard", "amex": "amex.Amex", "visa": "visa_offers.Visa"}
 
 
 def resolve_agent(name):
-    class_path = AGENTS[name]
+    class_path = ACTIVE_AGENTS[name]
     module_name, class_name = class_path.split(".")
     module = importlib.import_module(f"metis.agents.{module_name}")
     return getattr(module, class_name)
