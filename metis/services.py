@@ -179,25 +179,6 @@ def create_prod_receiver(receiver_type: str) -> requests.Response:
     return send_request("POST", url, XML_HEADER, xml_data, log_response=False)
 
 
-def create_sftp_receiver(sftp_details: dict) -> requests.Response:
-    """
-    Creates a receiver on the Spreedly environment.
-    This is a single call to create a receiver for an SFTP process.
-    """
-    url = f"{settings.SPREEDLY_BASE_URL}/receivers.xml"
-    xml_data = (
-        "<receiver>"
-        "  <receiver_type>{receiver_type}</receiver_type>"
-        "  <hostnames>{hostnames}</hostnames>"
-        "  <protocol>"
-        "    <user>{username}</user>"
-        "    <password>{password}</password>"
-        "  </protocol>"
-        "</receiver>"
-    ).format(**sftp_details)
-    return send_request("POST", url, XML_HEADER, xml_data, log_response=False)
-
-
 def get_hermes_data(resp, card_id):
     hermes_data = {"card_id": card_id, "response_action": "Add"}
 
