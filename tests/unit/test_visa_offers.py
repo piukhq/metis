@@ -418,6 +418,14 @@ class VOPActivation(TestCase):
         cls.metis_activate_endpoint = "/visa/activate/"
 
         cls.card_info = {"payment_token": "psp_token", "partner_slug": "visa", "merchant_slug": "Merchant1", "id": 1234}
+        cls.card_info_with_merchant_group = {
+            "payment_token": "psp_token",
+            "partner_slug": "visa",
+            "merchant_slug": "Merchant1",
+            "id": 1234,
+            "offer_id": "test_offer_id_1",
+            "merchant_group": "test_merchant_group",
+        }
 
     def create_app(self):
         return create_app(Testing)
@@ -428,6 +436,15 @@ class VOPActivation(TestCase):
             self.metis_activate_endpoint,
             headers={"content-type": "application/json", "Authorization": auth_key},
             data=json.dumps(card_info),
+        )
+        return resp
+
+    def activate_request_with_merchant_group_info(self, card_info_with_merchant_group, vop_response):
+        httpretty.register_uri(httpretty.POST, self.vop_activation_url, body=json.dumps(vop_response))
+        resp = self.client.post(
+            self.metis_activate_endpoint,
+            headers={"content-type": "application/json", "Authorization": auth_key},
+            data=json.dumps(card_info_with_merchant_group),
         )
         return resp
 
@@ -508,6 +525,13 @@ class VOPDeActivation(TestCase):
             "activation_id": "activation_id",
             "id": 1234,
         }
+        cls.card_info_with_offer_id = {
+            "payment_token": "psp_token",
+            "partner_slug": "visa",
+            "activation_id": "activation_id",
+            "id": 1234,
+            "offer_id": "test_offer_id_1",
+        }
 
     def create_app(self):
         return create_app(Testing)
@@ -518,6 +542,15 @@ class VOPDeActivation(TestCase):
             self.metis_deactivate_endpoint,
             headers={"content-type": "application/json", "Authorization": auth_key},
             data=json.dumps(card_info),
+        )
+        return resp
+
+    def deactivate_request_with_offer_id(self, card_info_with_offer_id, vop_response):
+        httpretty.register_uri(httpretty.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
+        resp = self.client.post(
+            self.metis_deactivate_endpoint,
+            headers={"content-type": "application/json", "Authorization": auth_key},
+            data=json.dumps(card_info_with_offer_id),
         )
         return resp
 
