@@ -84,7 +84,7 @@ class Secrets:
     vop_community_code = None
     vop_spreedly_community_code = None
     vop_merchant_group = None
-    vop_offerid = None
+    vop_offer_id = None
     amex_client_id = None
     amex_client_secret = None
     spreedly_oauth_username = None
@@ -106,7 +106,7 @@ class Secrets:
         "spreedly_mastercard_receive_token": {"vault_name": "spreedly-mastercardReceiveToken"},
         "vop_community_code": {"vault_name": "vop-communityCode"},
         "vop_spreedly_community_code": {"vault_name": "vop-spreedlyCommunityCode"},
-        "vop_offerid": {"vault_name": "vop-offerId"},
+        "vop_offer_id": {"vault_name": "vop-offerId"},
         "vop_user_id": {"vault_name": "vop-authUserId"},
         "vop_password": {"vault_name": "vop-authPassword"},
         "spreedly_vop_user_id": {"vault_name": "spreedly-vopAuthUserId"},
@@ -147,7 +147,7 @@ else:
     Secrets.vop_community_code = "community_code"
     Secrets.vop_spreedly_community_code = "spreedly_code"
     Secrets.vop_merchant_group = "test_merch"
-    Secrets.vop_offerid = "12345"
+    Secrets.vop_offer_id = "12345"
     Secrets.amex_client_id = "test"
     Secrets.amex_client_secret = "test"
     Secrets.spreedly_oauth_username = "test"

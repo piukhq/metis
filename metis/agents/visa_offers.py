@@ -151,7 +151,7 @@ class Visa:
         self.spreedly_receive_token = settings.Secrets.spreedly_visa_receive_token
         self.vop_community_code = settings.Secrets.vop_community_code
         self.vop_spreedly_community_code = settings.Secrets.vop_spreedly_community_code
-        self.offerid = settings.Secrets.vop_offerid
+        self.offer_id = settings.Secrets.vop_offer_id
         self.vop_user_id = settings.Secrets.vop_user_id
         self.vop_password = settings.Secrets.vop_password
         spreedly_vop_user_id = settings.Secrets.spreedly_vop_user_id
@@ -487,23 +487,23 @@ class Visa:
             activation = f" activation_id: '{card_info['activation_id']}'"
         return f"Card id: '{cid}' userKey/token: '{token}'{activation}"
 
-    def activate_data(self, payment_token, merchant_slug):
+    def activate_data(self, payment_token, merchant_slug, card_info):
         return {
             "communityCode": self.vop_community_code,
             "userKey": payment_token,
-            "offerId": self.offerid,
+            "offerId": card_info.get("offer_id", self.offer_id),
             "recurrenceLimit": "-1",
             "activations": [
-                {"name": "MerchantGroupName", "value": self.merchant_group},
+                {"name": "MerchantGroupName", "value": card_info.get("merchant_group", self.merchant_group)},
                 {"name": "ExternalId", "value": merchant_slug},
             ],
         }
 
-    def deactivate_data(self, payment_token, activation_id):
+    def deactivate_data(self, payment_token, activation_id, card_info):
         return {
             "communityCode": self.vop_spreedly_community_code,
             "userKey": payment_token,
-            "offerId": self.offerid,
+            "offerId": card_info.get("offer_id", self.offer_id),
             "clientCommunityCode": self.vop_community_code,
             "activationId": activation_id,
         }
@@ -522,7 +522,7 @@ class Visa:
             self._visa_report_vop_status_count("Activate", VOPResultStatus.FAILED)
             return VOPResultStatus.FAILED.value, 400, "", "", {"activation_id": None}
         return self.try_vop_and_get_status(
-            self.activate_data(payment_token, merchant_slug),
+            self.activate_data(payment_token, merchant_slug, card_info),
             "Activate",
             ActionCode.ACTIVATE_MERCHANT,
             self.vop_activation,
@@ -544,7 +544,7 @@ class Visa:
             return VOPResultStatus.FAILED.value, 400, "", "", {}
 
         return self.try_vop_and_get_status(
-            self.deactivate_data(payment_token, activation_id),
+            self.deactivate_data(payment_token, activation_id, card_info),
             "Deactivate",
             ActionCode.DEACTIVATE_MERCHANT,
             self.vop_deactivation,
