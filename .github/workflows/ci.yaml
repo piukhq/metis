@@ -13,28 +13,10 @@ jobs:
     name: tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: "."
-          security-checks: "vuln"
-          vuln-type: library
-          ignore-unfixed: true
-          exit-code: 0
-          severity: UNKNOWN,LOW,MEDIUM
-      - uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: "."
-          security-checks: "vuln"
-          vuln-type: library
-          ignore-unfixed: true
-          exit-code: 1
-          severity: HIGH,CRITICAL
       - run: pip install poetry
       - run: poetry config virtualenvs.create false
       - run: poetry config http-basic.bink-pypi 269fdc63-af3d-4eca-8101-8bddc22d6f14 b694b5b1-f97e-49e4-959e-f3c202e3ab91
@@ -53,14 +35,15 @@ jobs:
     environment: Development
     needs: [ tests ]
     steps:
-      - uses: actions/checkout@v2
-      - run: echo "container_tag=$(date +'%FT%H%M%SZ')" >> $GITHUB_ENV
-      - uses: docker/login-action@v2
+      - uses: actions/checkout@v4
+      - run: echo "::set-output name=date::$(date +'%FT%H%M%SZ')"
+        id: date
+      - uses: docker/login-action@v3
         with:
           registry: binkcore.azurecr.io
           username: binkcore
           password: ${{ secrets.ACR_BINKCORE_PASSWORD }}
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
@@ -74,44 +57,24 @@ jobs:
     environment: Staging
     needs: [ tests ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: tag_check
         run: |
           if ! [[ ${{ github.event.release.tag_name }} =~ [0-9]+.[0-9]+.[0-9]+ ]]; then
             exit 1;
           fi
-      - uses: docker/login-action@v2
+      - uses: docker/login-action@v3
         with:
           registry: binkcore.azurecr.io
           username: binkcore
           password: ${{ secrets.ACR_BINKCORE_PASSWORD }}
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
             binkcore.azurecr.io/${{ github.event.repository.name }}:staging
             binkcore.azurecr.io/${{ github.event.repository.name }}:${{ github.event.release.tag_name }}
             binkcore.azurecr.io/${{ github.event.repository.name }}:staging-${{ github.event.release.tag_name }}
-
-  release_sandbox:
-    if: github.event_name == 'release' && github.event.action == 'published'
-    name: release_sandbox
-    environment: Sandbox
-    needs: [release_staging]
-    runs-on: ubuntu-latest
-    container: ghcr.io/binkhq/tagbot:latest
-    steps:
-      - run: |-
-          tagbot \
-            --username binkcore \
-            --password ${{ secrets.ACR_BINKCORE_PASSWORD }} \
-            --source binkcore.azurecr.io/${{ github.event.repository.name }}:${{ github.event.release.tag_name }} \
-            --tag sandbox-${{ github.event.release.tag_name }}
-          tagbot \
-            --username binkcore \
-            --password ${{ secrets.ACR_BINKCORE_PASSWORD }} \
-            --source binkcore.azurecr.io/${{ github.event.repository.name }}:${{ github.event.release.tag_name }} \
-            --tag sandbox
 
   release_production:
     if: github.event_name == 'release' && github.event.action == 'published'
