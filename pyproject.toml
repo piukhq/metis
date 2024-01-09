@@ -7,9 +7,9 @@ readme = "README.md"
 packages = [{include = "metis"}]
 
 [[tool.poetry.source]]
-name = "bink-pypi"
-url = "https://pypi.gb.bink.com/simple"
-priority = "supplemental"
+name = "azure"
+url = "https://pkgs.dev.azure.com/binkhq/_packaging/binkhq/pypi/simple/"
+priority = "primary"
 
 [tool.poetry.dependencies]
 python = "^3.11"
