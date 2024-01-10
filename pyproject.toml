@@ -115,3 +115,8 @@ ignore = [
 "tests/*" = ["T201", "PLR0913"]
 "metis/prometheus/*" = ["T201"]
 "metis/card_router.py" = ["PLR0915"]
+
+[tool.refurb]
+ignore = [
+    "FURB184",  # some chaining suggestions don't make sense
+]
