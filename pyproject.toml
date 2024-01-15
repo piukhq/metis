@@ -7,9 +7,13 @@ readme = "README.md"
 packages = [{include = "metis"}]
 
 [[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[[tool.poetry.source]]
 name = "azure"
 url = "https://pkgs.dev.azure.com/binkhq/_packaging/binkhq/pypi/simple/"
-priority = "primary"
+priority = "explicit"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -29,7 +33,7 @@ gunicorn = "^21.2.0"
 azure-keyvault-secrets = "^4.7.0"
 azure-identity = "^1.15.0"
 loguru = "^0.7.2"
-bink-logging-utils = "^1.4.0"
+bink-logging-utils = { version="^1.4.0", source="azure" }
 voluptuous = "^0.14.1"
 python-decouple = "^3.8"
 
