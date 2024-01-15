@@ -1,17 +1,27 @@
-FROM ghcr.io/binkhq/python:3.11-poetry as build
+FROM ghcr.io/binkhq/python:3.11 as build
+
 WORKDIR /src
 ADD . .
+
+ENV VENV /app/venv
+ARG AZURE_DEVOPS_PAT
+ENV VIRTUAL_ENV=$VENV
+ENV PATH=$VENV/bin:$PATH
+
+RUN pip install poetry==1.7.1
+RUN poetry config http-basic.azure jeff $AZURE_DEVOPS_PAT
+RUN python -m venv $VENV
+RUN poetry install --without=dev --no-root
 RUN poetry build
+RUN pip install dist/*.whl
 
 FROM ghcr.io/binkhq/python:3.11 as main
-ARG PIP_INDEX_URL
-WORKDIR /app
-COPY --from=build /src/dist/*.whl .
-COPY --from=build /src/wsgi.py .
 
-RUN export wheel=$(find -type f -name "*.whl") && \
-    pip install "$wheel" && \
-    rm $wheel
+WORKDIR /app
+ENV VENV /app/venv
+ENV PATH="$VENV/bin:$PATH"
+COPY --from=build $VENV $VENV
+COPY --from=build /src/wsgi.py .
 
 ENTRYPOINT [ "linkerd-await", "--" ]
 CMD [ "gunicorn", "--error-logfile=-", "--access-logfile=-", \
