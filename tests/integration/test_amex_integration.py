@@ -1,28 +1,29 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import httpretty
 
 import metis.services
-from metis import settings
 from metis.agents.amex import Amex
+from metis.settings import settings
+from metis.vault import Secrets
 
 
 class TestServicesToAmexMock(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
-        settings.TESTING = True
+    def setUpClass(cls) -> None:
+        settings.METIS_TESTING = True
         settings.STUBBED_AMEX_URL = "http://127.0.0.1:5050"
         settings.AZURE_VAULT_URL = ""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.token = "QdjGCPSiYYDKxPMvvluYRG6zq79"
 
     @httpretty.activate
     @patch("metis.services.put_account_status", autospec=True)
     @patch("metis.services.get_provider_status_mappings", autospec=True)
-    def test_amex_sync_fail(self, status_map_mock, status_return_mock):
+    def test_amex_sync_fail(self, status_map_mock: Mock, status_return_mock: Mock) -> None:
         token = f"REQADD_XXXXXX_1_1_1_{uuid4()}"
         card_info = {"payment_token": token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
@@ -40,7 +41,7 @@ class TestServicesToAmexMock(unittest.TestCase):
             """,
             content_type="application/xml",
         )
-        resp = metis.services.add_card(card_info)
+        assert (resp := metis.services.add_card(card_info))
         self.assertTrue(resp["status_code"] == 422)
         self.assertDictEqual(
             status_return_mock.call_args[1],
@@ -55,7 +56,7 @@ class TestServicesToAmexMock(unittest.TestCase):
     @httpretty.activate
     @patch("metis.services.put_account_status", autospec=True)
     @patch("metis.services.get_provider_status_mappings", autospec=True)
-    def test_amex_sync(self, status_map_mock, status_return_mock):
+    def test_amex_sync(self, status_map_mock: Mock, status_return_mock: Mock) -> None:
         card_info = {"payment_token": self.token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
         httpretty.register_uri(
@@ -72,7 +73,7 @@ class TestServicesToAmexMock(unittest.TestCase):
             """,
             content_type="application/xml",
         )
-        resp = metis.services.add_card(card_info)
+        assert (resp := metis.services.add_card(card_info))
         self.assertTrue(resp["status_code"] == 200)
         self.assertDictEqual(
             status_return_mock.call_args[1],
@@ -86,7 +87,7 @@ class TestServicesToAmexMock(unittest.TestCase):
 
     @httpretty.activate
     @patch("metis.services.get_provider_status_mappings", autospec=True)
-    def test_amex_unsync(self, status_map_mock):
+    def test_amex_unsync(self, status_map_mock: Mock) -> None:
         card_info = {"payment_token": self.token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
         httpretty.register_uri(
@@ -104,13 +105,14 @@ class TestServicesToAmexMock(unittest.TestCase):
             content_type="application/xml",
         )
         resp = metis.services.remove_card(card_info)
+        assert (resp := metis.services.remove_card(card_info))
         self.assertTrue(resp["status_code"] == 200)
 
     @httpretty.activate
-    def test_request_header_both(self):
+    def test_request_header_both(self) -> None:
         res_path = "/v3/smartoffers/sync"
         amex = Amex()
         req_body = ""
         result = amex.request_header(res_path, req_body)
-        self.assertIn(f'Authorization: "MAC id="{settings.Secrets.amex_client_id}"', result)
-        self.assertIn(f"X-AMEX-API-KEY: {settings.Secrets.amex_client_id}]]>", result)
+        self.assertIn(f'Authorization: "MAC id="{Secrets.amex_client_id}"', result)
+        self.assertIn(f"X-AMEX-API-KEY: {Secrets.amex_client_id}]]>", result)

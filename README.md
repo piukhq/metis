@@ -14,13 +14,13 @@ First make sure you have a RabbitMQ server running on port 5672.
 Then, run this command in the root directory of the project, setting concurrency to one for easier debugging
 
 ```bash
-$ celery -A app.tasks worker --loglevel=INFO --concurrency=1
+$ celery -A metis worker --loglevel=INFO --concurrency=1
 ```
 
 For running the celery worker as a daemon, the following command is sufficient for dev:
 
 ```bash
-$ /var/.virtualenvs/metis/bin/celery worker -A app.tasks --pidfile=/tmp/celery_metis.pid -D
+$ /var/.virtualenvs/metis/bin/celery worker -A metis --pidfile=/tmp/celery_metis.pid -D
 ```
 of alternatively set up Pycharm to have a run celery config using the module name celery and
 the rest of the command line as parameters.
@@ -79,10 +79,10 @@ and the stubbed amex url should be your local Pelops.
 Amex has been updated to align with this policy.  The following config will cause secrets to accessed
 on start up and used to talk to Amex Test environment:
 
-        settings.TESTING = True
+        settings.METIS_TESTING = True
         settings.STUBBED_AMEX_URL = "https://api.dev2s.americanexpress.com"
         settings.AZURE_VAULT_URL = "https://bink-uksouth-dev-com.vault.azure.net/"
-        settings.secrets_from_vault(start_delay=0)
+        vault.secrets_from_vault(start_delay=0)
 
 Note: The above is used in the test SetUp class in Amex integration tests to force the correct config. when running
  the test
@@ -96,10 +96,10 @@ Before running the test ensure you have vault access by running:
 
 - `HERMES_URL`
   - String Value, URL for Hermes
-- `DEBUG`
+- `METIS_DEBUG`
   - `true` - Enable Application Debug Logging
   - `false` - Disable Application Debug Logging
-- `TESTING`
+- `METIS_TESTING`
   - `true` - Use stubbed URLs to talk to Pelops or test Spreedly
   - `false` - Force Production Spreedly environment
 - `AZURE_VAULT_URL`
@@ -108,5 +108,5 @@ Before running the test ensure you have vault access by running:
   - String Value, URL for Spreedly, either `https://core.spreedly.com/v1` or Pelops endpoint
 - `SENTRY_DSN`
   - String Value, DSN to Sentry
-- `AMQP_URL`
+- `CELERY_BROKER_URL`
   - URL for RabbitMQ/AMQP

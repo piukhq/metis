@@ -6,21 +6,21 @@ import urllib.error
 from prometheus_client import push_to_gateway
 from prometheus_client.registry import REGISTRY
 
-from metis import settings
 from metis.prometheus.logging import metrics_logger
+from metis.settings import settings
 
 
 class PrometheusPushThread(threading.Thread):  # pragma: no cover
     SLEEP_INTERVAL = 30
     PUSH_TIMEOUT = 3  # PushGateway should be running in the same pod
 
-    def __init__(self, pid: str):
+    def __init__(self, pid: str) -> None:
         # Grouping key should not need pod id as prometheus
         # should tag that itself
         self.grouping_key = {"pid": pid}
         super().__init__()
 
-    def run(self):
+    def run(self) -> None:
         time.sleep(10)
         while True:
             now = time.time()
@@ -43,7 +43,7 @@ class PrometheusPushThread(threading.Thread):  # pragma: no cover
                 time.sleep(remaining)
 
 
-def init_metrics_collection():
+def init_metrics_collection() -> None:
     if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:  # pragma: no cover
         metrics_logger.info("Configuring prometheus metrics pusher")
         process_id = str(os.getpid())

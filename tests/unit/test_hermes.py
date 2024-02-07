@@ -4,8 +4,8 @@ from unittest import TestCase
 
 import httpretty
 
-from metis import settings
 from metis.hermes import get_provider_status_mappings, put_account_status
+from metis.settings import settings
 
 
 class TestHermes(TestCase):
@@ -14,7 +14,7 @@ class TestHermes(TestCase):
         "CJpYXQiOjE0NDQ5ODk2Mjh9.N-0YnRxeei8edsuxHHQC7-okLoWKfY6uE6YmcOWlFLU"
     )
 
-    def hermes_account_status_route(self):
+    def hermes_account_status_route(self) -> None:
         httpretty.register_uri(
             httpretty.PUT,
             f"{settings.HERMES_URL}/payment_cards/accounts/status",
@@ -23,7 +23,7 @@ class TestHermes(TestCase):
             content_type="application/json",
         )
 
-    def hermes_provider_status_mappings_route(self):
+    def hermes_provider_status_mappings_route(self) -> None:
         httpretty.register_uri(
             httpretty.GET,
             re.compile(f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/(.+)"),
@@ -34,19 +34,19 @@ class TestHermes(TestCase):
         )
 
     @httpretty.activate
-    def test_get_provider_status_mappings(self):
+    def test_get_provider_status_mappings(self) -> None:
         self.hermes_provider_status_mappings_route()
         mapping = get_provider_status_mappings("visa")
         self.assertEqual(mapping, {"BINK_UNKNOWN": 10})
 
     @httpretty.activate
-    def test_put_account_status_card_id(self):
+    def test_put_account_status_card_id(self) -> None:
         self.hermes_account_status_route()
         put_account_status(2, card_id=2)
         self.assertTrue(httpretty.has_request())
 
     @httpretty.activate
-    def test_put_account_status_card_token(self):
+    def test_put_account_status_card_token(self) -> None:
         self.hermes_account_status_route()
         put_account_status(2, token="test")
         self.assertTrue(httpretty.has_request())

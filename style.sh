@@ -44,9 +44,12 @@ info "xenon"
 xenon --no-assert -a A -m B -b B .
 
 info "ruff"
-ruff metis tests wsgi.py
+ruff .
 
 info "refurb"
-refurb metis tests wsgi.py
+refurb .
+
+info mypy
+mypy .
 
 success "all checks completed."

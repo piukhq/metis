@@ -1,14 +1,17 @@
 import json
 import unittest
+from typing import cast
 
 import httpretty
+import requests
 
-from metis import settings
+from metis.agents.mastercard import MasterCard
 from metis.services import add_card, get_agent, remove_card, send_request
+from metis.settings import settings
 
 
 class TestServices(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         httpretty.enable()
         self.mock_response = """
                 <transaction>
@@ -51,52 +54,52 @@ class TestServices(unittest.TestCase):
         ]
         httpretty.register_uri(
             httpretty.GET,
-            "http://127.0.0.1:5010/payment_cards/provider_status_mappings/mastercard",
+            f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/mastercard",
             body=json.dumps(self.expected_response),
             content_type="application/json",
             status=200,
         )
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         httpretty.disable()
         httpretty.reset()
 
-    def test_mastercard_enroll(self):
+    def test_mastercard_enroll(self) -> None:
         card_info = {
             "payment_token": "RjG4WgzYoBZWgJ1ZK3KsHd2nYRv",
             "card_token": " ",
             "partner_slug": "mastercard",
             "id": 100,
         }
-        settings.TESTING = True
+        settings.METIS_TESTING = True
         httpretty.register_uri(
             httpretty.PUT,
-            "http://127.0.0.1:5010/payment_cards/accounts/status",
+            f"{settings.HERMES_URL}/payment_cards/accounts/status",
             body=json.dumps(self.expected_response),
             content_type="application/json",
             status=200,
         )
-        resp = add_card(card_info)
+        assert (resp := add_card(card_info))
         self.assertTrue(resp["status_code"] == 200)
 
-    def test_mastercard_unenroll(self):
+    def test_mastercard_unenroll(self) -> None:
         card_info = {"payment_token": "RjG4WgzYoBZWgJ1ZK3KsHd2nYRv", "card_token": " ", "partner_slug": "mastercard"}
-        settings.TESTING = True
-        resp = remove_card(card_info)
+        settings.METIS_TESTING = True
+        assert (resp := remove_card(card_info))
         self.assertTrue(resp["status_code"] == 200)
 
-    def test_mastercard_do_echo(self):
+    def test_mastercard_do_echo(self) -> None:
         card_info = {"payment_token": "4Bz7xSbcxCI0sHU9XN9lXvnvoMi", "card_token": " ", "partner_slug": "mastercard"}
-        settings.TESTING = True
+        settings.METIS_TESTING = True
 
         resp = self.call_do_echo(card_info)
         self.assertTrue(resp.status_code == 200)
 
-    def call_do_echo(self, card_info):
+    def call_do_echo(self, card_info: dict) -> requests.Response:
         """Once the receiver has been created and token sent back, we can pass in card details, without PAN.
         Receiver_tokens kept in settings.py."""
         receiver_token = "SiXfsuR5TQJ87wjH2O5Mo1I5WR" + "/deliver.xml"
-        agent_instance = get_agent(card_info["partner_slug"])
+        agent_instance = cast(MasterCard, get_agent(card_info["partner_slug"]))
         header = agent_instance.header
         url = "https://core.spreedly.com/v1/receivers/" + receiver_token
 
