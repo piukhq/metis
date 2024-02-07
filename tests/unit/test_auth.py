@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from metis.auth import parse_token
+from metis.api.deps import parse_token
 
 auth_key = (
     "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL"
@@ -9,14 +9,14 @@ auth_key = (
 
 
 class TestAuth(TestCase):
-    def test_validate_user_none(self):
+    def test_validate_user_none(self) -> None:
         result = parse_token("")
         self.assertEqual(result, None)
 
-    def test_validate_user(self):
-        result = parse_token(auth_key)
+    def test_validate_user(self) -> None:
+        assert isinstance((result := parse_token(auth_key)), dict)
         self.assertEqual(result["sub"], 32)
 
-    def test_service_auth(self):
+    def test_service_auth(self) -> None:
         result = parse_token("Token F616CE5C88744DD52DB628FAD8B3D")
         self.assertTrue(result)

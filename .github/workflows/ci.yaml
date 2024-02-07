@@ -24,8 +24,9 @@ jobs:
       - run: xenon --no-assert --max-average A --max-modules B --max-absolute B .
       - run: black --check .
       - run: isort --check .
-      - run: ruff metis tests wsgi.py
-      - run: refurb metis tests wsgi.py
+      - run: ruff .
+      - run: refurb .
+      - run: mypy .
       - run: pytest --verbose --cov=metis --cov-report=xml --junitxml=report.xml tests
 
   release_dev:

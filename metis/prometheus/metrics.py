@@ -1,7 +1,7 @@
 from loguru import logger
 from prometheus_client import CollectorRegistry, Counter, Histogram, push_to_gateway
 
-from metis import settings
+from metis.settings import settings
 
 NAMESPACE = "metis"
 STATUS_FAILED = "Failed"
@@ -125,7 +125,7 @@ mastercard_reactivate_response_time_histogram = Histogram(
 )
 
 
-def push_metrics(pid):
+def push_metrics(pid: int) -> None:
     if settings.PUSH_PROMETHEUS_METRICS and not settings.PROMETHEUS_TESTING:  # pragma: no cover
         try:
             push_to_gateway(
@@ -135,4 +135,4 @@ def push_metrics(pid):
                 grouping_key={"celery": str(pid)},
             )
         except Exception as ex:
-            logger.error(f"Error while pushing metrics to gateway: {ex!r}")
+            logger.error("Error while pushing metrics to gateway: {}", ex)

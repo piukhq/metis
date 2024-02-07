@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ActionCode(str, Enum):
+class ActionCode(StrEnum):
     ADD = "A"
     DELETE = "D"
     REACTIVATE = "R"

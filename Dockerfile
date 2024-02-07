@@ -21,9 +21,10 @@ WORKDIR /app
 ENV VENV /app/venv
 ENV PATH="$VENV/bin:$PATH"
 COPY --from=build $VENV $VENV
-COPY --from=build /src/wsgi.py .
+COPY --from=build /src/asgi.py .
 
 ENTRYPOINT [ "linkerd-await", "--" ]
 CMD [ "gunicorn", "--error-logfile=-", "--access-logfile=-", \
+                  "--worker-class=uvicorn.workers.UvicornWorker", \
                   "--logger-class=metis.reporting.CustomGunicornLogger", \
-                  "--bind=0.0.0.0:9000", "wsgi:app" ]
+                  "--bind=0.0.0.0:9000", "asgi:app" ]

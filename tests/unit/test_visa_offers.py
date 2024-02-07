@@ -4,12 +4,15 @@ from copy import copy
 
 import arrow
 import httpretty
-from flask_testing import TestCase
+import respx
+from fastapi.testclient import TestClient
+from httpx import Response
 
-from metis import create_app, settings
+from metis import create_app
 from metis.action import ActionCode
 from metis.agents.visa_offers import Visa
 from metis.services import add_card, get_spreedly_url, remove_card
+from metis.settings import settings
 
 auth_key = (
     "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMyL"
@@ -22,9 +25,15 @@ class Testing:
 
 
 class VOPUnenroll(unittest.TestCase):
+    visa: Visa
+    vop_un_enrol_url: str
+    vop_deactivation_url: str
+    hermes_payment_card_call_back: str
+    card_info: dict
+
     @classmethod
-    def setUpClass(cls):
-        settings.TESTING = True
+    def setUpClass(cls) -> None:
+        settings.METIS_TESTING = True
         cls.visa = Visa()
         cls.vop_un_enrol_url = f"{cls.visa.vop_url}{cls.visa.vop_unenroll}"
         cls.vop_deactivation_url = f"{cls.visa.vop_url}{cls.visa.vop_deactivation}"
@@ -40,10 +49,10 @@ class VOPUnenroll(unittest.TestCase):
             "retry_id": -1,
         }
 
-    def register_success_requests(self):
+    def register_success_requests(self) -> None:
         self.compile_requests(code="SUCCESS", message="Request proceed successfully without error.")
 
-    def compile_requests(self, code, message):
+    def compile_requests(self, code: str, message: str) -> None:
         self.register_requests(
             {
                 "correlationId": "ce708e6a-fd5f-48cc-b9ff-ce518a6fda1a",
@@ -52,14 +61,14 @@ class VOPUnenroll(unittest.TestCase):
             }
         )
 
-    def register_requests(self, vop_response):
+    def register_requests(self, vop_response: dict) -> None:
         httpretty.register_uri(httpretty.POST, self.vop_un_enrol_url, body=json.dumps(vop_response))
         httpretty.register_uri(httpretty.PUT, self.hermes_payment_card_call_back, body="")
 
-    def register_deactivations(self, vop_response):
+    def register_deactivations(self, vop_response: dict) -> None:
         httpretty.register_uri(httpretty.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
 
-    def assert_success(self):
+    def assert_success(self) -> None:
         request = httpretty.last_request()
         expected = {
             "id": 1234,
@@ -74,7 +83,7 @@ class VOPUnenroll(unittest.TestCase):
         actual = json.loads(request.body)
         self.assertDictEqual(expected, actual)
 
-    def assert_failed(self, state, code, message):
+    def assert_failed(self, state: str, code: str, message: str) -> None:
         request = httpretty.last_request()
         expected = {
             "id": 1234,
@@ -90,13 +99,13 @@ class VOPUnenroll(unittest.TestCase):
         self.assertDictEqual(expected, actual)
 
     @httpretty.activate
-    def test_remove_card_success(self):
+    def test_remove_card_success(self) -> None:
         self.register_success_requests()
         remove_card(self.card_info)
         self.assert_success()
 
     @httpretty.activate
-    def test_remove_card_fail(self):
+    def test_remove_card_fail(self) -> None:
         code = "1000"
         message = "Permanent VOP Error"
         self.compile_requests(code=code, message=message)
@@ -104,7 +113,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assert_failed("Failed", code, message)
 
     @httpretty.activate
-    def test_remove_card_retry(self):
+    def test_remove_card_retry(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
         self.compile_requests(code=code, message=message)
@@ -112,7 +121,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assert_failed("Retry", code, message)
 
     @httpretty.activate
-    def test_remove_card_success_with_null_activations(self):
+    def test_remove_card_success_with_null_activations(self) -> None:
         self.register_success_requests()
         card_info = copy(self.card_info)
         card_info["activations"] = {}
@@ -120,7 +129,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assert_success()
 
     @httpretty.activate
-    def test_remove_card_retry_with_null_activations(self):
+    def test_remove_card_retry_with_null_activations(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
         self.compile_requests(code=code, message=message)
@@ -130,7 +139,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assert_failed("Retry", code, message)
 
     @httpretty.activate
-    def test_remove_card_success_with_activations(self):
+    def test_remove_card_success_with_activations(self) -> None:
         self.register_success_requests()
         self.register_deactivations(
             {
@@ -160,7 +169,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assertEqual(0, len(req["deactivate_errors"]))
 
     @httpretty.activate
-    def test_remove_card_retry_with_activations(self):
+    def test_remove_card_retry_with_activations(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
         self.compile_requests(code=code, message=message)
@@ -182,7 +191,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assertEqual(4, len(prev_req))
 
     @httpretty.activate
-    def test_remove_card_success_with_activation_retry(self):
+    def test_remove_card_success_with_activation_retry(self) -> None:
         self.register_success_requests()
         self.register_deactivations(
             {
@@ -225,15 +234,20 @@ class VOPUnenroll(unittest.TestCase):
 
 
 class VOPEnroll(unittest.TestCase):
+    visa: Visa
+    vop_enrol_url: str
+    hermes_payment_card_call_back: str
+    hermes_status_mapping: str
+    card_info: dict
+
     @classmethod
-    def setUpClass(cls):
-        settings.TESTING = True
+    def setUpClass(cls) -> None:
+        settings.METIS_TESTING = True
         settings.VOP_SPREEDLY_BASE_URL = "http://localhost:8006"
         cls.visa = Visa()
         cls.vop_enrol_url = f"{cls.visa.vop_url}{cls.visa.vop_enrol}"
         cls.hermes_payment_card_call_back = f"{settings.HERMES_URL}/payment_cards/accounts/status"
         cls.hermes_status_mapping = f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/visa"
-
         cls.card_info = {
             "partner_slug": "visa",
             "payment_token": "psp_token",
@@ -246,14 +260,14 @@ class VOPEnroll(unittest.TestCase):
 
     def register_success_requests(
         self,
-        card_info,
-        resp_code="SUCCESS",
-        message="Request proceed successfully without error.",
-        vop_response_status_code=200,
-    ):
+        card_info: dict,
+        resp_code: str = "SUCCESS",
+        message: str = "Request proceed successfully without error.",
+        vop_response_status_code: int = 200,
+    ) -> None:
         self.construct_request(card_info, resp_code, message, vop_response_status_code)
 
-    def construct_request(self, card_info, resp_code, message, vop_response_status_code):
+    def construct_request(self, card_info: dict, resp_code: str, message: str, vop_response_status_code: int) -> None:
         body_dict = {
             "userDetails": {
                 "externalUserId": "a74hd93d9812wir0174mk093dkie1",
@@ -285,7 +299,7 @@ class VOPEnroll(unittest.TestCase):
             card_info,
         )
 
-    def register_requests(self, vop_response, card_info):
+    def register_requests(self, vop_response: dict, card_info: dict) -> None:
         spreedly_url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{self.visa.receiver_token()}"
         print(f"Mocking out {spreedly_url}")
         httpretty.register_uri(httpretty.POST, spreedly_url, body=json.dumps(vop_response))
@@ -305,7 +319,7 @@ class VOPEnroll(unittest.TestCase):
 
         print("End points mocked")
 
-    def assert_success(self):
+    def assert_success(self) -> None:
         request = httpretty.last_request()
         expected = {
             "status": 1,
@@ -321,7 +335,9 @@ class VOPEnroll(unittest.TestCase):
         actual = json.loads(request.body)
         self.assertDictEqual(expected, actual)
 
-    def assert_unsuccessful(self, code, message, resp_state, vop_response_status_code, mapped_status):
+    def assert_unsuccessful(
+        self, code: str, message: str, resp_state: str, vop_response_status_code: int, mapped_status: int
+    ) -> None:
         request = httpretty.last_request()
         expected = {
             "status": mapped_status,
@@ -337,7 +353,7 @@ class VOPEnroll(unittest.TestCase):
         self.assertDictEqual(expected, actual)
 
     @httpretty.activate
-    def test_add_card_success(self):
+    def test_add_card_success(self) -> None:
         self.register_success_requests(self.card_info)
         try:
             add_card(self.card_info)
@@ -349,7 +365,7 @@ class VOPEnroll(unittest.TestCase):
         self.assert_success()
 
     @httpretty.activate
-    def test_add_card_failed(self):
+    def test_add_card_failed(self) -> None:
         error_code = "1000"
         error_message = "Vop Permanent Failure message"
         vop_response_status_code = 400
@@ -364,7 +380,7 @@ class VOPEnroll(unittest.TestCase):
         self.assert_unsuccessful(error_code, error_message, "Failed", vop_response_status_code, 10)
 
     @httpretty.activate
-    def test_add_card_failed_unmapped(self):
+    def test_add_card_failed_unmapped(self) -> None:
         error_code = "xxxx"
         error_message = "Vop Permanent Failure message"
         vop_response_status_code = 400
@@ -379,7 +395,7 @@ class VOPEnroll(unittest.TestCase):
         self.assert_unsuccessful(error_code, error_message, "Failed", vop_response_status_code, 0)
 
     @httpretty.activate
-    def test_add_card_retry(self):
+    def test_add_card_retry(self) -> None:
         error_code = "4000"
         error_message = "Vop Retry 4000 Failure message"
         vop_response_status_code = 400
@@ -394,7 +410,7 @@ class VOPEnroll(unittest.TestCase):
         self.assert_unsuccessful(error_code, error_message, "Retry", vop_response_status_code, 20)
 
     @httpretty.activate
-    def test_add_card_retry_unmapped(self):
+    def test_add_card_retry_unmapped(self) -> None:
         error_code = "3000"
         error_message = "Vop Retry 3000 Failure message"
         vop_response_status_code = 400
@@ -409,46 +425,56 @@ class VOPEnroll(unittest.TestCase):
         self.assert_unsuccessful(error_code, error_message, "Retry", vop_response_status_code, 0)
 
 
-class VOPActivation(TestCase):
+class VOPActivation(unittest.TestCase):
+    client: TestClient
+    visa: Visa
+    vop_activation_url: str
+    metis_activate_endpoint = "/visa/activate/"
+    card_info = {
+        "payment_token": "psp_token",
+        "partner_slug": "visa",
+        "merchant_slug": "Merchant1",
+        "id": 1234,
+    }
+    card_info_with_merchant_group = {
+        "payment_token": "psp_token",
+        "partner_slug": "visa",
+        "merchant_slug": "Merchant1",
+        "id": 1234,
+        "offer_id": "test_offer_id_1",
+        "merchant_group": "test_merchant_group",
+    }
+
     @classmethod
-    def setUpClass(cls):
-        settings.TESTING = True
+    def setUpClass(cls) -> None:
+        settings.METIS_TESTING = True
         cls.visa = Visa()
         cls.vop_activation_url = f"{cls.visa.vop_url}{cls.visa.vop_activation}"
-        cls.metis_activate_endpoint = "/visa/activate/"
 
-        cls.card_info = {"payment_token": "psp_token", "partner_slug": "visa", "merchant_slug": "Merchant1", "id": 1234}
-        cls.card_info_with_merchant_group = {
-            "payment_token": "psp_token",
-            "partner_slug": "visa",
-            "merchant_slug": "Merchant1",
-            "id": 1234,
-            "offer_id": "test_offer_id_1",
-            "merchant_group": "test_merchant_group",
-        }
+        cls.client = TestClient(create_app(), raise_server_exceptions=False)
 
-    def create_app(self):
-        return create_app(Testing)
-
-    def activate_request(self, card_info, vop_response):
-        httpretty.register_uri(httpretty.POST, self.vop_activation_url, body=json.dumps(vop_response))
+    def activate_request(self, card_info: dict, vop_response: dict) -> Response:
+        respx.post(self.vop_activation_url).mock(Response(status_code=200, json=vop_response))
         resp = self.client.post(
             self.metis_activate_endpoint,
-            headers={"content-type": "application/json", "Authorization": auth_key},
-            data=json.dumps(card_info),
+            headers={"Authorization": auth_key},
+            json=card_info,
         )
         return resp
 
-    def activate_request_with_merchant_group_info(self, card_info_with_merchant_group, vop_response):
-        httpretty.register_uri(httpretty.POST, self.vop_activation_url, body=json.dumps(vop_response))
+    def activate_request_with_merchant_group_info(
+        self, card_info_with_merchant_group: dict, vop_response: dict
+    ) -> Response:
+        respx.post(self.vop_activation_url).mock(Response(status_code=200, json=vop_response))
+
         resp = self.client.post(
             self.metis_activate_endpoint,
-            headers={"content-type": "application/json", "Authorization": auth_key},
-            data=json.dumps(card_info_with_merchant_group),
+            headers={"Authorization": auth_key},
+            json=card_info_with_merchant_group,
         )
         return resp
 
-    def activation_unsuccessful(self, vop_error_code, vop_message):
+    def activation_unsuccessful(self, vop_error_code: str, vop_message: str) -> Response:
         vop_response = {
             "correlationId": "96e38ed5-91d5-4567-82e9-6c441f4ca300",
             "responseDateTime": "2020-01-30T11:13:43.5765614Z",
@@ -458,8 +484,8 @@ class VOPActivation(TestCase):
         self.assertEqual(resp.status_code, 200)
         return resp
 
-    @httpretty.activate
-    def test_activation_success(self):
+    @respx.mock
+    def test_activation_success(self) -> None:
         vop_message = "Request proceed successfully without error."
         activation_id = "88395654-0b8a-4f2d-9046-2b8669f76bd2"
         vop_response = {
@@ -471,7 +497,7 @@ class VOPActivation(TestCase):
         resp = self.activate_request(self.card_info, vop_response)
         self.assertEqual(resp.status_code, 201)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Success",
                 "agent_response_code": "Activate:SUCCESS",
@@ -480,13 +506,13 @@ class VOPActivation(TestCase):
             },
         )
 
-    @httpretty.activate
-    def test_activation_failed(self):
+    @respx.mock
+    def test_activation_failed(self) -> None:
         vop_error_code = "RTMOACTVE01"
         vop_message = "VOP Activate failure message."
         resp = self.activation_unsuccessful(vop_error_code, vop_message)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Failed",
                 "activation_id": None,
@@ -495,13 +521,13 @@ class VOPActivation(TestCase):
             },
         )
 
-    @httpretty.activate
-    def test_activation_retry(self):
+    @respx.mock
+    def test_activation_retry(self) -> None:
         vop_error_code = "RTMOACTVE05"
         vop_message = "VOP Activate failure message."
         resp = self.activation_unsuccessful(vop_error_code, vop_message)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Retry",
                 "activation_id": None,
@@ -511,50 +537,51 @@ class VOPActivation(TestCase):
         )
 
 
-class VOPDeActivation(TestCase):
+class VOPDeActivation(unittest.TestCase):
+    client: TestClient
+    visa: Visa
+    vop_deactivation_url: str
+    metis_deactivate_endpoint = "/visa/deactivate/"
+    card_info = {
+        "payment_token": "psp_token",
+        "partner_slug": "visa",
+        "activation_id": "activation_id",
+        "id": 1234,
+    }
+    card_info_with_offer_id = {
+        "payment_token": "psp_token",
+        "partner_slug": "visa",
+        "activation_id": "activation_id",
+        "id": 1234,
+        "offer_id": "test_offer_id_1",
+    }
+
     @classmethod
-    def setUpClass(cls):
-        settings.TESTING = True
+    def setUpClass(cls) -> None:
+        settings.METIS_TESTING = True
         cls.visa = Visa()
         cls.vop_deactivation_url = f"{cls.visa.vop_url}{cls.visa.vop_deactivation}"
-        cls.metis_deactivate_endpoint = "/visa/deactivate/"
+        cls.client = TestClient(create_app(), raise_server_exceptions=False)
 
-        cls.card_info = {
-            "payment_token": "psp_token",
-            "partner_slug": "visa",
-            "activation_id": "activation_id",
-            "id": 1234,
-        }
-        cls.card_info_with_offer_id = {
-            "payment_token": "psp_token",
-            "partner_slug": "visa",
-            "activation_id": "activation_id",
-            "id": 1234,
-            "offer_id": "test_offer_id_1",
-        }
-
-    def create_app(self):
-        return create_app(Testing)
-
-    def deactivate_request(self, card_info, vop_response):
-        httpretty.register_uri(httpretty.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
+    def deactivate_request(self, card_info: dict, vop_response: dict) -> Response:
+        respx.post(self.vop_deactivation_url).mock(Response(status_code=200, json=vop_response))
         resp = self.client.post(
             self.metis_deactivate_endpoint,
-            headers={"content-type": "application/json", "Authorization": auth_key},
-            data=json.dumps(card_info),
+            headers={"Authorization": auth_key},
+            json=card_info,
         )
         return resp
 
-    def deactivate_request_with_offer_id(self, card_info_with_offer_id, vop_response):
-        httpretty.register_uri(httpretty.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
+    def deactivate_request_with_offer_id(self, card_info_with_offer_id: dict, vop_response: dict) -> Response:
+        respx.post(self.vop_deactivation_url).mock(Response(status_code=200, json=vop_response))
         resp = self.client.post(
             self.metis_deactivate_endpoint,
-            headers={"content-type": "application/json", "Authorization": auth_key},
-            data=json.dumps(card_info_with_offer_id),
+            headers={"Authorization": auth_key},
+            json=card_info_with_offer_id,
         )
         return resp
 
-    def deactivation_unsuccessful(self, vop_error_code, vop_message):
+    def deactivation_unsuccessful(self, vop_error_code: str, vop_message: str) -> Response:
         vop_response = {
             "correlationId": "96e38ed5-91d5-4567-82e9-6c441f4ca300",
             "responseDateTime": "2020-01-30T11:13:43.5765614Z",
@@ -564,8 +591,8 @@ class VOPDeActivation(TestCase):
         self.assertEqual(resp.status_code, 200)
         return resp
 
-    @httpretty.activate
-    def test_deactivation_success(self):
+    @respx.mock
+    def test_deactivation_success(self) -> None:
         vop_message = "Request proceed successfully without error."
         vop_response = {
             "correlationId": "96e38ed5-91d5-4567-82e9-6c441f4ca300",
@@ -575,7 +602,7 @@ class VOPDeActivation(TestCase):
         resp = self.deactivate_request(self.card_info, vop_response)
         self.assertEqual(resp.status_code, 201)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Success",
                 "agent_response_code": "Deactivate:SUCCESS",
@@ -583,13 +610,13 @@ class VOPDeActivation(TestCase):
             },
         )
 
-    @httpretty.activate
-    def test_deactivation_failed(self):
+    @respx.mock
+    def test_deactivation_failed(self) -> None:
         vop_error_code = "RTMOACTVE01"
         vop_message = "VOP DeActivate failure message."
         resp = self.deactivation_unsuccessful(vop_error_code, vop_message)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Failed",
                 "agent_response_code": f"Deactivate:{vop_error_code}",
@@ -597,13 +624,13 @@ class VOPDeActivation(TestCase):
             },
         )
 
-    @httpretty.activate
-    def test_deactivation_retry(self):
+    @respx.mock
+    def test_deactivation_retry(self) -> None:
         vop_error_code = "RTMOACTVE05"
         vop_message = "VOP DeActivate failure message."
         resp = self.deactivation_unsuccessful(vop_error_code, vop_message)
         self.assertDictEqual(
-            resp.json,
+            resp.json(),
             {
                 "response_status": "Retry",
                 "agent_response_code": f"Deactivate:{vop_error_code}",
