@@ -39,8 +39,6 @@ httpx = "^0.26.0"
 ruff = "^0.1.6"
 pytest = "^7.4.3"
 pyfakefs = "^5.3.1"
-isort = "^5.12.0"
-black = "^23.11.0"
 pytest-cov = "^4.1.0"
 xenon = "^0.9.1"
 httpretty = "^1.0.5, !=1.1.0, !=1.1.1, !=1.1.2, !=1.1.3, !=1.1.4"
@@ -56,13 +54,6 @@ types-requests = "^2.31.0.20240125"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.black]
-line-length = 120
-
-[tool.isort]
-profile = "black"
-line_length = 120
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -80,12 +71,17 @@ plugins = [
 line-length = 120
 show-source = true
 target-version = "py311"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
 select = [
     "F",    # Pyflakes (F)
     "E",
     "W",    # pycodestyle (E, W)
     "C90",  # mccabe (C90)
-    # isort (I)
+    "I",    # isort (I)
     # pydocstyle (D)
     "UP",   # pyupgrade (UP)
     "N",    # pep8-naming (N)
@@ -117,18 +113,14 @@ select = [
     "PLW",  # Pylint (PLC, PLE, PLR, PLW)
     "RUF",  # Ruff-specific rules (RUF)
 ]
-
 ignore = [
     "BLE001",
     "PLR2004",
-    "DTZ005", # FIXME: all the datetimes in this project are datetime.now() with no tz specified is this correct?
     "N818",
     "PLR0915", # Too many statements
-    "RUF012", # FIXME: This is a temporary fix to allow us to use the new Ruff rules without breaking the build
-    "RUF013", # FIXME: This is a temporary fix to allow us to use the new Ruff rules without breaking the build
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["T201", "PLR0913"]
 "metis/prometheus/*" = ["T201"]
 "metis/card_router.py" = ["PLR0915"]

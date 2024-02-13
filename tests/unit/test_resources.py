@@ -1,4 +1,5 @@
 import unittest
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import respx
@@ -17,8 +18,8 @@ auth_key = (
 
 class TestMetisResources(unittest.TestCase):
     client: TestClient
-    response_xml_headers = {"Content-Type": "application/xml"}
-    response_json_headers = {"Content-Type": "application/json"}
+    response_xml_headers: ClassVar[dict] = {"Content-Type": "application/xml"}
+    response_json_headers: ClassVar[dict] = {"Content-Type": "application/json"}
     xml_response = "<receiver>" "<receiver_type>test1</receiver_type>" "</receiver>"
     receiver_token = "testing_624624613fgae3"
 

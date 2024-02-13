@@ -5,7 +5,7 @@ from asyncio import sleep
 from contextlib import suppress
 from enum import Enum
 from time import perf_counter
-from typing import cast
+from typing import ClassVar, cast
 from uuid import uuid4
 
 import httpx
@@ -40,10 +40,10 @@ class VOPResultStatus(str, Enum):
 
 
 class Visa(AbstractAgentBase):
-    header = {"Content-Type": "application/json"}
+    header: ClassVar[dict] = {"Content-Type": "application/json"}
 
     MAX_RETRIES = 3
-    ERROR_MAPPING = {
+    ERROR_MAPPING: ClassVar[dict] = {
         ActionCode.ACTIVATE_MERCHANT: {
             "SUCCESS": VOPResultStatus.SUCCESS,
             "1000": VOPResultStatus.FAILED,

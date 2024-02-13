@@ -1,6 +1,7 @@
 import json
 import unittest
 from copy import copy
+from typing import ClassVar
 
 import arrow
 import httpretty
@@ -430,13 +431,13 @@ class VOPActivation(unittest.TestCase):
     visa: Visa
     vop_activation_url: str
     metis_activate_endpoint = "/visa/activate/"
-    card_info = {
+    card_info: ClassVar[dict] = {
         "payment_token": "psp_token",
         "partner_slug": "visa",
         "merchant_slug": "Merchant1",
         "id": 1234,
     }
-    card_info_with_merchant_group = {
+    card_info_with_merchant_group: ClassVar[dict] = {
         "payment_token": "psp_token",
         "partner_slug": "visa",
         "merchant_slug": "Merchant1",
@@ -542,13 +543,13 @@ class VOPDeActivation(unittest.TestCase):
     visa: Visa
     vop_deactivation_url: str
     metis_deactivate_endpoint = "/visa/deactivate/"
-    card_info = {
+    card_info: ClassVar[dict] = {
         "payment_token": "psp_token",
         "partner_slug": "visa",
         "activation_id": "activation_id",
         "id": 1234,
     }
-    card_info_with_offer_id = {
+    card_info_with_offer_id: ClassVar[dict] = {
         "payment_token": "psp_token",
         "partner_slug": "visa",
         "activation_id": "activation_id",

@@ -34,17 +34,14 @@ then
     exit
 fi
 
-info "black"
-black .
-
-info "isort"
-isort .
+info "ruff format"
+ruff format .
 
 info "xenon"
 xenon --no-assert -a A -m B -b B .
 
-info "ruff"
-ruff .
+info "ruff lint"
+ruff check . --fix
 
 info "refurb"
 refurb .

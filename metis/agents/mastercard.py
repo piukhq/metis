@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import jinja2
 from loguru import logger
@@ -21,7 +21,7 @@ REMOVE = "3"
 
 
 class MasterCard(AbstractAgentBase):
-    header = {"Content-Type": "application/xml"}
+    header: ClassVar[dict] = {"Content-Type": "application/xml"}
     xml_header = "<![CDATA[Content-Type: text/xml;charset=utf-8]]>"
 
     def add_url(self) -> str:
