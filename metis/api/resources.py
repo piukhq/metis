@@ -8,9 +8,8 @@ from pydantic import ValidationError
 from metis.action import ActionCode
 from metis.agents.exceptions import OAuthError
 from metis.agents.visa_offers import Visa
-from metis.api.deps import async_azure_ref_dep
+from metis.api.deps import async_azure_ref_dep, handle_payment_card_schema_validation_error, sync_azure_ref_dep
 from metis.api.deps import authorized as auth_dep
-from metis.api.deps import handle_payment_card_schema_validation_error, sync_azure_ref_dep
 from metis.api.schemas import (
     CardInfoSchema,
     CreateReceiverSchema,

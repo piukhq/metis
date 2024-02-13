@@ -1,7 +1,6 @@
 import asyncio
 import os
 import time
-from datetime import datetime
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -366,9 +365,9 @@ def add_card(card_info: dict) -> dict | None:
         return None
     logger.info("POST URL {}, header: {} *-* {}", url, header, request_data)
 
-    request_start_time = datetime.now()
+    request_start_time = perf_counter()
     req_resp = send_request("POST", url, header, request_data)
-    request_time_taken = datetime.now() - request_start_time
+    request_time_taken = perf_counter() - request_start_time
 
     # get the status mapping for this provider from hermes.
     status_mapping = get_provider_status_mappings(card_info["partner_slug"])
@@ -411,7 +410,7 @@ def add_card(card_info: dict) -> dict | None:
 
     payment_card_enrolment_reponse_time_histogram.labels(
         provider=card_info["partner_slug"], status=resp["status_code"]
-    ).observe(request_time_taken.total_seconds())
+    ).observe(request_time_taken)
 
     push_metrics(pid)
 

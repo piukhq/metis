@@ -2,6 +2,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from time import sleep
+from typing import ClassVar
 
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
@@ -32,7 +33,7 @@ class Secrets:
 
     # One entry for each of the above attributes is required for app to start  The secret is stored in the attribute
     # unless file path is declared in which case the secret is saved to the file and the attribute set to the file path
-    SECRETS_DEF = {
+    SECRETS_DEF: ClassVar[dict] = {
         "vop_client_certificate_path": {
             "vault_name": "vop-clientCert",
             "file_path": "/tmp/vop_client_certificate.pem",

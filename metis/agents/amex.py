@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from loguru import logger
 from lxml import etree
@@ -24,7 +24,7 @@ res_path_unsync = "/marketing/v4/smartoffers/card_accounts/cards/unsync_details"
 
 
 class Amex(AbstractAgentBase):
-    header = {"Content-Type": "application/xml"}
+    header: ClassVar[dict] = {"Content-Type": "application/xml"}
     partner_id = "AADP0050"
     distr_chan = "9999"  # 'Amex to provide'
     receiver_function_open = "{{#base64}}{{#bytes_hex}}{{#hmac}}sha256,"
