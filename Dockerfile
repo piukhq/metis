@@ -6,7 +6,6 @@ WORKDIR /app
 RUN pip install --no-cache ${APP_NAME}==$(echo ${APP_VERSION} | cut -c 2-)
 ADD asgi.py .
 
-ENTRYPOINT [ "linkerd-await", "--" ]
 CMD [ "gunicorn", "--error-logfile=-", "--access-logfile=-", \
     "--worker-class=uvicorn.workers.UvicornWorker", \
     "--logger-class=metis.reporting.CustomGunicornLogger", \
