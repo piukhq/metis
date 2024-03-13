@@ -7,7 +7,7 @@ class CreateReceiverSchema(BaseModel, extra="allow"):
 
 
 class CardInfoSchema(BaseModel):
-    id: int  # noqa: A003
+    id: int
     payment_token: str = Field(..., min_length=1)
     card_token: str = Field(..., min_length=1)
     date: int
@@ -17,7 +17,7 @@ class CardInfoSchema(BaseModel):
 
 
 class _VisaVOPSchema(BaseModel):
-    id: int  # noqa: A003
+    id: int
     payment_token: str
     partner_slug: str
     offer_id: str | None = None
@@ -52,7 +52,7 @@ class VisaActivationResponseSchema(VisaDeactivationResponseSchema):
 
 
 class FoundationRetainSchema(BaseModel):
-    id: int  # noqa: A003
+    id: int
     payment_token: str = Field(..., min_length=1)
 
 

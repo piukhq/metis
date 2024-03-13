@@ -86,7 +86,7 @@ def _save_secret_to_file(secret_name: str, secret: str, file_path: str) -> bool:
 
 def fetch_and_set_secret(client: SecretClient, secret_name: str, secret_def: dict) -> None:
     secret_value = _get_secret_value(client, secret_def["vault_name"])
-    file_path = secret_def.get("file_path", None)
+    file_path = secret_def.get("file_path")
 
     if file_path:
         _save_secret_to_file(secret_name, secret_value, file_path)

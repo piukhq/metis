@@ -225,7 +225,7 @@ class Visa(AbstractAgentBase):
         other_data = {"activation_id": None}
         if resp_state == VOPResultStatus.SUCCESS:
             if action_code == ActionCode.ACTIVATE_MERCHANT:
-                activation_id = resp_content.get("activationId", None)
+                activation_id = resp_content.get("activationId")
                 if not activation_id:
                     resp_state = VOPResultStatus.FAILED
                     resp_visa_status_code = 0
