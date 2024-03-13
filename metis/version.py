@@ -1,1 +1,1 @@
-__version__ = "1.36.1"
+__version__ = "0.0.0"  # handled by poetry-dynamic-versioning
