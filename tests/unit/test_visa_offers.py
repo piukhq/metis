@@ -1,10 +1,10 @@
 import json
 import unittest
 from copy import copy
-from typing import ClassVar
+from typing import ClassVar, cast
 
 import arrow
-import httpretty
+import responses
 import respx
 from fastapi.testclient import TestClient
 from httpx import Response
@@ -63,14 +63,14 @@ class VOPUnenroll(unittest.TestCase):
         )
 
     def register_requests(self, vop_response: dict) -> None:
-        httpretty.register_uri(httpretty.POST, self.vop_un_enrol_url, body=json.dumps(vop_response))
-        httpretty.register_uri(httpretty.PUT, self.hermes_payment_card_call_back, body="")
+        responses.add(responses.POST, self.vop_un_enrol_url, body=json.dumps(vop_response))
+        responses.add(responses.PUT, self.hermes_payment_card_call_back, body="")
 
     def register_deactivations(self, vop_response: dict) -> None:
-        httpretty.register_uri(httpretty.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
+        responses.add(responses.POST, self.vop_deactivation_url, body=json.dumps(vop_response))
 
     def assert_success(self) -> None:
-        request = httpretty.last_request()
+        request, _ = responses.calls[-1]
         expected = {
             "id": 1234,
             "response_state": "Success",
@@ -80,12 +80,13 @@ class VOPUnenroll(unittest.TestCase):
             "retry_id": -1,
             "deactivated_list": [],
             "deactivate_errors": {},
+            "retry_type": "remove",
         }
-        actual = json.loads(request.body)
+        actual = json.loads(cast(str, request.body))
         self.assertDictEqual(expected, actual)
 
     def assert_failed(self, state: str, code: str, message: str) -> None:
-        request = httpretty.last_request()
+        request, _ = responses.calls[-1]
         expected = {
             "id": 1234,
             "response_state": state,
@@ -95,17 +96,18 @@ class VOPUnenroll(unittest.TestCase):
             "retry_id": -1,
             "deactivated_list": [],
             "deactivate_errors": {},
+            "retry_type": "remove",
         }
-        actual = json.loads(request.body)
+        actual = json.loads(cast(str, request.body))
         self.assertDictEqual(expected, actual)
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_success(self) -> None:
         self.register_success_requests()
         remove_card(self.card_info)
         self.assert_success()
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_fail(self) -> None:
         code = "1000"
         message = "Permanent VOP Error"
@@ -113,7 +115,7 @@ class VOPUnenroll(unittest.TestCase):
         remove_card(self.card_info)
         self.assert_failed("Failed", code, message)
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_retry(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
@@ -121,7 +123,7 @@ class VOPUnenroll(unittest.TestCase):
         remove_card(self.card_info)
         self.assert_failed("Retry", code, message)
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_success_with_null_activations(self) -> None:
         self.register_success_requests()
         card_info = copy(self.card_info)
@@ -129,7 +131,7 @@ class VOPUnenroll(unittest.TestCase):
         remove_card(card_info)
         self.assert_success()
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_retry_with_null_activations(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
@@ -139,7 +141,7 @@ class VOPUnenroll(unittest.TestCase):
         remove_card(self.card_info)
         self.assert_failed("Retry", code, message)
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_success_with_activations(self) -> None:
         self.register_success_requests()
         self.register_deactivations(
@@ -155,13 +157,13 @@ class VOPUnenroll(unittest.TestCase):
             6789: {"scheme": "merchant2", "activation_id": "merchant2_activation_id"},
         }
         remove_card(card_info)
-        prev_req = httpretty.latest_requests()
-        self.assertEqual(4, len(prev_req))
-        req = json.loads(prev_req[0].body)
+        prev_calls = responses.calls
+        self.assertEqual(4, len(prev_calls))
+        req = json.loads(cast(str, prev_calls[0][0].body))
         self.assertEqual("merchant1_activation_id", req["activationId"])
-        req = json.loads(prev_req[1].body)
+        req = json.loads(cast(str, prev_calls[1][0].body))
         self.assertEqual("merchant2_activation_id", req["activationId"])
-        req = json.loads(prev_req[3].body)
+        req = json.loads(cast(str, prev_calls[3][0].body))
         self.assertEqual(1234, req["id"])
         self.assertEqual("Success", req["response_state"])
         self.assertEqual("Delete:SUCCESS", req["response_status"])
@@ -169,7 +171,7 @@ class VOPUnenroll(unittest.TestCase):
         self.assertEqual([345, 6789], req["deactivated_list"])
         self.assertEqual(0, len(req["deactivate_errors"]))
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_retry_with_activations(self) -> None:
         code = "3000"
         message = "Temp VOP Error"
@@ -188,10 +190,10 @@ class VOPUnenroll(unittest.TestCase):
         }
         remove_card(self.card_info)
         self.assert_failed("Retry", code, message)
-        prev_req = httpretty.latest_requests()
-        self.assertEqual(4, len(prev_req))
+        prev_calls = responses.calls
+        self.assertEqual(4, len(prev_calls))
 
-    @httpretty.activate
+    @responses.activate
     def test_remove_card_success_with_activation_retry(self) -> None:
         self.register_success_requests()
         self.register_deactivations(
@@ -212,21 +214,21 @@ class VOPUnenroll(unittest.TestCase):
             6789: {"scheme": "merchant2", "activation_id": "merchant2_activation_id"},
         }
         remove_card(card_info)
-        prev_req = httpretty.latest_requests()
-        self.assertEqual(7, len(prev_req))
-        req = json.loads(prev_req[0].body)
+        prev_calls = responses.calls
+        self.assertEqual(7, len(prev_calls))
+        req = json.loads(cast(str, prev_calls[0][0].body))
         self.assertEqual("merchant1_activation_id", req["activationId"])
-        req = json.loads(prev_req[1].body)
+        req = json.loads(cast(str, prev_calls[1][0].body))
         self.assertEqual("merchant1_activation_id", req["activationId"])
-        req = json.loads(prev_req[2].body)
+        req = json.loads(cast(str, prev_calls[2][0].body))
         self.assertEqual("merchant1_activation_id", req["activationId"])
-        req = json.loads(prev_req[3].body)
+        req = json.loads(cast(str, prev_calls[3][0].body))
         self.assertEqual("merchant2_activation_id", req["activationId"])
-        req = json.loads(prev_req[4].body)
+        req = json.loads(cast(str, prev_calls[4][0].body))
         self.assertEqual("merchant2_activation_id", req["activationId"])
-        req = json.loads(prev_req[5].body)
+        req = json.loads(cast(str, prev_calls[5][0].body))
         self.assertEqual("merchant2_activation_id", req["activationId"])
-        req = json.loads(prev_req[6].body)
+        req = json.loads(cast(str, prev_calls[6][0].body))
         self.assertEqual(1234, req["id"])
         self.assertEqual("Retry", req["response_state"])
         self.assertEqual("Delete", req["response_action"])
@@ -303,12 +305,12 @@ class VOPEnroll(unittest.TestCase):
     def register_requests(self, vop_response: dict, card_info: dict) -> None:
         spreedly_url = f"{get_spreedly_url(card_info['partner_slug'])}/receivers/{self.visa.receiver_token()}"
         print(f"Mocking out {spreedly_url}")
-        httpretty.register_uri(httpretty.POST, spreedly_url, body=json.dumps(vop_response))
+        responses.add(responses.POST, spreedly_url, body=json.dumps(vop_response))
         print(f"Mocking out call back {self.hermes_payment_card_call_back}")
-        httpretty.register_uri(httpretty.PUT, self.hermes_payment_card_call_back, body="")
+        responses.add(responses.PUT, self.hermes_payment_card_call_back, body="")
         print(f"Mocking out error mapping call back {self.hermes_payment_card_call_back}")
-        httpretty.register_uri(
-            httpretty.GET,
+        responses.add(
+            responses.GET,
             self.hermes_status_mapping,
             body=json.dumps(
                 [
@@ -321,7 +323,7 @@ class VOPEnroll(unittest.TestCase):
         print("End points mocked")
 
     def assert_success(self) -> None:
-        request = httpretty.last_request()
+        request, _ = responses.calls[-1]
         expected = {
             "status": 1,
             "id": 1234,
@@ -333,13 +335,13 @@ class VOPEnroll(unittest.TestCase):
             "retry_id": -1,
             "agent_card_uid": "bfc33c1d-d4ef-e111-8d48-001a4bcdeef4",
         }
-        actual = json.loads(request.body)
+        actual = json.loads(cast(str, request.body))
         self.assertDictEqual(expected, actual)
 
     def assert_unsuccessful(
         self, code: str, message: str, resp_state: str, vop_response_status_code: int, mapped_status: int
     ) -> None:
-        request = httpretty.last_request()
+        request, _ = responses.calls[-1]
         expected = {
             "status": mapped_status,
             "id": 1234,
@@ -350,22 +352,22 @@ class VOPEnroll(unittest.TestCase):
             "response_action": "Add",
             "retry_id": -1,
         }
-        actual = json.loads(request.body)
+        actual = json.loads(cast(str, request.body))
         self.assertDictEqual(expected, actual)
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card_success(self) -> None:
         self.register_success_requests(self.card_info)
         try:
             add_card(self.card_info)
         except Exception as e:
             self.assertFalse(True, msg=f"Exception: {e}")
-        prev_req = httpretty.latest_requests()
-        for req in prev_req:
+        prev_calls = responses.calls
+        for req, _ in prev_calls:
             print(req.body)
         self.assert_success()
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card_failed(self) -> None:
         error_code = "1000"
         error_message = "Vop Permanent Failure message"
@@ -375,12 +377,12 @@ class VOPEnroll(unittest.TestCase):
             add_card(self.card_info)
         except Exception as e:
             self.assertFalse(True, msg=f"Exception: {e}")
-        prev_req = httpretty.latest_requests()
-        for req in prev_req:
+        prev_calls = responses.calls
+        for req, _ in prev_calls:
             print(req.body)
         self.assert_unsuccessful(error_code, error_message, "Failed", vop_response_status_code, 10)
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card_failed_unmapped(self) -> None:
         error_code = "xxxx"
         error_message = "Vop Permanent Failure message"
@@ -390,12 +392,12 @@ class VOPEnroll(unittest.TestCase):
             add_card(self.card_info)
         except Exception as e:
             self.assertFalse(True, msg=f"Exception: {e}")
-        prev_req = httpretty.latest_requests()
-        for req in prev_req:
+        prev_calls = responses.calls
+        for req, _ in prev_calls:
             print(req.body)
         self.assert_unsuccessful(error_code, error_message, "Failed", vop_response_status_code, 0)
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card_retry(self) -> None:
         error_code = "4000"
         error_message = "Vop Retry 4000 Failure message"
@@ -405,12 +407,12 @@ class VOPEnroll(unittest.TestCase):
             add_card(self.card_info)
         except Exception as e:
             self.assertFalse(True, msg=f"Exception: {e}")
-        prev_req = httpretty.latest_requests()
-        for req in prev_req:
+        prev_calls = responses.calls
+        for req, _ in prev_calls:
             print(req.body)
         self.assert_unsuccessful(error_code, error_message, "Retry", vop_response_status_code, 20)
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card_retry_unmapped(self) -> None:
         error_code = "3000"
         error_message = "Vop Retry 3000 Failure message"
@@ -420,8 +422,8 @@ class VOPEnroll(unittest.TestCase):
             add_card(self.card_info)
         except Exception as e:
             self.assertFalse(True, msg=f"Exception: {e}")
-        prev_req = httpretty.latest_requests()
-        for req in prev_req:
+        prev_calls = responses.calls
+        for req, _ in prev_calls:
             print(req.body)
         self.assert_unsuccessful(error_code, error_message, "Retry", vop_response_status_code, 0)
 

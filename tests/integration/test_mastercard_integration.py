@@ -2,8 +2,8 @@ import json
 import unittest
 from typing import cast
 
-import httpretty
 import requests
+import responses
 
 from metis.agents.mastercard import MasterCard
 from metis.services import add_card, get_agent, remove_card, send_request
@@ -12,7 +12,7 @@ from metis.settings import settings
 
 class TestServices(unittest.TestCase):
     def setUp(self) -> None:
-        httpretty.enable()
+        responses.start()
         self.mock_response = """
                 <transaction>
                     <token>bink_mastercard_token_1</token>
@@ -43,8 +43,8 @@ class TestServices(unittest.TestCase):
                     </payment_method>
                 </transaction>
             """
-        httpretty.register_uri(
-            httpretty.POST,
+        responses.add(
+            responses.POST,
             "https://core.spreedly.com/v1/receivers/mastercard/deliver.xml",
             body=self.mock_response,
             content_type="application/xml",
@@ -52,8 +52,8 @@ class TestServices(unittest.TestCase):
         self.expected_response = [
             {"provider": "mastercard", "provider_status_code": "BINK_UNKNOWN", "bink_status_code": 200},
         ]
-        httpretty.register_uri(
-            httpretty.GET,
+        responses.add(
+            responses.GET,
             f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/mastercard",
             body=json.dumps(self.expected_response),
             content_type="application/json",
@@ -61,8 +61,8 @@ class TestServices(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
-        httpretty.disable()
-        httpretty.reset()
+        responses.stop()
+        responses.reset()
 
     def test_mastercard_enroll(self) -> None:
         card_info = {
@@ -72,8 +72,8 @@ class TestServices(unittest.TestCase):
             "id": 100,
         }
         settings.METIS_TESTING = True
-        httpretty.register_uri(
-            httpretty.PUT,
+        responses.add(
+            responses.PUT,
             f"{settings.HERMES_URL}/payment_cards/accounts/status",
             body=json.dumps(self.expected_response),
             content_type="application/json",
@@ -104,8 +104,8 @@ class TestServices(unittest.TestCase):
         url = "https://core.spreedly.com/v1/receivers/" + receiver_token
 
         request_data = agent_instance.do_echo_body(card_info)
-        httpretty.register_uri(
-            httpretty.POST,
+        responses.add(
+            responses.POST,
             "https://core.spreedly.com/v1/receivers/SiXfsuR5TQJ87wjH2O5Mo1I5WR/deliver.xml",
             body=self.mock_response,
             content_type="application/xml",

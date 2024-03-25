@@ -7,11 +7,13 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import httpx
 import requests
 from loguru import logger
+from requests import RequestException
 
 from metis.agents.amex import Amex
 from metis.agents.exceptions import OAuthError
 from metis.agents.mastercard import MasterCard
 from metis.agents.visa_offers import Visa, VOPResultStatus
+from metis.enums import RetryTypes
 from metis.hermes import get_provider_status_mappings, put_account_status
 from metis.prometheus.metrics import (
     STATUS_FAILED,
@@ -274,7 +276,8 @@ def _send_retry_spreedly_request(  # noqa: PLR0913
 
         else:
             break
-    if not resp:
+
+    if resp is None:
         raise ValueError(f"Failed {method} {url} request.")
 
     return resp
@@ -428,6 +431,8 @@ def hermes_unenroll_call_back(  # noqa: PLR0913
     agent_status_code: str,
     agent_message: str,
     _: Any,
+    *,
+    retry_type: RetryTypes,
 ) -> set:
     # Set card_payment status in hermes using 'id' HERMES_URL
     if status_code != 201:
@@ -448,6 +453,7 @@ def hermes_unenroll_call_back(  # noqa: PLR0913
         "response_action": action_name,
         "deactivated_list": deactivated_list,
         "deactivate_errors": deactivate_errors,
+        "retry_type": retry_type.value,
     }
     if card_info.get("retry_id"):
         hermes_status_data["retry_id"] = card_info["retry_id"]
@@ -457,7 +463,7 @@ def hermes_unenroll_call_back(  # noqa: PLR0913
     return {response_state, status_code}
 
 
-def _remove_visa_card(card_info: dict, action_name: str) -> dict | None:
+def _remove_visa_card(card_info: dict, action_name: str, retry_type: RetryTypes) -> dict | None:
     # Note the other agents call Spreedly to Unenrol. This is incorrect as Spreedly should not
     # be used as a Proxy to pass unmodified messages to the Agent. The use in add/enrol is an
     # example of correct because Spreedly inserts the PAN when forwarding our message to the Agent.
@@ -516,6 +522,7 @@ def _remove_visa_card(card_info: dict, action_name: str) -> dict | None:
                 "",
                 message,
                 "",
+                retry_type=retry_type,
             )
             return {"response_status": response_state, "status_code": status_code}
 
@@ -526,6 +533,7 @@ def _remove_visa_card(card_info: dict, action_name: str) -> dict | None:
         deactivated_list,
         deactivate_errors,
         *agent_instance.un_enroll(card_info, action_name, pid),
+        retry_type=retry_type,
     )
 
     # put_account_status sends a async response back to Hermes.
@@ -534,12 +542,12 @@ def _remove_visa_card(card_info: dict, action_name: str) -> dict | None:
     return {"response_status": response_state, "status_code": status_code}
 
 
-def remove_card(card_info: dict) -> dict | None:
+def remove_card(card_info: dict, retry_type: RetryTypes = RetryTypes.REMOVE) -> dict | None:
     logger.info("Start Remove card for {}", card_info["partner_slug"])
     action_name = "Delete"
 
     if card_info["partner_slug"] == "visa":
-        return _remove_visa_card(card_info, action_name)
+        return _remove_visa_card(card_info, action_name, retry_type=retry_type)
 
     agent_instance = cast(Amex | MasterCard, get_agent(card_info["partner_slug"]))
     header = agent_instance.header
@@ -550,7 +558,7 @@ def remove_card(card_info: dict) -> dict | None:
         request_data = agent_instance.remove_card_body(card_info)
     except OAuthError:
         # TODO: get this from gaia
-        put_account_status(5, card_id=card_info["id"])
+        put_account_status(5, card_id=card_info["id"], retry_type=retry_type.value)
         return None
 
     request_start_time = perf_counter()
@@ -612,3 +620,46 @@ def get_agent(partner_slug: Literal["amex", "mastercard", "visa"]) -> Amex | Mas
 async def retain_payment_method_token(payment_method_token: str, partner_slug: str | None = None) -> httpx.Response:
     url = f"{get_spreedly_url(partner_slug)}/payment_methods/{payment_method_token}/retain.json"
     return await async_send_request("PUT", url, {"Content-Type": "application/json"})
+
+
+def redact_card(card_info: dict) -> None:
+    try:
+        redact_resp = send_request(
+            method="PUT",
+            url=f"{settings.SPREEDLY_BASE_URL}/payment_methods/{card_info['payment_token']}/redact.json",
+            headers={"Content-Type": "application/json"},
+        )
+    except RequestException:
+        # something went wrong, send retry to hermes
+        put_account_status(
+            5,
+            card_info["id"],
+            response_action=card_info["action_code"],
+            response_state=VOPResultStatus.RETRY.value,
+            retry_type=RetryTypes.REDACT.value,
+        )
+
+    else:
+        if redact_resp.status_code == 404:
+            # Payment Account not found, nothing to redact.
+            return
+
+        if (
+            (200 <= redact_resp.status_code < 300)
+            and (resp_json := redact_resp.json())
+            and (
+                resp_json["transaction"]["succeeded"]
+                or resp_json["transaction"]["payment_method"]["storage_state"] == "redacted"
+            )
+        ):
+            # Redacted successully.
+            return
+
+        # something else went wrong, send retry to hermes
+        put_account_status(
+            6,
+            card_info["id"],
+            response_action=card_info["action_code"],
+            response_state=VOPResultStatus.RETRY.value,
+            retry_type=RetryTypes.REDACT.value,
+        )

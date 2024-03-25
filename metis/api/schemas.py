@@ -16,6 +16,10 @@ class CardInfoSchema(BaseModel):
     activations: dict | None = None
 
 
+class CardInfoRedactSchema(CardInfoSchema):
+    redact_only: bool = False
+
+
 class _VisaVOPSchema(BaseModel):
     id: int
     payment_token: str
