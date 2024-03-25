@@ -11,6 +11,7 @@ from metis.agents.visa_offers import Visa
 from metis.api.deps import async_azure_ref_dep, handle_payment_card_schema_validation_error, sync_azure_ref_dep
 from metis.api.deps import authorized as auth_dep
 from metis.api.schemas import (
+    CardInfoRedactSchema,
     CardInfoSchema,
     CreateReceiverSchema,
     FoundationAddSchema,
@@ -31,7 +32,7 @@ from metis.prometheus.metrics import (
     status_counter,
 )
 from metis.services import create_prod_receiver, retain_payment_method_token
-from metis.tasks import add_card, reactivate_card, remove_card
+from metis.tasks import add_card, reactivate_card, remove_and_redact, remove_card
 from metis.utils import ctx
 
 if TYPE_CHECKING:
@@ -76,15 +77,17 @@ class XMLResponse(Response):
     media_type = "application/xml"
 
 
-def process_card(action_code: str, card_info: dict, *, priority: int, x_azure_ref: str | None = None) -> None:
-    card_info["action_code"] = action_code
-
+def get_routing_key(priority: int) -> str:
     # as reported on https://docs.celeryq.dev/projects/kombu/en/latest/reference/kombu.html#queue for Kombu v5.3.4
     # max_priority(int)  # noqa: ERA001
     # For example if the value is 10,
     # then messages can delivered to this queue can have a priority value between 0 and 10,
     # where 10 is the highest priority.
-    routing_key = "metis.tasks.high" if priority > 5 else "metis.tasks.low"
+    return "metis.tasks.high" if priority > 5 else "metis.tasks.low"
+
+
+def process_card(action_code: str, card_info: dict, *, priority: int, x_azure_ref: str | None = None) -> None:
+    card_info["action_code"] = action_code
 
     match action_code:
         case ActionCode.ADD:
@@ -98,7 +101,7 @@ def process_card(action_code: str, card_info: dict, *, priority: int, x_azure_re
         args=[card_info],
         kwargs={"x_azure_ref": x_azure_ref},
         exchange="metis-celery-tasks",
-        routing_key=routing_key,
+        routing_key=get_routing_key(priority),
         priority=priority,
     )
 
@@ -257,6 +260,32 @@ def update_payment_card(card_info: CardInfoSchema, x_priority: Annotated[int, He
     req_data = card_info.model_dump(exclude_none=True)
     logger.info("Received reactivate payment card request: {}", req_data)
     process_card(ActionCode.REACTIVATE, req_data, priority=x_priority, x_azure_ref=ctx.x_azure_ref)
+    return "Success"
+
+
+@auth_router.post(
+    "/payment_service/payment_card/unenrol_and_redact",
+    description="Endpoint used by Hermes, will spawn a celery task",
+    dependencies=[Depends(handle_payment_card_schema_validation_error)],
+    responses=openapi_payment_card_responses,
+    status_code=status.HTTP_200_OK,
+    tags=["payment_account"],
+)
+async def payment_card_delete_and_redact(
+    card_info: CardInfoRedactSchema, x_priority: Annotated[int, Header(ge=0, le=10)] = 10
+) -> str:
+    req_data = card_info.model_dump(exclude_none=True)
+    req_data["action_code"] = ActionCode.DELETE
+    redact_only = req_data.pop("redact_only", False)
+
+    remove_and_redact.apply_async(
+        args=[req_data],
+        kwargs={"x_azure_ref": ctx.x_azure_ref, "redact_only": redact_only},
+        exchange="metis-celery-tasks",
+        routing_key=get_routing_key(x_priority),
+        priority=x_priority,
+    )
+
     return "Success"
 
 

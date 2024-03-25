@@ -57,7 +57,7 @@ def put_account_status(
             break
         else:
             _handle_request_retry(count, max_count, card_id, token)
-    if not resp:
+    if resp is None:
         raise ValueError("failed request PUT /payment_cards/accounts/status to Hermes")
 
     return resp

@@ -2,7 +2,9 @@ import json
 import re
 import unittest
 
-import httpretty
+import responses
+import respx
+from httpx import Response
 
 import metis.agents.mastercard
 from metis.services import add_card, create_receiver, get_agent, reactivate_card
@@ -67,14 +69,12 @@ class TestServices(unittest.TestCase):
             "</receiver>"
         )
 
-        httpretty.register_uri(
-            httpretty.POST, self.create_url, status=201, body=xml_response, content_type="application/xml"
-        )
+        responses.add(responses.POST, self.create_url, status=201, body=xml_response, content_type="application/xml")
 
     @staticmethod
     def hermes_status_route() -> None:
-        httpretty.register_uri(
-            httpretty.PUT,
+        responses.add(
+            responses.PUT,
             f"{settings.HERMES_URL}/payment_cards/accounts/status",
             status=200,
             headers={"Authorization": auth_key},
@@ -84,21 +84,18 @@ class TestServices(unittest.TestCase):
 
     @staticmethod
     def hermes_provider_status_mappings_route() -> None:
-        httpretty.register_uri(
-            httpretty.GET,
+        responses.add(
+            responses.GET,
             re.compile(f"{settings.HERMES_URL}/payment_cards/provider_status_mappings/(.+)"),
             status=200,
             headers={"Authorization": auth_key},
-            body=json.dumps([{"provider_status_code": "BINK_UNKNOWN", "bink_status_code": 10}]),
-            content_type="application/json",
+            json=[{"provider_status_code": "BINK_UNKNOWN", "bink_status_code": 10}],
         )
 
     def test_route(self) -> None:
-        httpretty.register_uri(
-            httpretty.POST, self.payment_url, status=200, body=xml_data, content_type="application/xml"
-        )
+        responses.add(responses.POST, self.payment_url, status=200, body=xml_data, content_type="application/xml")
 
-    @httpretty.activate
+    @responses.activate
     def test_add_card(self) -> None:
         card_info = {
             "id": 1,
@@ -121,7 +118,7 @@ class TestServices(unittest.TestCase):
         with self.assertRaises(KeyError):
             get_agent("monkey")  # type: ignore [arg-type] # this is the point of this test
 
-    @httpretty.activate
+    @responses.activate
     def test_reactivate_card(self) -> None:
         card_info = {
             "id": 1,
@@ -159,13 +156,13 @@ class TestAsyncServices(unittest.IsolatedAsyncioTestCase):
             "</receiver>"
         )
 
-        httpretty.register_uri(
-            httpretty.POST, self.create_url, status=201, body=xml_response, content_type="application/xml"
+        respx.post(self.create_url).mock(
+            Response(status_code=201, text=xml_response, headers={"Content-Type": "application/xml"})
         )
 
-    @httpretty.activate
+    @respx.mock
     async def test_create_receiver(self) -> None:
         self.create_route()
         resp = await create_receiver("http://testing_latestserver.com", "test")
         self.assertEqual(resp.status_code, 201)
-        self.assertIn("token", resp.json())
+        self.assertIn("token", resp.text)

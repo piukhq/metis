@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-import httpretty
+import responses
 
 import metis.services
 from metis.agents.amex import Amex
@@ -20,15 +20,15 @@ class TestServicesToAmexMock(unittest.TestCase):
     def setUp(self) -> None:
         self.token = "QdjGCPSiYYDKxPMvvluYRG6zq79"
 
-    @httpretty.activate
+    @responses.activate
     @patch("metis.services.put_account_status", autospec=True)
     @patch("metis.services.get_provider_status_mappings", autospec=True)
     def test_amex_sync_fail(self, status_map_mock: Mock, status_return_mock: Mock) -> None:
         token = f"REQADD_XXXXXX_1_1_1_{uuid4()}"
         card_info = {"payment_token": token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
-        httpretty.register_uri(
-            httpretty.POST,
+        responses.add(
+            responses.POST,
             "https://core.spreedly.com/v1/receivers/amex/deliver.xml",
             body="""
             <root>
@@ -53,14 +53,14 @@ class TestServicesToAmexMock(unittest.TestCase):
             },
         )
 
-    @httpretty.activate
+    @responses.activate
     @patch("metis.services.put_account_status", autospec=True)
     @patch("metis.services.get_provider_status_mappings", autospec=True)
     def test_amex_sync(self, status_map_mock: Mock, status_return_mock: Mock) -> None:
         card_info = {"payment_token": self.token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
-        httpretty.register_uri(
-            httpretty.POST,
+        responses.add(
+            responses.POST,
             "https://core.spreedly.com/v1/receivers/amex/deliver.xml",
             body="""
             <root>
@@ -85,13 +85,13 @@ class TestServicesToAmexMock(unittest.TestCase):
             },
         )
 
-    @httpretty.activate
+    @responses.activate
     @patch("metis.services.get_provider_status_mappings", autospec=True)
     def test_amex_unsync(self, status_map_mock: Mock) -> None:
         card_info = {"payment_token": self.token, "card_token": " ", "partner_slug": "amex", "id": 100}
         status_map_mock.return_value = {"BINK_UNKNOWN": 0}
-        httpretty.register_uri(
-            httpretty.POST,
+        responses.add(
+            responses.POST,
             "https://core.spreedly.com/v1/receivers/amex/deliver.xml",
             body="""
             <root>
@@ -108,7 +108,7 @@ class TestServicesToAmexMock(unittest.TestCase):
         assert (resp := metis.services.remove_card(card_info))
         self.assertTrue(resp["status_code"] == 200)
 
-    @httpretty.activate
+    @responses.activate
     def test_request_header_both(self) -> None:
         res_path = "/v3/smartoffers/sync"
         amex = Amex()
