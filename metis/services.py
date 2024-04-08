@@ -623,6 +623,7 @@ async def retain_payment_method_token(payment_method_token: str, partner_slug: s
 
 
 def redact_card(card_info: dict) -> None:
+    logger.info("Start redact for card {}", card_info["id"])
     try:
         redact_resp = send_request(
             method="PUT",

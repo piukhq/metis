@@ -277,6 +277,7 @@ async def payment_card_delete_and_redact(
     req_data = card_info.model_dump(exclude_none=True)
     req_data["action_code"] = ActionCode.DELETE
     redact_only = req_data.pop("redact_only", False)
+    logger.info("Received delete_and_redact request for card: {} redact_only: {}", req_data["id"], redact_only)
 
     remove_and_redact.apply_async(
         args=[req_data],
