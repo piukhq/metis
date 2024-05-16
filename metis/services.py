@@ -165,7 +165,7 @@ async def _async_send_retry_spreedly_request(  # noqa: PLR0913
             logger.error("Spreedly {}, url:{}, Retryable exception {} attempt {}", method, url, e, attempts)
 
         else:
-            if resp.status_code in (401, 403):
+            if resp.status_code == 401:
                 logger.info(
                     "Spreedly {} status code: {}, reloading oauth password from Vault", method, resp.status_code
                 )
@@ -248,7 +248,7 @@ def _send_retry_spreedly_request(  # noqa: PLR0913
             resp = None
             logger.error("Spreedly {}, url:{}, Retryable exception {} attempt {}", method, url, e, attempts)
         else:
-            if resp.status_code in (401, 403):
+            if resp.status_code == 401:
                 logger.info(
                     "Spreedly {} status code: {}, reloading oauth password from Vault", method, resp.status_code
                 )
