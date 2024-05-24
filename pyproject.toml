@@ -38,7 +38,7 @@ azure-keyvault-secrets = "^4.7.0"
 azure-identity = "^1.15.0"
 loguru = "^0.7.2"
 bink-logging-utils = { version="^1.4.0", source="azure" }
-fastapi = "^0.109.2"
+fastapi = "^0.111.0"
 pydantic-settings = "^2.1.0"
 uvicorn = "^0.27.0.post1"
 httpx = "^0.26.0"
